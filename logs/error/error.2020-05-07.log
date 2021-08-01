@@ -1,0 +1,15 @@
+22:19:49.840 default [restartedMain] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Field config in com.mola.molachat.config.TomcatConfig required a bean of type 'com.mola.molachat.config.SelfConfig' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'com.mola.molachat.config.SelfConfig' in your configuration.
+

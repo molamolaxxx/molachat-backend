@@ -1,0 +1,62 @@
+package com.mola.molachat.controller;
+
+import com.mola.molachat.common.ResponseCode;
+import com.mola.molachat.common.ServerResponse;
+import com.mola.molachat.entity.dto.ChatterDTO;
+import com.mola.molachat.exception.service.ChatterServiceException;
+import com.mola.molachat.form.ChatterForm;
+import com.mola.molachat.service.ChatterService;
+import com.mola.molachat.service.RobotService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+
+/**
+ * @author : molamola
+ * @Project: molachat
+ * @Description: 机器人api
+ * @date : 2021-03-10 18:04
+ **/
+@RestController
+@RequestMapping("/robot")
+@Slf4j
+public class RobotController {
+
+    @Resource
+    private ChatterService chatterService;
+
+    @Resource
+    private RobotService robotService;
+
+    @PutMapping
+    public ServerResponse update(@Valid ChatterForm form,
+                                 BindingResult bindingResult,
+                                 HttpServletResponse response) {
+        if (bindingResult.hasErrors()){
+            log.error("表单验证出错");
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.ERROR.getCode(),
+                    bindingResult.getFieldError().getDefaultMessage());
+        }
+        if (!robotService.isRobot(form.getId())) {
+            return ServerResponse.createByErrorMessage("修改对象不是机器人");
+        }
+        ChatterDTO chatterDTO = new ChatterDTO();
+        BeanUtils.copyProperties(form, chatterDTO);
+
+        try {
+            chatterService.update(chatterDTO);
+        } catch (ChatterServiceException e) {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            return ServerResponse.createByErrorCodeMessage(e.getCode(), e.getMessage());
+        }
+        return ServerResponse.createBySuccess();
+    }
+}

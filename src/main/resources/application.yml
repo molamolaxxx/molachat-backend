@@ -1,0 +1,88 @@
+server:
+  servlet:
+    context-path: /chat
+#  阿里云证书 pfx类型证书
+  ssl:
+    key-store: classpath:5307799_molaspace.xyz.pfx
+    key-store-type: PKCS12
+    key-store-password: vRNJGM7r
+  # jks类型证书配置
+#    key-store: classpath:520oo.jks
+#    key-alias: alias
+#    enabled: true
+#    key-store-password: fVDgL4r3
+#    key-store-type: JKS
+
+
+#个人配置
+self-conf:
+  #检查连接的超时时间
+  connect-timeout: 60000
+  #断开链接时间
+  close-timeout: 3600000
+  #最大客户端数量
+  max-client-num: 20
+  #session最大保存信息数
+  max-session-message-num: 50
+  # chatter缓冲消息队列最大长度
+  max-message-queue-num: 30
+  #上传文件保存地址，供下载管理
+  upload-file-path: /tmp/chattmp/${app.id}
+
+  #最大存储文件大小,单位为m
+  max-file-size : 500
+  #最大请求文件大小,单位为m
+  max-request-size : 500
+
+  # 是否使用redis 1、redis 2、cache
+  cache-type: redis
+
+app:
+  version: 2.2.0
+  id: molachat001
+  # websocket的类型 1、spring 2、tomcat 3、netty（待开发）
+  server-type: spring
+  secret: molamolaxxx
+
+# jwt
+jwt:
+  secret: molachat
+  #  一个月过期
+  expiration: 2592000
+
+spring:
+  jackson:
+    default-property-inclusion: non_null
+  #模板引擎
+  thymeleaf:
+    cache: false
+    check-template: true
+    prefix: classpath:/templates/
+    suffix: .html
+    encoding: UTF-8
+    servlet:
+      content-type: text/html
+    mode: LEGACYHTML5
+  mvc:
+    favicon:
+      enabled: false
+  profiles:
+    active: dev
+  redis:
+    host: 127.0.0.1
+    port: 6379
+
+management:
+  endpoint:
+    shutdown:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+  #只允许本机的9001端口操作监控
+  server:
+    port: 9001
+    address: 127.0.0.1
+
