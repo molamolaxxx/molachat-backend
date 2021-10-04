@@ -10,6 +10,7 @@ import com.mola.molachat.enumeration.ChatterTagEnum;
 import com.mola.molachat.enumeration.VideoStateEnum;
 import com.mola.molachat.exception.service.ChatterServiceException;
 import com.mola.molachat.form.ChatterForm;
+import com.mola.molachat.handler.common.TokenCheckHandler;
 import com.mola.molachat.server.ChatServer;
 import com.mola.molachat.service.ChatterService;
 import com.mola.molachat.service.ServerService;
@@ -50,6 +51,9 @@ public class ChatterController {
 
     @Resource
     private SessionService sessionService;
+
+    @Resource
+    private TokenCheckHandler tokenCheckHandler;
 
     @Resource
     private JwtTokenUtil jwtUtil;
@@ -99,7 +103,7 @@ public class ChatterController {
                     bindingResult.getFieldError().getDefaultMessage());
         }
         //jwt验证
-        if (!checkToken(form.getId(), form.getToken(), request)){
+        if (!tokenCheckHandler.checkToken(form.getId(), form.getToken(), request)){
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return ServerResponse.createByErrorCodeMessage(ResponseCode.ERROR.getCode(),
                     "token验证错误");
@@ -127,7 +131,7 @@ public class ChatterController {
                                      HttpServletResponse response){
 
         //jwt验证
-        if (!checkToken(chatterId, token, request)){
+        if (!tokenCheckHandler.checkToken(chatterId, token, request)){
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return ServerResponse.createByErrorCodeMessage(ResponseCode.ERROR.getCode(),
                     "token验证错误");
@@ -215,7 +219,7 @@ public class ChatterController {
         if (jwtUtil.canRefresh(token)) {
             token = jwtUtil.generateToken(chatterId);
         }
-        if (checkToken(chatterId, token, request)){
+        if (tokenCheckHandler.checkToken(chatterId, token, request)){
             //3.保存session，close掉server，重新创建chatter(内部创建，保持一致)
 //            List<SessionDTO> saveSessionList = new ArrayList<>();
 //            for (SessionDTO sessionDTO : sessionService.list()){
@@ -250,16 +254,6 @@ public class ChatterController {
         }
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         return ServerResponse.createByErrorMessage("重连失败,token错误");
-    }
-
-
-    private Boolean checkToken(String id, String token, HttpServletRequest request){
-        boolean rs = jwtUtil.validateToken(token, id);
-        if (!rs) {
-            log.info("[checkToken]token验证错误，id = {},token = {},ip = {}", id, token, IpUtils.getIp(request));
-            return false;
-        }
-        return true;
     }
 
     /**

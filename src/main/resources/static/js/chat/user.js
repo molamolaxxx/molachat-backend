@@ -247,7 +247,7 @@ $(document).ready(function() {
         var str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         var namePrefixList = ["星巴克","米奇","米妮","四月春风","博丽灵梦",
                             "大灰狼","神里凌华","乌鸦哥","甘雨","jojo",
-                            "黄鹤","deep♂dark♂fantasy","初音未来","猫头鹰","兔子",
+                            "黄鹤","嘉然","初音未来","猫头鹰","兔子",
                             "狼人","预言家","女巫","编译器","猎人",
                             "自动状态机","虚拟机","神经网络","缓存","数据库",
                             "西施","貂蝉","自助酱大骨","螃蟹","龙虾",
@@ -332,7 +332,7 @@ $(document).ready(function() {
     }
 
     //判断弹窗是否弹出
-    var isPopout = false;
+    var errorCounter = 0;
     //发送心跳包
     var timer = setInterval(function() {
         var action = new Object();
@@ -366,9 +366,9 @@ $(document).ready(function() {
                 }
             },
             error: function(result) {
-                if (!isPopout) {
-                    isPopout = true;
-                    swal("Sometimes Bad", "用户已被销毁，请重新创建", "error", {
+                if (errorCounter > 10) {
+                    errorCounter -= 1;
+                    swal("Sometimes Bad", "连接失败，请重新连接", "error", {
                         buttons: {
                             catch: {
                                 text: "刷新",
@@ -377,7 +377,7 @@ $(document).ready(function() {
                         },
                     }).then((value) => {
                         location.reload();
-                        isPopout = false;
+                        errorCounter = 0;
                     });
                 }
                 

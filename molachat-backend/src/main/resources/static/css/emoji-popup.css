@@ -1,0 +1,33 @@
+ul.emoji-list li {
+    font-size: 36px;
+    float: left;
+    display: inline-block;
+    padding: 2px;
+    margin: 4px;
+    width: 40px;
+    height: 40px;
+}
+
+.emoji-root {
+    overflow: auto;
+    height: 25rem;
+}
+
+.chat__message .emoji {
+    height: 1.5rem;
+    vertical-align: middle;
+}
+
+ul {
+    display: block;
+    list-style-type: disc;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: -0.5rem;
+    margin-inline-end: 0px;
+    padding-inline-start: 40px;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+    <property name="CONSOLE_INFO_LOG_PATTERN"
+              value="%white(%date{yyyy-MM-dd HH:mm:ss}) |%white(%-5level) |%white(%thread) |%white(%file:%line) |%cyan(%logger) |%blue(%msg%n)"/>
+
+    <property name="PACKAGE_INFO_LOG_PATTERN"
+              value="%white(%date{yyyy-MM-dd HH:mm:ss}) |%white(%-5level) |%white(%thread) |%yellow(%file:%line) |%cyan(%logger) |%blue(%msg%n)"/>
+
+    <property name="CONSOLE_INFO_ERROR_PATTERN"
+              value="%yellow(%date{yyyy-MM-dd HH:mm:ss}) |%red(%-5level) |%blue(%thread) |%blue(%file:%line) |%cyan(%logger) |%yellow(%msg%n)"/>
+
+    <property name="FILE_LOG_PATTERN"
+              value="%d{HH:mm:ss.SSS} %contextName [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!--控制台输出包下的info-->
+    <appender name="packageAllInfo" class="ch.qos.logback.core.ConsoleAppender">
+        <!--根据范围过滤-->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>
+                ${PACKAGE_INFO_LOG_PATTERN}
+            </pattern>
+        </layout>
+    </appender>
+
+    <!--控制台输出info-->
+    <appender name="consoleInfoLog" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>ACCEPT</onMismatch>
+        </filter>
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>
+                ${CONSOLE_INFO_LOG_PATTERN}
+            </pattern>
+        </layout>
+    </appender>
+
+    <!--控制台输出error-->
+    <appender name="consoleErrorLog" class="ch.qos.logback.core.ConsoleAppender">
+        <!--根据范围过滤-->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>
+                ${CONSOLE_INFO_ERROR_PATTERN}
+            </pattern>
+        </layout>
+    </appender>
+
+    <!--文件输出等级为info的日志-->
+    <appender name="fileInfoLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--根据级别过滤-->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>ACCEPT</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>
+                ${FILE_LOG_PATTERN}
+            </pattern>
+        </encoder>
+        <!--滚动策略,按照时间滚动-->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!--路径-->
+            <fileNamePattern>./logs/info/info.%d.log</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+
+    <!--文件输出等级为error的日志-->
+    <appender name="fileErrorLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--根据范围过滤-->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <encoder>
+            <pattern>
+                ${FILE_LOG_PATTERN}
+            </pattern>
+        </encoder>
+        <!--滚动策略,按照时间滚动-->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!--路径-->
+            <fileNamePattern>./logs/error/error.%d.log</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+
+    <!--使用配置,作用域为sell-->
+    <root level="info">
+        <appender-ref ref="consoleInfoLog"/>
+        <appender-ref ref="consoleErrorLog"/>
+        <appender-ref ref="fileInfoLog"/>
+        <appender-ref ref="fileErrorLog"/>
+    </root>
+
+    <logger name="com.mola.molachat" level="DEBUG" additivity="false">
+        <appender-ref ref="packageAllInfo" />
+    </logger>
+</configuration>

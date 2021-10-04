@@ -492,6 +492,10 @@ svg {
     font-family: "Open Sans", Helvetica, Arial, sans-serif;
 }
 
+.search__input {
+    width: 100%;
+}
+
 .user_info {
     position: fixed;
     width: 20%;

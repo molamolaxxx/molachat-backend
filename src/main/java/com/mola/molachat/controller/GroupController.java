@@ -1,8 +1,9 @@
 package com.mola.molachat.controller;
 
+import com.mola.molachat.common.ResponseCode;
 import com.mola.molachat.common.ServerResponse;
+import com.mola.molachat.handler.common.TokenCheckHandler;
 import com.mola.molachat.service.GroupService;
-import com.mola.molachat.utils.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,14 +29,20 @@ public class GroupController {
     private GroupService groupService;
 
     @Resource
-    private JwtTokenUtil jwtUtil;
+    private TokenCheckHandler tokenCheckHandler;
 
     @GetMapping("/owner")
     public ServerResponse listByOwner(@RequestParam("chatterId") String chatterId,
                                       @RequestParam("token") String token,
                                       HttpServletRequest request,
                                       HttpServletResponse response) {
-        return ServerResponse.createBySuccess();
+        //jwt验证
+        if (!tokenCheckHandler.checkToken(chatterId, token, request)){
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.ERROR.getCode(),
+                    "token验证错误");
+        }
+        return ServerResponse.createBySuccess(groupService.listByOwner(chatterId));
     }
 
     @GetMapping("/member")
@@ -43,6 +50,12 @@ public class GroupController {
                                        @RequestParam("token") String token,
                                        HttpServletRequest request,
                                        HttpServletResponse response) {
-        return ServerResponse.createBySuccess();
+        //jwt验证
+        if (!tokenCheckHandler.checkToken(chatterId, token, request)){
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.ERROR.getCode(),
+                    "token验证错误");
+        }
+        return ServerResponse.createBySuccess(groupService.listByMemberId(chatterId));
     }
 }

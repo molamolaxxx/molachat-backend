@@ -1,0 +1,111 @@
+00:02:36.701 default [Thread-29] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+00:02:36.703 default [Thread-29] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+00:02:48.349 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+00:02:48.351 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+00:02:51.283 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+00:02:51.292 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+00:02:51.436 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 90ms. Found 0 repository interfaces.
+00:02:55.878 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+00:02:55.930 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+00:02:55.960 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+00:02:55.961 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+00:02:56.217 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+00:02:56.218 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 7866 ms
+00:02:57.080 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.6139019634456786211.8550/]
+00:02:59.082 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+00:02:59.091 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+00:02:59.917 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+00:03:00.328 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+00:03:00.440 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+00:03:02.063 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+00:03:02.187 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+00:03:03.036 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+00:03:03.341 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+00:03:03.345 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+00:03:03.346 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+00:03:03.348 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+00:03:03.364 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+00:03:03.365 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 320 ms
+00:03:03.456 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+00:03:03.513 default [https-jsse-nio-8550-exec-6] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+00:03:03.513 default [https-jsse-nio-8550-exec-6] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+00:03:03.552 default [https-jsse-nio-8550-exec-6] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 38 ms
+00:03:03.647 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+00:03:04.131 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+00:03:05.100 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+00:03:05.105 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+00:04:45.928 default [https-jsse-nio-8550-exec-6] WARN  o.s.w.s.m.s.DefaultHandlerExceptionResolver - Resolved [org.springframework.web.bind.MissingServletRequestParameterException: Required String parameter 'chatterId' is not present]
+00:08:21.207 default [Thread-45] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+00:08:21.210 default [Thread-45] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+00:08:33.263 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+00:08:33.264 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+00:08:35.960 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+00:08:35.966 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+00:08:36.066 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 63ms. Found 0 repository interfaces.
+00:08:38.692 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+00:08:38.733 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+00:08:38.757 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+00:08:38.757 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+00:08:38.942 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+00:08:38.943 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 5679 ms
+00:08:39.466 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.7172060873643164976.8550/]
+00:08:40.667 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+00:08:40.674 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+00:08:41.319 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+00:08:41.678 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+00:08:41.775 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+00:08:43.093 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+00:08:43.196 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+00:08:43.925 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+00:08:44.091 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+00:08:44.093 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+00:08:44.094 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+00:08:44.095 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+00:08:44.105 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+00:08:44.105 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 171 ms
+00:08:44.151 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+00:08:44.283 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+00:08:44.565 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+00:08:45.141 default [RMI TCP Connection(2)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+00:08:45.142 default [RMI TCP Connection(2)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+00:08:45.167 default [RMI TCP Connection(2)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 25 ms
+00:08:45.494 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+00:08:45.498 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+00:09:39.824 default [Thread-37] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+00:09:39.826 default [Thread-37] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+01:02:55.519 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+01:02:55.521 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+01:02:57.237 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+01:02:57.243 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+01:02:57.317 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 44ms. Found 0 repository interfaces.
+01:02:59.172 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+01:02:59.202 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+01:02:59.218 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+01:02:59.218 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+01:02:59.363 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+01:02:59.364 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 3842 ms
+01:02:59.717 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.556000693291169475.8550/]
+01:03:00.638 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+01:03:00.645 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+01:03:01.270 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+01:03:01.677 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+01:03:01.760 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+01:03:03.113 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+01:03:03.205 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+01:03:03.848 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+01:03:04.007 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+01:03:04.009 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+01:03:04.010 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+01:03:04.011 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+01:03:04.021 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+01:03:04.021 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 166 ms
+01:03:04.065 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+01:03:04.183 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+01:03:04.507 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+01:03:04.724 default [RMI TCP Connection(5)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+01:03:04.724 default [RMI TCP Connection(5)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+01:03:04.760 default [RMI TCP Connection(5)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 35 ms
+01:03:05.048 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+01:03:05.053 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+01:16:46.710 default [Thread-30] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+01:16:46.712 default [Thread-30] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'

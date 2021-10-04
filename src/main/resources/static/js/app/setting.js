@@ -1,5 +1,6 @@
 // app全局的一些配置
-var DEFAULT_IP = "molaspace.xyz"
+var DEFAULT_HOST = "molaspace.xyz"
+var DEFAULT_LOCAL_HOST = "127.0.0.1"
 var DEFAULT_PORT = "8550"
 
 var ipAndPort = getIpAndPort()
@@ -16,7 +17,7 @@ function getIpAndPort() {
     // 判断是否web页面
     if (location.href.indexOf("file://") >= 0) {
         // web-app， 此处可进行服务器选择
-        ip = localStorage.getItem("_ip") ? localStorage.getItem("_ip") : DEFAULT_IP
+        ip = localStorage.getItem("_ip") ? localStorage.getItem("_ip") : DEFAULT_HOST
         port = localStorage.getItem("_port") ? localStorage.getItem("_port") :DEFAULT_PORT
         isApp = true
     } else {
@@ -29,11 +30,11 @@ function getIpAndPort() {
         } else if (configArr.length == 1) {
             ip = configArr[0]
             if (ip === 'localhost' || ip === '127.0.0.1') { // 测试使用
-                ip = DEFAULT_IP
+                ip = DEFAULT_LOCAL_HOST
             }
             port = DEFAULT_PORT
         } else {
-            ip = DEFAULT_IP
+            ip = DEFAULT_HOST
             port = DEFAULT_PORT
         }
     }

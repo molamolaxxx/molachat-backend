@@ -1,6 +1,7 @@
 package com.mola.molachat.service.impl;
 
 import com.mola.molachat.data.GroupFactoryInterface;
+import com.mola.molachat.data.impl.cache.GroupFactory;
 import com.mola.molachat.entity.Group;
 import com.mola.molachat.entity.dto.SessionDTO;
 import com.mola.molachat.exception.AppBaseException;
@@ -13,10 +14,10 @@ import com.mola.molachat.utils.SegmentLock;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -53,27 +54,25 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public List<Group> listByOwner(String chatterId) {
         Assert.hasText(chatterId, "[GroupServiceImpl] chatterId can not be null!");
-        List<Group> cache = ownerGroupListCache.get(chatterId);
-        if (null == cache) {
-            List<Group> data = groupFactoryInterface.list(group ->
-                    group.getId().equals(chatterId));
-            ownerGroupListCache.put(chatterId, data);
-            return data;
+        List<Group> ownerGroups = ownerGroupListCache.get(chatterId);
+        if (CollectionUtils.isEmpty(ownerGroups)) {
+            ownerGroups = groupFactoryInterface.list(group -> group.getCreatorId().equals(chatterId));
+            ownerGroupListCache.put(chatterId, ownerGroups);
         }
-        return cache;
+        return ownerGroups;
     }
 
     @Override
     public List<Group> listByMemberId(String memberChatterId) {
         Assert.hasText(memberChatterId, "[GroupServiceImpl] memberChatterId can not be null!");
-        List<Group> cache = memberGroupListCache.get(memberChatterId);
-        if (null == cache) {
-            List<Group> data = groupFactoryInterface.list(group ->
-                    group.getMemberIds().contains(memberChatterId));
-            memberGroupListCache.put(memberChatterId, data);
-            return data;
+        List<Group> groupList = getBaseGroup();
+        List<Group> memberGroups = ownerGroupListCache.get(memberChatterId);
+        if (CollectionUtils.isEmpty(memberGroups)) {
+            memberGroups = groupFactoryInterface.list(group -> group.getMemberIds().contains(memberChatterId));
+            memberGroupListCache.put(memberChatterId, memberGroups);
         }
-        return cache;
+        groupList.addAll(memberGroups);
+        return groupList;
     }
 
     @Override
@@ -154,5 +153,14 @@ public class GroupServiceImpl implements GroupService {
             segmentLock.unlock(toUpdate);
         }
         return toUpdate;
+    }
+
+    /**
+     * 公共群组加入默认列表
+     * @return
+     */
+    private List<Group> getBaseGroup() {
+        Group group = groupFactoryInterface.selectOne(GroupFactory.COMMON_GROUP_ID);
+        return Arrays.asList(group);
     }
 }

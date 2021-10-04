@@ -43,6 +43,7 @@ public class ChatterFactory implements ChatterFactoryInterface {
 
     /**
      * chatter消息队列，用于存放session中因为断线未发出的消息
+     * @key: chatterId
      */
     private static Map<String, LinkedBlockingQueue<Message>> chatterMessageQueue;
 

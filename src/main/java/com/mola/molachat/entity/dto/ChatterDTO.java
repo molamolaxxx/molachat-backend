@@ -1,5 +1,6 @@
 package com.mola.molachat.entity.dto;
 
+import com.mola.molachat.enumeration.ChatterTagEnum;
 import lombok.Data;
 
 import java.util.Date;
@@ -35,6 +36,7 @@ public class ChatterDTO {
 
     /**
      * 用户标签
+     * @see ChatterTagEnum
      */
     private Integer tag;
 

@@ -6,6 +6,7 @@ import com.mola.molachat.utils.IdUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,7 +42,8 @@ public class GroupFactory implements GroupFactoryInterface {
         group.setSessionId("common-session");
         group.setCreatorId("admin");
         group.setDesc("欢迎各位的到来");
-        group.setMemberIds(null);
+        group.setImgUrl("img/mola.png");
+        group.setMemberIds(new HashSet<>());
         return group;
     }
 

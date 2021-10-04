@@ -7,8 +7,8 @@ import org.springframework.context.ApplicationContext;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author : molamola
@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class ActionStrategyContext {
 
-    private final Map<Integer, WSRequestActionHandler> actionHandlerMap = new ConcurrentHashMap<>();
+    private final Map<Integer, WSRequestActionHandler> actionHandlerMap = new HashMap<>(8);
 
     @Resource
     private ApplicationContext applicationContext;
