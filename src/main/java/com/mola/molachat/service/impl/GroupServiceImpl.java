@@ -88,7 +88,7 @@ public class GroupServiceImpl implements GroupService {
                 return data.get(0);
             }
         }
-        return null;
+        return cache;
     }
 
     @Override

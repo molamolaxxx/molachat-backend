@@ -38,6 +38,11 @@ public class Group {
     private String desc;
 
     /**
+     * 进入群组的提示语
+     */
+    private String hint;
+
+    /**
      * 群组头像
      */
     private String imgUrl;

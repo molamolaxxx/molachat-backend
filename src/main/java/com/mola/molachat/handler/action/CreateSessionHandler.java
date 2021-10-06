@@ -11,6 +11,7 @@ import com.mola.molachat.server.session.SessionWrapper;
 import com.mola.molachat.service.GroupService;
 import com.mola.molachat.service.SessionService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.Assert;
 
 import javax.annotation.Resource;
 
@@ -38,35 +39,41 @@ public class CreateSessionHandler implements WSRequestActionHandler{
     @Override
     public void handle(Action action) throws Exception {
         log.info("action:创建/找到session");
-        //按照分号获取id
-        String ids = (String) action.getData();
-        String chatterId = action.getChatterId();
-        SessionWrapper session = action.getSessionWrapper();
+        try {
+            //按照分号获取id
+            String ids = (String) action.getData();
+            String chatterId = action.getChatterId();
+            SessionWrapper session = action.getSessionWrapper();
 
-        // 如果该session为群聊session
-        if (SessionConstant.COMMON_SESSION_ID.equals(ids)) {
-            SessionDTO sessionDTO = sessionService.findCommonAndGroupSession(chatterId, SessionConstant.COMMON_SESSION_ID);
-            session.sendToClient(WSResponse.createSession("ok", sessionDTO));
-            return;
-        }
-
-        // 如果为group-session
-        Group group = groupService.selectBySessionId(ids);
-        if (null != group && group.getMemberIds().contains(chatterId)) {
-            SessionDTO groupSession = sessionService.findSession(ids);
-            if (null != groupSession) {
-                groupSession = sessionService.findCommonAndGroupSession(chatterId, groupSession.getSessionId());
-                session.sendToClient(WSResponse.createSession("ok", groupSession));
+            // 如果该session为群聊session
+            if (SessionConstant.COMMON_SESSION_ID.equals(ids)) {
+                SessionDTO sessionDTO = sessionService.findCommonAndGroupSession(chatterId, SessionConstant.COMMON_SESSION_ID);
+                session.sendToClient(WSResponse.createSession("ok", sessionDTO));
                 return;
             }
+
+            // 如果为group-session
+            Group group = groupService.selectBySessionId(ids);
+            if (null != group && group.getMemberIds().contains(chatterId)) {
+                SessionDTO groupSession = sessionService.findSession(ids);
+                if (null != groupSession) {
+                    groupSession = sessionService.findCommonAndGroupSession(chatterId, groupSession.getSessionId());
+                    session.sendToClient(WSResponse.createSession("ok", groupSession));
+                    return;
+                }
+            }
+
+            String[] idSplit = ids.split(";");
+            Assert.isTrue(idSplit.length == 2, "未找到会话，请重试");
+            //查找是否已经存在session,没有的话创建session
+            SessionDTO sessionDTO = sessionService.findSession(idSplit[0], idSplit[1]);
+
+            //返回session信息
+            session.sendToClient(WSResponse.createSession("ok", sessionDTO));
+        } catch (Exception e) {
+            log.error("com.mola.molachat.handler.action.CreateSessionHandler.handle error ", e);
+            action.getSessionWrapper().sendToClient(WSResponse.exception("会话创建失败", e.getMessage()));
         }
 
-        String[] idSplit = ids.split(";");
-
-        //查找是否已经存在session,没有的话创建session
-        SessionDTO sessionDTO = sessionService.findSession(idSplit[0], idSplit[1]);
-
-        //返回session信息
-        session.sendToClient(WSResponse.createSession("ok", sessionDTO));
     }
 }

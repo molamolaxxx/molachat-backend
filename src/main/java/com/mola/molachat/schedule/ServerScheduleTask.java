@@ -79,7 +79,7 @@ public class ServerScheduleTask {
      * 检测chatter是否没有server
      * 如果没有，设置为离线
      */
-    @Scheduled(initialDelay =  1800000,fixedRate = 3600000)
+    @Scheduled(initialDelay =  30000,fixedRate = 900000)
     private void checkChatterSingle() {
         log.info("开始检查chatter是否持有server");
         for (ChatterDTO chatter : chatterService.list()){
