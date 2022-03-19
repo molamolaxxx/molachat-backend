@@ -3,7 +3,7 @@ server:
     context-path: /chat
 #  阿里云证书 pfx类型证书
   ssl:
-    key-store: classpath:5307799_molaspace.xyz.pfx
+    key-store: classpath:molaspace.xyz.pfx
     key-store-type: PKCS12
     key-store-password: vRNJGM7r
   # jks类型证书配置
