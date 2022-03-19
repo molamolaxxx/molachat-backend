@@ -12,19 +12,38 @@ $(document).ready(function () {
     $(document).on('click', "#menu-icon", function(e) {
         openFAB(menu)
     })
+
+    
+
     $(document).on('click', '#multichat', function(e) {
-        enterMutiChat(e);
-        closeFAB(menu)
-        $('.tooltipped').tooltip('remove'); 
-        showToast("已进入群聊会话，可以畅所欲言", 1800)    
+          // 群组的信息
+        const groupInfo = {
+            name : "大家随便聊聊",
+            signature : "这里是MOLA的公共聊天室",
+            sessionId : "common-session",
+            imgUrl : "img/mola.png",
+            hint : "已进入群聊会话，可以畅所欲言"
+        }
+        onStartGroupSession(groupInfo)
     });
 
+    /**
+     * 主方法，进入群聊会话
+     * @param {*} groupInfo 
+     */
+    function onStartGroupSession(groupInfo) {
+        enterMutiChat(groupInfo);
+        closeFAB(menu)
+        $('.tooltipped').tooltip('remove'); 
+        showToast(groupInfo.hint, 1800)  
+    }
+
     // 进入群聊区域
-    function enterMutiChat(e) {
+    function enterMutiChat(groupInfo) {
         // 在好友区添加一个空白，然后点击
         var dom = chatterDom(
-            "大家随便聊聊", 
-            "img/mola.png", 
+            groupInfo.name, 
+            groupInfo.imgUrl, 
             false, 
             "", 
             "");
@@ -42,19 +61,19 @@ $(document).ready(function () {
         $tempDom.click()
         $tempDom.remove()
         // 清空区域，初始化签名
-        initMutiChat();
+        initMutiChat(groupInfo);
         // ui结束，切换会话
     }
 
-    function initMutiChat() {
+    function initMutiChat(groupInfo) {
         //设置当前chatter为公共chatter
         var activeChatter = {
             createTime: 99999999,
             id: "temp-chatter",
-            imgUrl: "img/mola.png",
+            imgUrl: groupInfo.imgUrl,
             ip: "127.0.0.1",
-            name: "大家随便聊聊",
-            signature: "这里是mola的公共聊天室",
+            name: groupInfo.name,
+            signature : groupInfo.signature,
             status: 1,
             isTemp:true
         };
@@ -68,7 +87,7 @@ $(document).ready(function () {
         action.code = CREATE_SESSION;
         action.msg = "ok";
         // 发送公共chatter的固定sessionId
-        action.data = "common-session";
+        action.data = groupInfo.sessionId;
         //向服务器发送数据
         socket.send(JSON.stringify(action));
     }

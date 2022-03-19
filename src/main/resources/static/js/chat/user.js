@@ -194,10 +194,11 @@ $(document).ready(function() {
                 //刷新聊天列表
                 initChatter(chatterList, chatterId);
             } else if (result.code == EXCEPTION) {
-                swal(result.msg, result.data, "error")
-                if (result.msg == "session-invalid") {
-                    $(".chat__back")[0].click();
-                }
+                swal(result.msg, result.data, "error").then(
+                    () => {
+                        $(".chat__back")[0].click();
+                    }
+                )
             } else if (result.code == CREATE_SESSION) {
                 //新建session
                 createSession(result.data);
@@ -332,7 +333,7 @@ $(document).ready(function() {
     }
 
     //判断弹窗是否弹出
-    var errorCounter = 0;
+    var errorAlert = false;
     //发送心跳包
     var timer = setInterval(function() {
         var action = new Object();
@@ -366,8 +367,8 @@ $(document).ready(function() {
                 }
             },
             error: function(result) {
-                if (errorCounter > 10) {
-                    errorCounter -= 1;
+                if (!errorAlert) {
+                    errorAlert -= true;
                     swal("Sometimes Bad", "连接失败，请重新连接", "error", {
                         buttons: {
                             catch: {
@@ -376,11 +377,10 @@ $(document).ready(function() {
                             }
                         },
                     }).then((value) => {
-                        location.reload();
-                        errorCounter = 0;
+                        errorCounter = false;
+                        reconnect();
                     });
                 }
-                
             },
             complete: function(xhr, status) {
                 if (status == 'timeout') {
