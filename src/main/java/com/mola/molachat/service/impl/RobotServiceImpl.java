@@ -83,7 +83,7 @@ public class RobotServiceImpl implements RobotService {
         // 消息构建
         Message msg = new Message();
         msg.setContent(content);
-        msg.setChatterId(receiver.getId());
+        msg.setChatterId(robot.getId());
 
         // 1、查询session，没有则创建
         SessionDTO session = sessionService.findOrCreateSession(appKey, toChatterId);

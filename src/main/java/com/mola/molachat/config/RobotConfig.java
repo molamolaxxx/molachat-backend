@@ -9,6 +9,7 @@ import com.mola.molachat.enumeration.ChatterTagEnum;
 import com.mola.molachat.robot.bus.RobotEventBusRegistry;
 import com.mola.molachat.service.SessionService;
 import com.mola.molachat.utils.BeanUtilsPlug;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.PostConstruct;
@@ -21,7 +22,7 @@ import javax.annotation.Resource;
  * @date : 2020-12-05 19:44
  **/
 @Configuration
-public class TestRobotConfig {
+public class RobotConfig {
 
     @Resource
     private ChatterFactoryInterface chatterFactory;
@@ -32,10 +33,17 @@ public class TestRobotConfig {
     @Resource
     private SessionService sessionService;
 
+    @Resource
+    private AppConfig appConfig;
+
     @PostConstruct
     public void initRobot() {
-        addRobot("robot1234");
-        addRobot("robot001");
+        String robotList = appConfig.getRobotList();
+        if (StringUtils.isNotEmpty(robotList)) {
+            for (String appKey : robotList.split(";")) {
+                addRobot(appKey);
+            }
+        }
     }
 
     /**
@@ -48,8 +56,8 @@ public class TestRobotConfig {
         if (null == chatter) {
             robot = new RobotChatter();
             robot.setId(appKey);
-            robot.setName("测试机器人");
-            robot.setSignature("我是一个测试机器人");
+            robot.setName("机器人");
+            robot.setSignature("我是一个机器人");
             robot.setStatus(ChatterStatusEnum.ONLINE.getCode());
             robot.setTag(ChatterTagEnum.ROBOT.getCode());
             robot.setImgUrl("img/header/6.jpeg");

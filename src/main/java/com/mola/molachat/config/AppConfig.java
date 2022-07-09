@@ -36,4 +36,9 @@ public class AppConfig {
      * webSocket的类型，分为spring、tomcat和netty
      */
     private String serverType;
+
+    /**
+     * 机器人appKey
+     */
+    private String robotList;
 }

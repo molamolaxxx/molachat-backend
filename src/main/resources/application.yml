@@ -43,6 +43,7 @@ app:
   # websocket的类型 1、spring 2、tomcat 3、netty（待开发）
   server-type: spring
   secret: molamolaxxx
+  robot-list: robot1234
 
 # jwt
 jwt:

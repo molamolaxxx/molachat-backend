@@ -59,7 +59,7 @@ public class RobotController {
     }
 
     @GetMapping("/push/{appKey}")
-    public ServerResponse pushMessage(@RequestParam("appKey") String appKey,
+    public ServerResponse pushMessage(@PathVariable("appKey") String appKey,
                                       @RequestParam("toChatterId") String toChatterId,
                                       @RequestParam("content") String content) {
         try {
