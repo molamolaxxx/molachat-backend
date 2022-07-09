@@ -22,6 +22,7 @@ import com.mola.molachat.service.*;
 import com.mola.molachat.utils.BeanUtilsPlug;
 import com.mola.molachat.utils.IdUtils;
 import com.mola.molachat.utils.SegmentLock;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -87,7 +88,7 @@ public class SessionServiceImpl implements SessionService{
 
     @Override
     public SessionDTO findOrCreateSession(String chatterId1, String chatterId2) {
-
+        Assert.isTrue(!StringUtils.equals(chatterId1, chatterId2), "会话建立失败，id1 equals id2");
         SessionDTO result = null;
         String sessId1 = chatterId1 + chatterId2;
         String sessId2 = chatterId2 + chatterId1;
