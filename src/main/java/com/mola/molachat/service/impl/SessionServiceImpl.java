@@ -86,7 +86,7 @@ public class SessionServiceImpl implements SessionService{
     }
 
     @Override
-    public SessionDTO findSession(String chatterId1, String chatterId2) {
+    public SessionDTO findOrCreateSession(String chatterId1, String chatterId2) {
 
         SessionDTO result = null;
         String sessId1 = chatterId1 + chatterId2;

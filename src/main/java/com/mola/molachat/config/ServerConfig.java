@@ -57,16 +57,12 @@ public class ServerConfig implements WebSocketConfigurer, InitializingBean {
     public void afterPropertiesSet() throws Exception {
         if ("tomcat".equals(appConfig.getServerType())) {
             log.info("[molachat] 使用了tomcat提供的websocket引擎");
-            BeanUtilsPlug.registerBean("tomcatChatServer", TomcatChatServer.class, () -> {
-                return new TomcatChatServer();
-            });
-            BeanUtilsPlug.registerBean("serverEndpointExporter", ServerEndpointExporter.class, () -> {
-                ServerEndpointExporter serverEndpointExporter = new ServerEndpointExporter();
-                return serverEndpointExporter;
-            });
+            BeanUtilsPlug.registerBean("tomcatChatServer", TomcatChatServer.class, () -> new TomcatChatServer());
+            BeanUtilsPlug.registerBean("serverEndpointExporter", ServerEndpointExporter.class, () -> new ServerEndpointExporter());
             // 动态添加beanDefination后，如果需要执行钩子函数，需要重新调用beanFactory.preInstantiateSingletons方法
             // 因为第一次执行
-            DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory)MyApplicationContextAware.getApplicationContext()
+            DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory)MyApplicationContextAware
+                    .getApplicationContext()
                     .getAutowireCapableBeanFactory();
             beanFactory.preInstantiateSingletons();
         }

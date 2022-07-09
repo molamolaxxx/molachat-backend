@@ -35,7 +35,7 @@ public interface SessionService {
      * @param
      * @return
      */
-    SessionDTO findSession(String chatterId1, String chatterId2);
+    SessionDTO findOrCreateSession(String chatterId1, String chatterId2);
 
     /**
      *

@@ -22,4 +22,19 @@ public interface RobotService {
      * @return
      */
     Boolean isRobot(String chatterId);
+
+    /**
+     * 获取机器人
+     * @param appKey
+     * @return
+     */
+    RobotChatter getRobot(String appKey);
+
+    /**
+     * 消息推送
+     * @param appKey 发送方（机器人）
+     * @param toChatterId 接收方
+     * @param content 消息
+     */
+    void pushMessage(String appKey, String toChatterId, String content);
 }

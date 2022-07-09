@@ -64,9 +64,9 @@ public class CreateSessionHandler implements WSRequestActionHandler{
             }
 
             String[] idSplit = ids.split(";");
-            Assert.isTrue(idSplit.length == 2, "未找到会话，请重试");
+            Assert.isTrue(idSplit.length == 2, "会话参数长度错误");
             //查找是否已经存在session,没有的话创建session
-            SessionDTO sessionDTO = sessionService.findSession(idSplit[0], idSplit[1]);
+            SessionDTO sessionDTO = sessionService.findOrCreateSession(idSplit[0], idSplit[1]);
 
             //返回session信息
             session.sendToClient(WSResponse.createSession("ok", sessionDTO));

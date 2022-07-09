@@ -10,9 +10,7 @@ import com.mola.molachat.service.RobotService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
@@ -58,5 +56,19 @@ public class RobotController {
             return ServerResponse.createByErrorCodeMessage(e.getCode(), e.getMessage());
         }
         return ServerResponse.createBySuccess();
+    }
+
+    @GetMapping("/push/{appKey}")
+    public ServerResponse pushMessage(@RequestParam("appKey") String appKey,
+                                      @RequestParam("toChatterId") String toChatterId,
+                                      @RequestParam("content") String content) {
+        try {
+            // 发送服务
+            robotService.pushMessage(appKey, toChatterId, content);
+            return ServerResponse.createBySuccess();
+        } catch (Exception e) {
+            log.error("pushMessage error", e);
+            return ServerResponse.createByErrorMessage(e.getMessage());
+        }
     }
 }

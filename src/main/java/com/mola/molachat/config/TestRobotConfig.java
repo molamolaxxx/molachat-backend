@@ -32,17 +32,22 @@ public class TestRobotConfig {
     @Resource
     private SessionService sessionService;
 
-    private String testId = "robot1234";
-
-    private String appKey = "robot1234";
-
     @PostConstruct
     public void initRobot() {
-        Chatter chatter = chatterFactory.select(testId);
+        addRobot("robot1234");
+        addRobot("robot001");
+    }
+
+    /**
+     * 加一个机器人
+     * @param appKey
+     */
+    private void addRobot(String appKey) {
+        Chatter chatter = chatterFactory.select(appKey);
         RobotChatter robot = null;
         if (null == chatter) {
             robot = new RobotChatter();
-            robot.setId(testId);
+            robot.setId(appKey);
             robot.setName("测试机器人");
             robot.setSignature("我是一个测试机器人");
             robot.setStatus(ChatterStatusEnum.ONLINE.getCode());
