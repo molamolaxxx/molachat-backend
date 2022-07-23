@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 //@Component
 @Aspect
 @Slf4j
+@Deprecated
 public class RefreshChattersAspect {
 
     @Resource

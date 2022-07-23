@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 //@Component
 @Aspect
 @Slf4j
+@Deprecated
 public class AddPointAspect {
 
     @Autowired
