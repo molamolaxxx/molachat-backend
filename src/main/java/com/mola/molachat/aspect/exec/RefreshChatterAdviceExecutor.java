@@ -1,4 +1,4 @@
-package com.mola.molachat.aspect;
+package com.mola.molachat.aspect.exec;
 
 import com.mola.molachat.annotation.RefreshChatterList;
 import com.mola.molachat.common.websocket.WSResponse;
@@ -9,27 +9,25 @@ import com.mola.molachat.server.ChatServer;
 import com.mola.molachat.service.ChatterService;
 import com.mola.molachat.service.ServerService;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Pointcut;
-import org.aspectj.lang.reflect.MethodSignature;
+import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * @Author: molamola
- * @Date: 19-8-8 下午4:06
- * @Version 1.0
- */
-//@Component
-@Aspect
+ * @author : molamola
+ * @Project: molachat
+ * @Description:
+ * @date : 2022-07-23 19:12
+ **/
+@Component
 @Slf4j
-public class RefreshChattersAspect {
+public class RefreshChatterAdviceExecutor implements AnnotationAdviceExecutor {
 
     @Resource
     private ServerService serverService;
@@ -37,20 +35,16 @@ public class RefreshChattersAspect {
     @Resource
     private ChatterService chatterService;
 
-    @Pointcut("@annotation(com.mola.molachat.annotation.RefreshChatterList)")
-    public void pointCut(){}
-
-    @Around("pointCut()")
-    public Object around(ProceedingJoinPoint joinPoint) throws Exception{
+    @Override
+    public Object invoke(MethodInvocation invocation) throws Exception {
 
         Object obj = null;
         try {
-            obj = joinPoint.proceed();
+            obj = invocation.proceed();
         } catch (Throwable throwable) {
             throwable.printStackTrace();
         }
-        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        Method method = signature.getMethod();
+        Method method = invocation.getMethod();
 
         RefreshChatterList annotation = method.getAnnotation(RefreshChatterList.class);
         if (null != annotation){
@@ -78,5 +72,10 @@ public class RefreshChattersAspect {
             }
         }
         return obj;
+    }
+
+    @Override
+    public Class<? extends Annotation> bindAnnotation() {
+        return RefreshChatterList.class;
     }
 }

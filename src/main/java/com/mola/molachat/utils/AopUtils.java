@@ -1,6 +1,5 @@
 package com.mola.molachat.utils;
 
-import org.aspectj.lang.ProceedingJoinPoint;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.EvaluationException;
@@ -24,15 +23,14 @@ public class AopUtils {
      * 解析el表达式
      * @param rawKey 原始的key表达式
      * @param method
-     * @param joinPoint
+     * @param args
      * @return
      */
     public static Object finalKeyResolving(String rawKey, Method method,
-                                           ProceedingJoinPoint joinPoint, Boolean allowKeyEmpty){
+                                           Object[] args, Boolean allowKeyEmpty){
         ExpressionParser parser = new SpelExpressionParser();
         Expression expression = parser.parseExpression(rawKey);
         // 获取传入参数
-        Object[] args = joinPoint.getArgs();
         LocalVariableTableParameterNameDiscoverer discoverer = new LocalVariableTableParameterNameDiscoverer();
         // 获取参数名
         String[] parameterNames = discoverer.getParameterNames(method);

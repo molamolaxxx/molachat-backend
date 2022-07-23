@@ -12,7 +12,6 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 
@@ -22,7 +21,7 @@ import java.lang.reflect.Method;
  * @Description:
  * @date : 2020-05-01 12:53
  **/
-@Component
+//@Component
 @Aspect
 @Slf4j
 public class AddPointAspect {
@@ -51,7 +50,7 @@ public class AddPointAspect {
             String key = annotation.key();
             if (key.length() != 0) {
                 // 获取el表达式中的
-                Object o = AopUtils.finalKeyResolving(key, method, joinPoint, false);
+                Object o = AopUtils.finalKeyResolving(key, method, joinPoint.getArgs(), false);
                 if (o instanceof String) {
                     String id = (String) o;
                     chatterService.addPoint(id, action.getPoint());
