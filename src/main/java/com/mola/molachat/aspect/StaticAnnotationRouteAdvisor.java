@@ -12,9 +12,9 @@ import org.springframework.aop.support.StaticMethodMatcherPointcut;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -29,8 +29,9 @@ import java.util.Set;
  * @date : 2022-07-23 18:41
  **/
 @Component
-public class StaticAnnotationRouteAdvisor extends AbstractPointcutAdvisor implements ApplicationContextAware, BeanPostProcessor {
+public class StaticAnnotationRouteAdvisor extends AbstractPointcutAdvisor implements BeanPostProcessor {
 
+    @Resource
     private ApplicationContext applicationContext;
 
     private static AnnotationRouteInterceptor INTERCEPTOR = new AnnotationRouteInterceptor();
@@ -66,11 +67,6 @@ public class StaticAnnotationRouteAdvisor extends AbstractPointcutAdvisor implem
     @Override
     public Advice getAdvice() {
         return INTERCEPTOR;
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 
     static class AnnotationRouteInterceptor implements MethodInterceptor {

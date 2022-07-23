@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class MyApplicationContextAware implements ApplicationContextAware{
+public class MyApplicationContextAware implements ApplicationContextAware {
 
     private static ApplicationContext applicationContextStatic;
 
