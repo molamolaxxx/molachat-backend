@@ -1,0 +1,15 @@
+11:42:46.555 default [restartedMain] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+A component required a bean of type 'java.util.List' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'java.util.List' in your configuration.
+

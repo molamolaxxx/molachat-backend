@@ -6,7 +6,6 @@ import com.mola.molachat.entity.Chatter;
 import com.mola.molachat.entity.RobotChatter;
 import com.mola.molachat.enumeration.ChatterStatusEnum;
 import com.mola.molachat.enumeration.ChatterTagEnum;
-import com.mola.molachat.robot.bus.RobotEventBusRegistry;
 import com.mola.molachat.service.SessionService;
 import com.mola.molachat.utils.BeanUtilsPlug;
 import org.apache.commons.lang.StringUtils;
@@ -26,9 +25,6 @@ public class RobotConfig {
 
     @Resource
     private ChatterFactoryInterface chatterFactory;
-
-    @Resource
-    private RobotEventBusRegistry robotEventBusRegistry;
 
     @Resource
     private SessionService sessionService;
