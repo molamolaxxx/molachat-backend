@@ -50,7 +50,7 @@ public class RobotController {
         BeanUtils.copyProperties(form, chatterDTO);
 
         try {
-            chatterService.update(chatterDTO);
+            chatterService.updateRobot(chatterDTO);
         } catch (ChatterServiceException e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return ServerResponse.createByErrorCodeMessage(e.getCode(), e.getMessage());

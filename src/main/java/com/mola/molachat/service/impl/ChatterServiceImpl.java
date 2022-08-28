@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -100,6 +101,36 @@ public class ChatterServiceImpl implements ChatterService {
             throw new ChatterServiceException(ServiceErrorEnum.UPDATE_CHATTER_ERROR);
         }
         return (ChatterDTO)BeanUtilsPlug.copyPropertiesReturnTarget(chatter, chatterDTO);
+    }
+
+    @Override
+    @AddPoint(action = ChatterPointEnum.UPDATE, key = "#chatterDTO.id")
+    public ChatterDTO updateRobot(ChatterDTO chatterDTO) {
+        //1.根据chatterId查找chatter
+        Chatter chatter = chatterFactory.select(chatterDTO.getId());
+        Assert.notNull(chatter, ServiceErrorEnum.CHATTER_NOT_FOUND.getMsg());
+        Assert.isTrue(chatter instanceof RobotChatter, "非机器人");
+        RobotChatter robotChatter = (RobotChatter) chatter;
+        //2.如果存在名称，检查名称是否重复
+        if (null != robotChatter.getName()) {
+            List<String> nameList = chatterFactory.list().stream()
+                    .map(e -> e.getName())
+                    .collect(Collectors.toList());
+            if (nameList.contains(chatterDTO.getName())) {
+                log.info("名称重复");
+                throw new ChatterServiceException(ServiceErrorEnum.CHATTER_NAME_DUPLICATE);
+            }
+        }
+        chatterDTO.setPoint(chatter.getPoint());
+        //copy非空值到chatter
+        CopyUtils.copyProperties(chatterDTO, robotChatter);
+        //存储
+        try {
+            chatterFactory.update(robotChatter);
+        } catch (ChatterException e) {
+            throw new ChatterServiceException(ServiceErrorEnum.UPDATE_CHATTER_ERROR);
+        }
+        return (ChatterDTO)BeanUtilsPlug.copyPropertiesReturnTarget(robotChatter, chatterDTO);
     }
 
     @Override

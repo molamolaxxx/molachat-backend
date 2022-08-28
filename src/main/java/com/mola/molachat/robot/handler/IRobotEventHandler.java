@@ -1,7 +1,7 @@
 package com.mola.molachat.robot.handler;
 
+import com.mola.molachat.event.action.BaseAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
-import com.mola.molachat.robot.event.MessageSendAction;
 
 /**
  * @author : molamola
@@ -9,14 +9,14 @@ import com.mola.molachat.robot.event.MessageSendAction;
  * @Description: 执行器
  * @date : 2022-08-27 11:29
  **/
-public interface IRobotEventHandler<E extends BaseRobotEvent> {
+public interface IRobotEventHandler<E extends BaseRobotEvent, A extends BaseAction> {
 
     /**
      * 执行并返回action
      * @param baseEvent
      * @return
      */
-    MessageSendAction handler(E baseEvent);
+    A handler(E baseEvent);
 
     /**
      * 支持的event

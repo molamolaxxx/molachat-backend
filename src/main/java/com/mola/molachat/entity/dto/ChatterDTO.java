@@ -61,6 +61,11 @@ public class ChatterDTO {
     private boolean isRobot = false;
 
     /**
+     * 机器人apikey
+     */
+    private String apiKey;
+
+    /**
      * token
      */
     private String token;

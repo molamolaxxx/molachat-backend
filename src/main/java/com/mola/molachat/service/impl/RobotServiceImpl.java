@@ -2,10 +2,15 @@ package com.mola.molachat.service.impl;
 
 import com.mola.molachat.data.ChatterFactoryInterface;
 import com.mola.molachat.entity.Chatter;
+import com.mola.molachat.entity.FileMessage;
 import com.mola.molachat.entity.Message;
 import com.mola.molachat.entity.RobotChatter;
 import com.mola.molachat.entity.dto.ChatterDTO;
 import com.mola.molachat.entity.dto.SessionDTO;
+import com.mola.molachat.event.action.BaseAction;
+import com.mola.molachat.robot.bus.RobotEventBus;
+import com.mola.molachat.robot.event.MessageReceiveEvent;
+import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.service.ChatterService;
 import com.mola.molachat.service.RobotService;
 import com.mola.molachat.service.SessionService;
@@ -38,13 +43,42 @@ public class RobotServiceImpl implements RobotService {
     @Resource
     private ChatterService chatterService;
 
+    @Resource
+    private RobotEventBus robotEventBus;
+
     @Override
     public void onReceiveMessage(Message message, String sessionId, RobotChatter robot) {
-        if ("common-session".equals(sessionId)) {
-            log.info("机器人收到群聊文件消息，内容 = {}", message.getContent());
-        } else {
-            log.info("机器人收到单聊文件消息，内容 = {}", message.getContent());
+        if (null != message && message.getChatterId().equals(robot.getId())) {
+            return;
         }
+        if ("common-session".equals(sessionId)) {
+            return;
+        }
+        if (message instanceof FileMessage) {
+            return;
+        }
+        MessageReceiveEvent messageReceiveEvent = new MessageReceiveEvent();
+        messageReceiveEvent.setMessage(message);
+        messageReceiveEvent.setRobotChatter(robot);
+        messageReceiveEvent.setSessionId(sessionId);
+        BaseAction action = robotEventBus.handler(messageReceiveEvent);
+        if (!(action instanceof MessageSendAction)) {
+            return;
+        }
+        MessageSendAction messageSendAction = (MessageSendAction) action;
+        if (messageSendAction.getSkip() || StringUtils.isEmpty(messageSendAction.getResponsesText())) {
+            log.error("机器人跳过回复，内容 = {}", messageSendAction.getResponsesText());
+            return;
+        }
+        // 消息构建
+        Message msg = new Message();
+        msg.setContent(messageSendAction.getResponsesText());
+        msg.setChatterId(robot.getId());
+
+        // 1、查询session，没有则创建
+        SessionDTO session = sessionService.findSession(sessionId);
+        // 2、向session发送消息
+        sessionService.insertMessage(session.getSessionId(), msg);
     }
 
     @Override

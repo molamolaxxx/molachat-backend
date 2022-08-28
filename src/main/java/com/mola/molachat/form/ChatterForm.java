@@ -40,4 +40,9 @@ public class ChatterForm {
      * 标签
      */
     private Integer tag;
+
+    /**
+     * 机器api
+     */
+    private String apiKey;
 }

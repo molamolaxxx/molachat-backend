@@ -17,14 +17,8 @@ public class RobotChatter extends Chatter {
      */
     private String appKey = UUID.randomUUID().toString();
 
-//    /**
-//     * 入站插槽
-//     */
-//    private Set<InboundSlot> inboundSlotList = new HashSet<>();
-//
-//    public void addInboundSlot(InboundSlot inboundSlot) {
-//        if (null != inboundSlot) {
-//            inboundSlotList.add(inboundSlot);
-//        }
-//    }
+    /**
+     * 图灵api
+     */
+    private String apiKey;
 }

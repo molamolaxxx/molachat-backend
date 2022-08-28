@@ -1,4 +1,4 @@
-package com.mola.molachat.robot.event;
+package com.mola.molachat.robot.action;
 
 import com.mola.molachat.event.action.BaseAction;
 import lombok.Data;
@@ -13,7 +13,12 @@ import lombok.Data;
 public class MessageSendAction extends BaseAction {
 
     /**
-     * 优先级，返回最大的action
+     * 异常跳过
      */
-    private Integer order = Integer.MIN_VALUE;
+    private Boolean skip = Boolean.FALSE;
+
+    /**
+     * 返回结果
+     */
+    private String responsesText;
 }

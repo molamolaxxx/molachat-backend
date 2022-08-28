@@ -25,6 +25,11 @@ public class BaseAction {
     private String eventName;
 
     /**
+     * 优先级，返回最大的action
+     */
+    private Integer order = Integer.MIN_VALUE;
+
+    /**
      * 结束时间
      */
     private long finishTime = System.currentTimeMillis();

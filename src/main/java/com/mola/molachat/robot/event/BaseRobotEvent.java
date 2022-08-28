@@ -16,6 +16,4 @@ public class BaseRobotEvent extends BaseEvent {
     private RobotChatter robotChatter;
 
     private String sessionId;
-
-
 }

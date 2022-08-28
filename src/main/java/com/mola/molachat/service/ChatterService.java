@@ -35,6 +35,13 @@ public interface ChatterService {
     ChatterDTO update(ChatterDTO chatterDTO);
 
     /**
+     * 更新机器人信息
+     * @param chatterDTO
+     * @return
+     */
+    ChatterDTO updateRobot(ChatterDTO chatterDTO);
+
+    /**
      * @param chatterDTO
      * @return
      */

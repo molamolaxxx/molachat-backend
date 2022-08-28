@@ -59,6 +59,7 @@ public class RobotConfig {
             robot.setImgUrl("img/header/6.jpeg");
             robot.setIp("127.0.0.1");
             robot.setAppKey(appKey);
+            robot.setApiKey("ed24ed075d65c44df2f674d0f2730734");
             chatterFactory.create(robot);
         } else {
             robot = (RobotChatter) BeanUtilsPlug.copyPropertiesReturnTarget(chatter, new RobotChatter());
