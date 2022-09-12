@@ -41,7 +41,7 @@ app:
   version: 2.2.0
   id: molachat001
   # websocket的类型 1、spring 2、tomcat 3、netty（待开发）
-  server-type: spring
+  server-type: tomcat
   secret: molamolaxxx
   robot-list: robot1234
 

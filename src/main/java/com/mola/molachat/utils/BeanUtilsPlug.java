@@ -44,7 +44,6 @@ public class BeanUtilsPlug {
         ApplicationContext applicationContext = MyApplicationContextAware.getApplicationContext();
         BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(clazz, factoryMethod);
         BeanDefinition beanDefinition = beanDefinitionBuilder.getBeanDefinition();
-
         BeanDefinitionRegistry beanFactory = (BeanDefinitionRegistry) applicationContext.getAutowireCapableBeanFactory();
         beanFactory.registerBeanDefinition(name, beanDefinition);
         return applicationContext.getBean(name, clazz);

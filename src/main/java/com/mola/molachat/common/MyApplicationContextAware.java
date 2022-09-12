@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Component;
  * 获取全局的spring容器
  */
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @Slf4j
 public class MyApplicationContextAware implements ApplicationContextAware {
 
