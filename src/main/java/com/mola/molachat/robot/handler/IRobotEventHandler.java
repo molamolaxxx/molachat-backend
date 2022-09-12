@@ -23,4 +23,12 @@ public interface IRobotEventHandler<E extends BaseRobotEvent, A extends BaseActi
      * @return
      */
     Class<? extends BaseRobotEvent> acceptEvent();
+
+    /**
+     * 执行顺序
+     * @return
+     */
+    default Integer order() {
+        return Integer.MIN_VALUE;
+    }
 }

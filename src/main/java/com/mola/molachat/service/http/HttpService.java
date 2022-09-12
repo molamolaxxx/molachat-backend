@@ -1,6 +1,7 @@
 package com.mola.molachat.service.http;
 
 import com.alibaba.fastjson.JSONObject;
+import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
 import org.apache.http.NameValuePair;
@@ -134,9 +135,16 @@ public enum HttpService {
     }
 
     public String get(String url, int timeout) throws Exception {
+        return get(url, timeout, null);
+    }
+
+    public String get(String url, int timeout, Header[] headers) throws Exception {
         bootMonitorThread();
         URI uri = new URIBuilder(url).build();
         HttpGet httpGet = new HttpGet(uri);
+        if (null != headers) {
+            httpGet.setHeaders(headers);
+        }
         return httpClient.execute(httpGet, response -> {
             int statusCode = response.getStatusLine().getStatusCode();
             if (isSuccess(statusCode)) {

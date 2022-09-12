@@ -1,5 +1,6 @@
 package com.mola.molachat.event.action;
 
+import com.mola.molachat.robot.action.EmptyAction;
 import lombok.Data;
 
 import java.util.HashMap;
@@ -25,17 +26,26 @@ public class BaseAction {
     private String eventName;
 
     /**
-     * 优先级，返回最大的action
-     */
-    private Integer order = Integer.MIN_VALUE;
-
-    /**
      * 结束时间
      */
     private long finishTime = System.currentTimeMillis();
 
     /**
+     * 最后一个执行
+     */
+    private Boolean finalExec = Boolean.FALSE;
+
+    /**
+     * 跳过
+     */
+    private Boolean skip = Boolean.FALSE;
+
+    /**
      * 携带参数
      */
     private Map<String, String> feature = new HashMap<>();
+
+    public static BaseAction empty() {
+        return new EmptyAction();
+    }
 }

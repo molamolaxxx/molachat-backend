@@ -13,11 +13,6 @@ import lombok.Data;
 public class MessageSendAction extends BaseAction {
 
     /**
-     * 异常跳过
-     */
-    private Boolean skip = Boolean.FALSE;
-
-    /**
      * 返回结果
      */
     private String responsesText;

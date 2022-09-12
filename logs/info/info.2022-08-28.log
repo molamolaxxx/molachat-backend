@@ -1772,3 +1772,5 @@ Error starting ApplicationContext. To display the conditions report re-run your 
 21:18:51.294 default [RMI TCP Connection(5)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
 21:18:51.295 default [RMI TCP Connection(5)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
 21:18:51.307 default [RMI TCP Connection(5)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 12 ms
+21:25:50.657 default [Thread-37] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+21:25:50.657 default [Thread-37] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'

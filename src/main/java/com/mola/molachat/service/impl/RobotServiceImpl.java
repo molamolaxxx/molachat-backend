@@ -66,10 +66,6 @@ public class RobotServiceImpl implements RobotService {
             return;
         }
         MessageSendAction messageSendAction = (MessageSendAction) action;
-        if (messageSendAction.getSkip() || StringUtils.isEmpty(messageSendAction.getResponsesText())) {
-            log.error("机器人跳过回复，内容 = {}", messageSendAction.getResponsesText());
-            return;
-        }
         // 消息构建
         Message msg = new Message();
         msg.setContent(messageSendAction.getResponsesText());
