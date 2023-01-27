@@ -7,6 +7,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 /**
  * @Author: molamola
@@ -19,14 +20,20 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class MyApplicationContextAware implements ApplicationContextAware {
 
-    private static ApplicationContext applicationContextStatic;
+    private ApplicationContext myApplicationContext;
+
+    static class Singleton{
+        private static MyApplicationContextAware myApplicationContextAware = new MyApplicationContextAware();
+    }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        applicationContextStatic = applicationContext;
+        Singleton.myApplicationContextAware.myApplicationContext = applicationContext;
     }
 
     public static ApplicationContext getApplicationContext(){
-        return applicationContextStatic;
+        ApplicationContext myApplicationContext = Singleton.myApplicationContextAware.myApplicationContext;
+        Assert.notNull(myApplicationContext, "myApplicationContext is null");
+        return myApplicationContext;
     }
 }

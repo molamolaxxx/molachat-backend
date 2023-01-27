@@ -215,7 +215,7 @@ body {
     right: 1.5rem;
     width: 8px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: 80%;
     opacity: 0;
     -webkit-transition: opacity 0.3s;
     transition: opacity 0.3s;
