@@ -1,0 +1,30 @@
+17:07:34.865 default [restartedMain] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+A component required a bean of type 'com.mola.molachat.service.RobotService' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'com.mola.molachat.service.RobotService' in your configuration.
+
+17:09:21.245 default [restartedMain] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+A component required a bean of type 'com.mola.molachat.service.RobotService' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'com.mola.molachat.service.RobotService' in your configuration.
+

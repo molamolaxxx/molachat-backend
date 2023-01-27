@@ -8,18 +8,21 @@ import com.mola.molachat.entity.RobotChatter;
 import com.mola.molachat.entity.dto.ChatterDTO;
 import com.mola.molachat.entity.dto.SessionDTO;
 import com.mola.molachat.event.action.BaseAction;
+import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.bus.RobotEventBus;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
-import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.service.ChatterService;
 import com.mola.molachat.service.RobotService;
 import com.mola.molachat.service.SessionService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author : molamola
@@ -29,7 +32,7 @@ import javax.annotation.Resource;
  **/
 @Service
 @Slf4j
-public class RobotServiceImpl implements RobotService {
+public class RobotServiceImpl implements RobotService, InitializingBean {
 
     @Resource
     private ChatterFactoryInterface chatterFactory;
@@ -46,35 +49,37 @@ public class RobotServiceImpl implements RobotService {
     @Resource
     private RobotEventBus robotEventBus;
 
+    /**
+     * 业务线程池
+     */
+    private ThreadPoolExecutor bizProcessThreadPool;
+
+    /**
+     * 阻塞队列
+     */
+    private BlockingQueue<Runnable> blockingQueue;
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        this.blockingQueue = new LinkedBlockingDeque<>(1024);
+        this.bizProcessThreadPool = new ThreadPoolExecutor(2,8
+                ,200, TimeUnit.MILLISECONDS, blockingQueue, new ThreadFactory() {
+            private AtomicInteger threadIndex = new AtomicInteger(0);
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, String.format("robot-service-thread-%d", this.threadIndex.incrementAndGet()));
+            }
+        });
+    }
+
     @Override
     public void onReceiveMessage(Message message, String sessionId, RobotChatter robot) {
-        if (null != message && message.getChatterId().equals(robot.getId())) {
+        OnReceiveMessageRunnableTask task = new OnReceiveMessageRunnableTask(message, sessionId, robot);
+        if (blockingQueue.size() > 1000) {
+            task.run();
             return;
         }
-        if ("common-session".equals(sessionId)) {
-            return;
-        }
-        if (message instanceof FileMessage) {
-            return;
-        }
-        MessageReceiveEvent messageReceiveEvent = new MessageReceiveEvent();
-        messageReceiveEvent.setMessage(message);
-        messageReceiveEvent.setRobotChatter(robot);
-        messageReceiveEvent.setSessionId(sessionId);
-        BaseAction action = robotEventBus.handler(messageReceiveEvent);
-        if (!(action instanceof MessageSendAction)) {
-            return;
-        }
-        MessageSendAction messageSendAction = (MessageSendAction) action;
-        // 消息构建
-        Message msg = new Message();
-        msg.setContent(messageSendAction.getResponsesText());
-        msg.setChatterId(robot.getId());
-
-        // 1、查询session，没有则创建
-        SessionDTO session = sessionService.findSession(sessionId);
-        // 2、向session发送消息
-        sessionService.insertMessage(session.getSessionId(), msg);
+        bizProcessThreadPool.submit(task);
     }
 
     @Override
@@ -119,5 +124,48 @@ public class RobotServiceImpl implements RobotService {
         SessionDTO session = sessionService.findOrCreateSession(appKey, toChatterId);
         // 2、向session发送消息
         sessionService.insertMessage(session.getSessionId(), msg);
+    }
+
+    class OnReceiveMessageRunnableTask implements Runnable {
+        private Message message;
+        private String sessionId;
+        private RobotChatter robot;
+
+        public OnReceiveMessageRunnableTask(Message message, String sessionId, RobotChatter robot) {
+            this.message = message;
+            this.sessionId = sessionId;
+            this.robot = robot;
+        }
+
+        @Override
+        public void run() {
+            if (null != message && message.getChatterId().equals(robot.getId())) {
+                return;
+            }
+            if ("common-session".equals(sessionId)) {
+                return;
+            }
+            if (message instanceof FileMessage) {
+                return;
+            }
+            MessageReceiveEvent messageReceiveEvent = new MessageReceiveEvent();
+            messageReceiveEvent.setMessage(message);
+            messageReceiveEvent.setRobotChatter(robot);
+            messageReceiveEvent.setSessionId(sessionId);
+            BaseAction action = robotEventBus.handler(messageReceiveEvent);
+            if (!(action instanceof MessageSendAction)) {
+                return;
+            }
+            MessageSendAction messageSendAction = (MessageSendAction) action;
+            // 消息构建
+            Message msg = new Message();
+            msg.setContent(messageSendAction.getResponsesText());
+            msg.setChatterId(robot.getId());
+
+            // 1、查询session，没有则创建
+            SessionDTO session = sessionService.findSession(sessionId);
+            // 2、向session发送消息
+            sessionService.insertMessage(session.getSessionId(), msg);
+        }
     }
 }
