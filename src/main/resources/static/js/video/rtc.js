@@ -58,7 +58,7 @@ $(document).ready(function() {
                 $('#video-modal').modal('open')
                 $("#videoSelf")[0].srcObject = localStream
                 setTimeout(() => {
-                    getEngines().rtcEngine.sendStream(localStream)                    
+                    getEngines().rtcEngine.sendStream(localStream, false)                    
                 },1000)
                 return true
             }
@@ -293,10 +293,13 @@ $(document).ready(function() {
         }
 
         // 发送一个offer
-        var sendOffer = function() {
+        var createOffer = function(needSendOffer) {
             pc.createOffer(function(desc){
                 pc.setLocalDescription(desc);
-                sendSignal({"sdp":desc,"type":"_offer"});
+                console.log("needSendOffer", needSendOffer);
+                if (needSendOffer) {
+                    sendSignal({"sdp":desc,"type":"_offer"});
+                }
             }, function (error) {
                 console.log("发起信令失败:" + error);
             });
@@ -332,17 +335,18 @@ $(document).ready(function() {
             getSocket().send(JSON.stringify(action))
         }
 
-        var sendStream = function(stream) {
+        var sendStream = function(stream, needSendOffer) {
             pc.addStream(stream)
+            // 发送方需要sendOffer
             setTimeout(() => {
-                sendOffer()
+                createOffer(needSendOffer)
             },1000)
         }
         return {
             createPeerConnection, // 建立连接
             sendStream, // 发送视频流到channel
             signallingHandle, // 处理发来的信令
-            sendOffer, // 发送offer请求,
+            createOffer, // 发送offer请求,
             close,
             isSucc
         }

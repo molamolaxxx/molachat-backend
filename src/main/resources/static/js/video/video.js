@@ -19,10 +19,10 @@ $(document).ready(function() {
             };
         },function() {
             setTimeout(function() {
-            // onconnected
-            var stream = $("#videoSelf")[0].srcObject;
+                // onconnected
+                var stream = $("#videoSelf")[0].srcObject;
                 if (stream) {
-                    getEngines().rtcEngine.sendStream(stream)
+                    getEngines().rtcEngine.sendStream(stream, false)
                 } else {
                     console.log("no local stream avaliable")
                 }

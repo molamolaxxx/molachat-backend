@@ -111,13 +111,13 @@ $(document).ready(function() {
                     let rtc = getEngines().rtcEngine
                     rtc.createPeerConnection()
                     // 发送信令
-                    rtc.sendOffer()
+                    rtc.createOffer(true)
                     // 发送视频数据流
                     setTimeout(()=> {
                         var stream = videoSelf.srcObject;
                         if (stream) {
                             localStream = stream
-                            rtc.sendStream(localStream)
+                            rtc.sendStream(localStream, true)
                         }
                     },1000) 
                     // 设置轮询，如果自己没收到对方的数据流，则不断发出
@@ -129,7 +129,7 @@ $(document).ready(function() {
                             // if (!rtc.isSucc()) {
                             //     rtc.createPeerConnection()
                             // }
-                            rtc.sendStream(videoSelf.srcObject)
+                            rtc.sendStream(videoSelf.srcObject, true)
                             console.log("轮询，查看是否需要发出数据流")
                         } else{
                             clearInterval(timer)
@@ -176,7 +176,7 @@ $(document).ready(function() {
                         var stream = videoSelf.srcObject;
                         if (stream) {
                             localStream = stream
-                            getEngines().rtcEngine.sendStream(localStream)
+                            getEngines().rtcEngine.sendStream(localStream, false)
                         }
                     },1000)
                     // 设置轮询，如果自己没收到对方的数据流，则不断发出
@@ -189,7 +189,7 @@ $(document).ready(function() {
                             // if (!rtc.isSucc()) {
                             //     rtc.createPeerConnection()
                             // }
-                            rtc.sendStream(videoSelf.srcObject)
+                            rtc.sendStream(videoSelf.srcObject, false)
                             console.log("轮询，查看是否需要发出数据流")
                         } else {
                             clearInterval(timer)
@@ -281,7 +281,7 @@ $(document).ready(function() {
             videoEngine.changeStream("screen", function(stream) {
                 // rtc发送到远端
                 console.log("开始发送到远端")
-                rtcEngine.sendStream(stream)
+                rtcEngine.sendStream(stream, true)
                 // 修改videoSelf的旋转角度
                 $videoSelf.removeClass("rotateVideo")
                 // 通知对方修改角度
@@ -302,7 +302,7 @@ $(document).ready(function() {
             videoEngine.changeStream("video", function(stream) {
                 // rtc发送到远端
                 console.log("开始发送到远端")
-                rtcEngine.sendStream(stream)
+                rtcEngine.sendStream(stream, true)
                 // 修改videoSelf的旋转角度
                 $videoSelf.addClass("rotateVideo")
                 // 通知对方修改角度
