@@ -45,4 +45,9 @@ public class ChatterForm {
      * 机器api
      */
     private String apiKey;
+
+    /**
+     * 处理线的bean名称，用于区分不同功能的机器人
+     */
+    private String eventBusBeanName;
 }

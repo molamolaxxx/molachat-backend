@@ -8,6 +8,7 @@ import com.mola.molachat.entity.RobotChatter;
 import com.mola.molachat.entity.dto.ChatterDTO;
 import com.mola.molachat.entity.dto.SessionDTO;
 import com.mola.molachat.event.action.BaseAction;
+import com.mola.molachat.robot.action.FileMessageSendAction;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.bus.RobotEventBus;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
@@ -15,10 +16,11 @@ import com.mola.molachat.service.ChatterService;
 import com.mola.molachat.service.RobotService;
 import com.mola.molachat.service.SessionService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import java.util.concurrent.*;
@@ -49,6 +51,9 @@ public class RobotServiceImpl implements RobotService, InitializingBean {
     @Resource
     private RobotEventBus robotEventBus;
 
+    @Resource
+    private ApplicationContext applicationContext;
+
     /**
      * 业务线程池
      */
@@ -62,8 +67,8 @@ public class RobotServiceImpl implements RobotService, InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         this.blockingQueue = new LinkedBlockingDeque<>(1024);
-        this.bizProcessThreadPool = new ThreadPoolExecutor(2,8
-                ,200, TimeUnit.MILLISECONDS, blockingQueue, new ThreadFactory() {
+        this.bizProcessThreadPool = new ThreadPoolExecutor(5,20
+                ,3000, TimeUnit.MILLISECONDS, blockingQueue, new ThreadFactory() {
             private AtomicInteger threadIndex = new AtomicInteger(0);
             @Override
             public Thread newThread(Runnable r) {
@@ -152,20 +157,52 @@ public class RobotServiceImpl implements RobotService, InitializingBean {
             messageReceiveEvent.setMessage(message);
             messageReceiveEvent.setRobotChatter(robot);
             messageReceiveEvent.setSessionId(sessionId);
-            BaseAction action = robotEventBus.handler(messageReceiveEvent);
-            if (!(action instanceof MessageSendAction)) {
+            // 先取自定义的eventbus，没有就用默认的
+            RobotEventBus eventBus = robotEventBus;
+            if (StringUtils.isNotBlank(robot.getEventBusBeanName())) {
+                RobotEventBus customEventBus = applicationContext.getBean(robot.getEventBusBeanName(), RobotEventBus.class);
+                if (null != customEventBus)  {
+                    eventBus =  customEventBus;
+                } else {
+                    log.error("未找到自定义eventbus:{}, 使用默认eventbus", robot.getEventBusBeanName());
+                }
+            }
+            BaseAction action = eventBus.handler(messageReceiveEvent);
+            Message messageByAction = getMessageByAction(action);
+            if (null == messageByAction) {
                 return;
             }
-            MessageSendAction messageSendAction = (MessageSendAction) action;
-            // 消息构建
-            Message msg = new Message();
-            msg.setContent(messageSendAction.getResponsesText());
-            msg.setChatterId(robot.getId());
-
             // 1、查询session，没有则创建
             SessionDTO session = sessionService.findSession(sessionId);
             // 2、向session发送消息
-            sessionService.insertMessage(session.getSessionId(), msg);
+            sessionService.insertMessage(session.getSessionId(), messageByAction);
+        }
+
+        private Message getMessageByAction(BaseAction action) {
+            // 普通消息构建
+            if (action instanceof MessageSendAction) {
+                Message msg = new Message();
+                msg.setContent(((MessageSendAction)action).getResponsesText());
+                msg.setChatterId(robot.getId());
+                return msg;
+            }
+            // 文件消息构建
+            if (action instanceof FileMessageSendAction) {
+                //创建message
+                FileMessageSendAction fileMessageSendAction = (FileMessageSendAction) action;
+                FileMessage fileMessage = new FileMessage();
+                fileMessage.setFileName(fileMessageSendAction.getFileName());
+                fileMessage.setFileStorage("1024");
+                fileMessage.setUrl(fileMessageSendAction.getUrl());
+                fileMessage.setSnapshotUrl(fileMessageSendAction.getUrl());
+                fileMessage.setChatterId(robot.getId());
+                // 判断是否是群聊
+//                if (sessionId.equals("common-session")) {
+//                    fileMessage.setCommon(true);
+//                }
+                return fileMessage;
+            }
+            return null;
         }
     }
 }

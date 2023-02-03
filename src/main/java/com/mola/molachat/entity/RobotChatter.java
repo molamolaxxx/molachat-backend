@@ -21,4 +21,9 @@ public class RobotChatter extends Chatter {
      * 图灵api
      */
     private String apiKey;
+
+    /**
+     * 处理线的bean名称，用于区分不同功能的机器人
+     */
+    private String eventBusBeanName;
 }

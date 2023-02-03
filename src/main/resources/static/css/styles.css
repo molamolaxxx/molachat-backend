@@ -457,17 +457,18 @@ svg {
 
 .chat__message {
     display: inline-block;
-    max-width: 70%;
     padding: 1rem;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-family: "Open Sans", Helvetica, Arial, sans-serif;
     word-break: break-all;
+    white-space: break-spaces;
 }
 
 .chat__message.mine {
     color: #2B2342;
     border: 0.5px solid #DFDFDF;
     border-radius: 8px;
+    max-width: 87%;
 }
 
 .chat__message.notMine {
@@ -475,6 +476,7 @@ svg {
     color: #23244E;
     background: #E9EAF3;
     border-radius: 6px;
+    max-width: 80%;
 }
 
 .chat__input {
@@ -488,7 +490,7 @@ svg {
     background-position: 1rem 1.5rem;
     background-color: #E9EAF3;
     color: #2B2342;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-family: "Open Sans", Helvetica, Arial, sans-serif;
 }
 

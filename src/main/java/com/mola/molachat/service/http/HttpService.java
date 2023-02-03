@@ -157,12 +157,15 @@ public enum HttpService {
         }, buildContext(timeout));
     }
 
-    public String post(String url, JSONObject body, int timeout) throws Exception {
+    public String post(String url, JSONObject body, int timeout, Header[] headers) throws Exception {
         bootMonitorThread();
         URI uri = new URIBuilder(url).build();
         HttpPost httpPost = new HttpPost(uri);
         if (null != body) {
             httpPost.setEntity(new StringEntity(body.toJSONString(), ContentType.APPLICATION_JSON));
+        }
+        if (null != headers) {
+            httpPost.setHeaders(headers);
         }
         return httpClient.execute(httpPost, response -> {
             int statusCode = response.getStatusLine().getStatusCode();
@@ -175,6 +178,10 @@ public enum HttpService {
 
             }
         }, buildContext(timeout));
+    }
+
+    public String post(String url, JSONObject body, int timeout) throws Exception {
+        return post(url, body, timeout, null);
     }
 
     public String post(String url, Map<String, String> params, int timeout) throws Exception {
