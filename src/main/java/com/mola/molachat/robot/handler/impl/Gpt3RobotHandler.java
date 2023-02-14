@@ -2,7 +2,6 @@ package com.mola.molachat.robot.handler.impl;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.mola.molachat.entity.FileMessage;
 import com.mola.molachat.entity.Message;
 import com.mola.molachat.entity.RobotChatter;
 import com.mola.molachat.entity.dto.SessionDTO;
@@ -10,11 +9,12 @@ import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.bus.GptRobotEventBus;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
-import com.mola.molachat.robot.event.MessageSendEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
+import com.mola.molachat.server.ChatServer;
+import com.mola.molachat.service.ServerService;
 import com.mola.molachat.service.SessionService;
 import com.mola.molachat.service.http.HttpService;
-import com.mola.molachat.utils.PatternUtils;
+import com.mola.molachat.utils.RandomUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
@@ -26,6 +26,8 @@ import org.springframework.util.CollectionUtils;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * @author : molamola
@@ -41,55 +43,83 @@ public class Gpt3RobotHandler implements IRobotEventHandler<MessageReceiveEvent,
     private SessionService sessionService;
 
     @Resource
+    private ServerService serverService;
+
+    @Resource
     private GptRobotEventBus gptRobotEventBus;
+
+    /**
+     * 有效的
+     */
+    private Set<String> availableChildApiKeys = new ConcurrentSkipListSet<>();
 
     @Override
     public MessageSendAction handler(MessageReceiveEvent messageReceiveEvent) {
         MessageSendAction messageSendAction = new MessageSendAction();
-        try {
-            RobotChatter robotChatter = messageReceiveEvent.getRobotChatter();
-            // headers
-            List<Header> headers = new ArrayList<>();
-            headers.add(new BasicHeader("Content-Type", "application/json"));
-            headers.add(new BasicHeader("Accept-Encoding", "gzip,deflate"));
-//            headers.add(new BasicHeader("Content-Length", "1024"));
-//            headers.add(new BasicHeader("Transfer-Encoding", "chunked"));
-            headers.add(new BasicHeader("Authorization", "Bearer " + robotChatter.getApiKey()));
-            // prompt 拼接最近20条历史记录
-            JSONObject body = new JSONObject();
-            body.put("model", "text-davinci-003");
-            body.put("max_tokens", 2048);
-            body.put("temperature", 1);
-            body.put("top_p", 1);
-            body.put("frequency_penalty", 0);
-            body.put("presence_penalty", 0.6);
-            body.put("stop", JSONObject.parseArray("[\" Human:\", \" AI:\"]"));
-            body.put("prompt", getPrompt(messageReceiveEvent));
-            String res = HttpService.INSTANCE.post("https://api.openai.com/v1/completions", body, 120000, headers.toArray(new Header[]{}));
-            JSONObject jsonObject = JSONObject.parseObject(res);
-            Assert.isTrue(jsonObject.containsKey("choices"), "choices is empty");
-            JSONArray choices = jsonObject.getJSONArray("choices");
-            for (Object choice : choices) {
-                JSONObject inner = (JSONObject) choice;
-                String text = inner.getString("text");
-                if (StringUtils.isBlank(text)) {
-                    continue;
+        RobotChatter robotChatter = messageReceiveEvent.getRobotChatter();
+        // 默认主账号
+        String usedAppKey = robotChatter.getApiKey();
+        if (availableChildApiKeys.size() != 0) {
+            usedAppKey = RandomUtils.getRandomElement(availableChildApiKeys);
+        }
+        // 失败重试
+        for (int i = 0; i < 10; i++) {
+            // 子账号五次都失败，换成主账号，移除子账号
+            if (i > 5 && !StringUtils.equals(usedAppKey, robotChatter.getApiKey())) {
+                log.error("sub api key error retry failed all time, switch main remove sub, sub api key = " + usedAppKey);
+                if (availableChildApiKeys.contains(usedAppKey)) {
+                    availableChildApiKeys.remove(usedAppKey);
                 }
-                if (text.startsWith("\n")) {
-                    text = text.substring(1);
-                }
-                // markdown图片格式解析
-//                List<MessageSendEvent>  messageSendEvents = getFileSendAction(text, messageReceiveEvent);
-//                if (!CollectionUtils.isEmpty(messageSendEvents)) {
-//                    for (MessageSendEvent MessageSendEvent : messageSendEvents) {
-//                        gptRobotEventBus.handler(MessageSendEvent);
-//                    }
-//                }
-                messageSendAction.setResponsesText(text);
+                usedAppKey = robotChatter.getApiKey();
             }
-        } catch (Exception e) {
-            log.error("RemoteRobotChatHandler Gpt3RobotHandler error " + JSONObject.toJSONString(messageReceiveEvent), e);
-            messageSendAction.setSkip(Boolean.TRUE);
+            try {
+                // headers
+                List<Header> headers = new ArrayList<>();
+                headers.add(new BasicHeader("Content-Type", "application/json"));
+                headers.add(new BasicHeader("Accept-Encoding", "gzip,deflate"));
+                headers.add(new BasicHeader("Authorization", "Bearer " + usedAppKey));
+                // prompt 拼接最近20条历史记录
+                JSONObject body = new JSONObject();
+                body.put("model", "text-davinci-003");
+                body.put("max_tokens", 1920);
+                body.put("temperature", 0.9);
+                body.put("top_p", 1);
+                body.put("frequency_penalty", 0);
+                body.put("presence_penalty", 0.6);
+                body.put("stop", JSONObject.parseArray("[\" Human:\", \" AI:\"]"));
+                body.put("prompt", getPrompt(messageReceiveEvent));
+                String res = HttpService.INSTANCE.post("https://api.openai.com/v1/completions", body, 300000, headers.toArray(new Header[]{}));
+                JSONObject jsonObject = JSONObject.parseObject(res);
+                Assert.isTrue(jsonObject.containsKey("choices"), "choices is empty");
+                JSONArray choices = jsonObject.getJSONArray("choices");
+                for (Object choice : choices) {
+                    JSONObject inner = (JSONObject) choice;
+                    String text = inner.getString("text");
+                    if (StringUtils.isBlank(text)) {
+                        continue;
+                    }
+                    if (text.startsWith("\n")) {
+                        text = text.substring(1);
+                    }
+                    messageSendAction.setResponsesText(text);
+                }
+            } catch (Exception e) {
+                log.error("RemoteRobotChatHandler Gpt3RobotHandler error retry, time = " + i + " event:" + JSONObject.toJSONString(messageReceiveEvent), e);
+                continue;
+            }
+            log.info("RemoteRobotChatHandler Gpt3RobotHandler success, apiKey=" +  usedAppKey + " action:" + JSONObject.toJSONString(messageSendAction));
+            return messageSendAction;
+        }
+        try {
+            log.error("RemoteRobotChatHandler Gpt3RobotHandler error retry failed all time , event:" + JSONObject.toJSONString(messageReceiveEvent));
+            ChatServer server = serverService.selectByChatterId(messageReceiveEvent.getMessage().getChatterId());
+//            server.getSession().sendToClient(WSResponse
+//                    .exception("exception", "消息发送异常，请重试"));
+            // 不可用告警
+            String alertText = "调用出现异常, 请重试";
+            messageSendAction.setResponsesText(alertText);
+        } catch (Exception exception) {
+            // ignore exception
         }
         return messageSendAction;
     }
@@ -99,58 +129,8 @@ public class Gpt3RobotHandler implements IRobotEventHandler<MessageReceiveEvent,
         return MessageReceiveEvent.class;
     }
 
-    /**
-     * chatgpt会以markdown的形式发送图片，所以需要解析
-     * @param text
-     * @return
-     */
-    private List<MessageSendEvent> getFileSendAction(String text, MessageReceiveEvent messageReceiveEvent) {
-        try {
-            List<String> patternAll = PatternUtils.matchAll(text, PatternUtils.patternAll);
-            if (CollectionUtils.isEmpty(patternAll)) {
-                return null;
-            }
-            String sendText = text;
-            List<MessageSendEvent> events = new ArrayList<>();
-            for (String mdImgUrl : patternAll) {
-                // 处理text
-                sendText = StringUtils.remove(sendText, mdImgUrl);
-                sendText = StringUtils.replace(sendText, "\n", " ");
-                // 提取fileName
-                String fileName = PatternUtils.match(mdImgUrl, PatternUtils.patternFileName);
-                if (StringUtils.isBlank(fileName)) {
-                    continue;
-                }
-                fileName = fileName.substring(2, fileName.length() -1);
-                System.out.println(fileName);
-                String patternUrl = PatternUtils.match(mdImgUrl, PatternUtils.patternUrl);
-                if (StringUtils.isBlank(patternUrl)) {
-                    continue;
-                }
-                //创建message
-                FileMessage fileMessage = new FileMessage();
-                fileMessage.setFileName(fileName);
-                fileMessage.setFileStorage("1024");
-                fileMessage.setUrl(patternUrl);
-                fileMessage.setSnapshotUrl(patternUrl);
-                fileMessage.setChatterId(messageReceiveEvent.getRobotChatter().getId());
-                MessageSendEvent messageSendEvent = new MessageSendEvent();
-                messageSendEvent.setMessage(fileMessage);
-                messageSendEvent.setRobotChatter(messageReceiveEvent.getRobotChatter());
-                messageSendEvent.setSessionId(messageReceiveEvent.getSessionId());
-                messageSendEvent.setDelayTime(1000L + (long) (Math.random() * 1000));
-                // 判断是否是群聊
-//                if (sessionId.equals("common-session")) {
-//                    fileMessage.setCommon(true);
-//                }
-                events.add(messageSendEvent);
-            }
-            return events;
-        }catch (Exception e) {
-            log.error("getFileSendAction failed , " + text);
-            return null;
-        }
-
+    public Set<String> getAvailableChildApiKeys() {
+        return availableChildApiKeys;
     }
 
     /**

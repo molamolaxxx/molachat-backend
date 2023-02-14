@@ -66,7 +66,8 @@ $(document).ready(function () {
         }
 
         mainDoc.append(imgDoc);
-        mainDocChild.innerHTML = twemoji.parse(content,{"folder":"svg","ext":".svg","base":"asset/","size":15});
+        // mainDocChild.innerHTML = twemoji.parse(content,{"folder":"svg","ext":".svg","base":"asset/","size":15});
+        mainDocChild.innerText = content
         mainDoc.append(mainDocChild);
 
         return mainDoc;

@@ -5,6 +5,7 @@ import com.mola.molachat.common.ServerResponse;
 import com.mola.molachat.entity.dto.ChatterDTO;
 import com.mola.molachat.exception.service.ChatterServiceException;
 import com.mola.molachat.form.ChatterForm;
+import com.mola.molachat.robot.handler.impl.Gpt3RobotHandler;
 import com.mola.molachat.service.ChatterService;
 import com.mola.molachat.service.RobotService;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author : molamola
@@ -32,6 +35,9 @@ public class RobotController {
 
     @Resource
     private RobotService robotService;
+
+    @Resource
+    private Gpt3RobotHandler gpt3RobotHandler;
 
     @PutMapping
     public ServerResponse update(@Valid ChatterForm form,
@@ -68,6 +74,21 @@ public class RobotController {
             return ServerResponse.createBySuccess();
         } catch (Exception e) {
             log.error("pushMessage error", e);
+            return ServerResponse.createByErrorMessage(e.getMessage());
+        }
+    }
+
+    @PostMapping("/gpt/insertSubApiKeys")
+    public ServerResponse insertSubApiKeys(@RequestBody List<String> subApiKeys) {
+        try {
+            // 发送服务
+            Set<String> availableChildApiKeys = gpt3RobotHandler.getAvailableChildApiKeys();
+            for (String subApiKey : subApiKeys) {
+                availableChildApiKeys.add(subApiKey);
+            }
+            return ServerResponse.createBySuccess(availableChildApiKeys);
+        } catch (Exception e) {
+            log.error("insertSubApiKeys error", e);
             return ServerResponse.createByErrorMessage(e.getMessage());
         }
     }

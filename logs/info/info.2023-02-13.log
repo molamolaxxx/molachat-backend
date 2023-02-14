@@ -1,0 +1,573 @@
+16:07:18.805 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+16:07:18.808 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+16:07:20.715 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+16:07:20.719 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+16:07:20.791 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 46ms. Found 0 repository interfaces.
+16:07:21.661 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:21.668 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:21.716 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:21.729 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:21.737 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:21.740 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:21.742 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:22.375 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+16:07:22.410 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+16:07:22.425 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:07:22.425 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:07:22.543 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+16:07:22.543 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 3735 ms
+16:07:22.857 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.1643058553289108902.8550/]
+16:07:23.360 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+16:07:23.364 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+16:07:23.603 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+16:07:23.987 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+16:07:24.086 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+16:07:24.941 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+16:07:25.013 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+16:07:25.431 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+16:07:25.552 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+16:07:25.554 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:07:25.557 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:07:25.562 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:07:25.569 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+16:07:25.569 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 133 ms
+16:07:25.602 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+16:07:25.707 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:07:25.966 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+16:07:26.321 default [RMI TCP Connection(9)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+16:07:26.321 default [RMI TCP Connection(9)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+16:07:26.331 default [RMI TCP Connection(9)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 10 ms
+16:07:26.471 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+16:07:26.473 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+16:07:38.023 default [Thread-24] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+16:07:38.024 default [Thread-24] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+16:07:49.813 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+16:07:49.814 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+16:07:51.155 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+16:07:51.160 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+16:07:51.305 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 100ms. Found 0 repository interfaces.
+16:07:52.056 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:52.061 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:52.090 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:52.098 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:52.102 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:52.103 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:52.104 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:07:52.501 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+16:07:52.514 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+16:07:52.523 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:07:52.523 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:07:52.585 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+16:07:52.586 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 2772 ms
+16:07:52.735 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.840094920673157873.8550/]
+16:07:53.087 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+16:07:53.089 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+16:07:53.278 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+16:07:53.411 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+16:07:53.436 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+16:07:53.888 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+16:07:53.953 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+16:07:54.455 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+16:07:54.642 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+16:07:54.646 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:07:54.648 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:07:54.649 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:07:54.662 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+16:07:54.664 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 202 ms
+16:07:54.735 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+16:07:54.886 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:07:55.103 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+16:07:55.619 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+16:07:55.621 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+16:07:55.633 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 11 ms
+16:07:55.739 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+16:07:55.742 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+16:20:45.355 default [Thread-23] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+16:20:45.356 default [Thread-23] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+16:20:56.621 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+16:20:56.623 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+16:20:58.806 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+16:20:58.812 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+16:20:58.896 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 56ms. Found 0 repository interfaces.
+16:20:59.779 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:20:59.788 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:20:59.834 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:20:59.846 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:20:59.852 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:20:59.854 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:20:59.855 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:21:00.519 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+16:21:00.540 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+16:21:00.556 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:21:00.556 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:21:00.645 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+16:21:00.645 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 4021 ms
+16:21:00.902 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.7710505098095381183.8550/]
+16:21:01.582 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+16:21:01.587 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+16:21:02.071 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+16:21:02.612 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+16:21:02.701 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+16:21:05.181 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+16:21:05.473 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+16:21:06.414 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+16:21:06.511 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+16:21:06.512 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:21:06.512 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:21:06.513 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:21:06.518 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+16:21:06.518 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 96 ms
+16:21:06.542 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+16:21:06.608 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:21:06.795 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+16:21:07.151 default [RMI TCP Connection(11)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+16:21:07.152 default [RMI TCP Connection(11)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+16:21:07.161 default [RMI TCP Connection(11)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 9 ms
+16:21:07.304 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+16:21:07.305 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+16:23:25.040 default [Thread-24] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+16:23:25.041 default [Thread-24] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+16:23:28.656 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+16:23:28.657 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+16:23:28.711 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 53ms. Found 0 repository interfaces.
+16:23:29.000 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:29.013 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:29.041 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:29.070 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:29.080 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:29.087 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:29.091 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:29.373 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+16:23:29.381 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+16:23:29.387 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:23:29.388 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:23:29.410 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+16:23:29.411 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 2278 ms
+16:23:29.572 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.1820150293215387243.8550/]
+16:23:30.508 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+16:23:30.511 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+16:23:31.078 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+16:23:31.416 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+16:23:31.454 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+16:23:32.408 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+16:23:32.602 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+16:23:33.073 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+16:23:33.329 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+16:23:33.334 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:23:33.335 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:23:33.337 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:23:33.357 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+16:23:33.360 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 272 ms
+16:23:33.439 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+16:23:33.664 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:23:34.146 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+16:23:34.174 default [restartedMain] INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - Condition evaluation unchanged
+16:23:35.569 default [Thread-48] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+16:23:35.574 default [Thread-48] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+16:23:48.273 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+16:23:48.275 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+16:23:50.410 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+16:23:50.415 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+16:23:50.546 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 92ms. Found 0 repository interfaces.
+16:23:51.462 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:51.471 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:51.520 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:51.536 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:51.542 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:51.544 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:51.545 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:23:52.244 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+16:23:52.270 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+16:23:52.286 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:23:52.286 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:23:52.392 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+16:23:52.392 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 4116 ms
+16:23:52.642 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.2295304750599644396.8550/]
+16:23:53.221 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+16:23:53.224 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+16:23:53.534 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+16:23:53.742 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+16:23:53.786 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+16:23:54.519 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+16:23:54.613 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+16:23:55.042 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+16:23:55.163 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+16:23:55.165 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:23:55.167 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:23:55.167 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:23:55.172 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+16:23:55.173 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 126 ms
+16:23:55.210 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+16:23:55.330 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:23:55.521 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+16:23:55.873 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+16:23:55.874 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+16:23:55.891 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 16 ms
+16:23:56.092 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+16:23:56.096 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+16:26:27.487 default [Thread-26] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+16:26:27.489 default [Thread-26] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+16:26:34.562 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+16:26:34.563 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+16:26:36.181 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+16:26:36.186 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+16:26:36.293 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 74ms. Found 0 repository interfaces.
+16:26:37.072 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:26:37.080 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:26:37.123 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:26:37.134 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:26:37.139 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:26:37.141 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:26:37.142 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:26:37.692 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+16:26:37.715 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+16:26:37.728 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:26:37.729 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:26:37.820 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+16:26:37.820 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 3250 ms
+16:26:38.059 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.2489049590764017903.8550/]
+16:26:38.608 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+16:26:38.610 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+16:26:38.858 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+16:26:39.020 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+16:26:39.051 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+16:26:39.672 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+16:26:39.754 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+16:26:40.134 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+16:26:40.232 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+16:26:40.233 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:26:40.234 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:26:40.234 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:26:40.240 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+16:26:40.240 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 100 ms
+16:26:40.269 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+16:26:40.337 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:26:40.516 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+16:26:40.814 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+16:26:40.815 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+16:26:40.830 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 15 ms
+16:26:40.965 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+16:26:40.967 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+16:27:35.482 default [Thread-22] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+16:27:35.483 default [Thread-22] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+16:27:46.038 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+16:27:46.041 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+16:27:48.301 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+16:27:48.308 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+16:27:48.433 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 82ms. Found 0 repository interfaces.
+16:27:49.471 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:27:49.483 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:27:49.536 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:27:49.551 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:27:49.558 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:27:49.561 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:27:49.563 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:27:50.339 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+16:27:50.371 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+16:27:50.391 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:27:50.392 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:27:50.496 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+16:27:50.496 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 4454 ms
+16:27:50.745 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.1386032040395127933.8550/]
+16:27:51.329 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+16:27:51.331 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+16:27:51.632 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+16:27:51.834 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+16:27:51.878 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+16:27:52.630 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+16:27:52.731 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+16:27:53.178 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+16:27:53.292 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+16:27:53.294 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:27:53.296 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:27:53.296 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:27:53.302 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+16:27:53.302 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 120 ms
+16:27:53.339 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+16:27:53.435 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:27:53.649 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+16:27:54.161 default [RMI TCP Connection(5)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+16:27:54.162 default [RMI TCP Connection(5)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+16:27:54.184 default [RMI TCP Connection(5)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 21 ms
+16:27:54.397 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+16:27:54.400 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+16:29:25.649 default [Thread-27] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+16:29:25.653 default [Thread-27] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+16:29:35.046 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+16:29:35.048 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+16:29:37.235 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+16:29:37.240 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+16:29:37.343 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 74ms. Found 0 repository interfaces.
+16:29:38.192 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:29:38.200 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:29:38.244 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:29:38.259 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:29:38.265 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:29:38.267 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:29:38.270 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:29:38.887 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+16:29:38.904 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+16:29:38.916 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:29:38.917 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:29:39.003 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+16:29:39.003 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 3954 ms
+16:29:39.256 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.1078245319510267008.8550/]
+16:29:39.809 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+16:29:39.813 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+16:29:40.120 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+16:29:40.365 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+16:29:40.406 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+16:29:41.083 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+16:29:41.187 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+16:29:41.646 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+16:29:41.763 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+16:29:41.764 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:29:41.765 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:29:41.765 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:29:41.771 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+16:29:41.771 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 121 ms
+16:29:41.805 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+16:29:41.896 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:29:42.080 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+16:29:42.356 default [RMI TCP Connection(6)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+16:29:42.357 default [RMI TCP Connection(6)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+16:29:42.385 default [RMI TCP Connection(6)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 20 ms
+16:29:42.551 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+16:29:42.553 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+16:31:08.017 default [Thread-27] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+16:31:08.018 default [Thread-27] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+16:31:15.512 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+16:31:15.513 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+16:31:17.287 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+16:31:17.291 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+16:31:17.383 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 60ms. Found 0 repository interfaces.
+16:31:18.153 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:31:18.161 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:31:18.203 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:31:18.213 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:31:18.217 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:31:18.220 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:31:18.221 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:31:19.067 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+16:31:19.100 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+16:31:19.122 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:31:19.122 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:31:19.248 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+16:31:19.248 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 3734 ms
+16:31:19.540 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.6415103623987713910.8550/]
+16:31:20.097 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+16:31:20.101 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+16:31:20.384 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+16:31:20.570 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+16:31:20.608 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+16:31:21.278 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+16:31:21.384 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+16:31:21.847 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+16:31:21.960 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+16:31:21.961 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:31:21.962 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:31:21.962 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:31:21.968 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+16:31:21.969 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 117 ms
+16:31:22.006 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+16:31:22.097 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:31:22.290 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+16:31:22.463 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+16:31:22.464 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+16:31:22.486 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 22 ms
+16:31:22.697 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+16:31:22.700 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+16:43:06.349 default [Thread-24] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+16:43:06.351 default [Thread-24] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+16:43:15.678 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+16:43:15.680 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+16:43:17.625 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+16:43:17.631 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+16:43:17.759 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 90ms. Found 0 repository interfaces.
+16:43:18.672 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:43:18.680 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:43:18.728 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:43:18.744 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:43:18.751 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:43:18.754 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:43:18.756 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:43:19.390 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+16:43:19.415 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+16:43:19.433 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:43:19.433 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:43:19.540 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+16:43:19.541 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 3859 ms
+16:43:19.788 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.3283575664449455376.8550/]
+16:43:20.348 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+16:43:20.351 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+16:43:20.628 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+16:43:20.815 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+16:43:20.851 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+16:43:21.565 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+16:43:21.657 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+16:43:22.065 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+16:43:22.176 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+16:43:22.177 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:43:22.178 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:43:22.179 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:43:22.185 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+16:43:22.185 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 116 ms
+16:43:22.220 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+16:43:22.307 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:43:22.491 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+16:43:22.902 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+16:43:22.903 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+16:43:22.928 default [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 17 ms
+16:43:23.185 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+16:43:23.188 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+16:47:28.313 default [Thread-25] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+16:47:28.316 default [Thread-25] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+16:47:37.846 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+16:47:37.849 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+16:47:40.958 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+16:47:40.965 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+16:47:41.125 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 104ms. Found 0 repository interfaces.
+16:47:42.521 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:47:42.535 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:47:42.633 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:47:42.650 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:47:42.656 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:47:42.661 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:47:42.663 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+16:47:43.757 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+16:47:43.797 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+16:47:43.818 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:47:43.820 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:47:43.981 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+16:47:43.981 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 6131 ms
+16:47:44.348 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.3879501751279586448.8550/]
+16:47:45.136 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+16:47:45.139 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+16:47:45.556 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+16:47:45.863 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+16:47:45.901 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+16:47:47.164 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+16:47:47.306 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+16:47:48.385 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+16:47:48.723 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+16:47:48.727 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:47:48.730 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+16:47:48.731 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+16:47:48.749 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+16:47:48.750 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 349 ms
+16:47:48.850 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+16:47:49.083 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+16:47:49.491 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+16:47:49.804 default [RMI TCP Connection(1)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+16:47:49.805 default [RMI TCP Connection(1)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+16:47:49.837 default [RMI TCP Connection(1)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 30 ms
+16:47:50.179 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+16:47:50.184 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+17:22:21.104 default [Thread-26] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+17:22:21.108 default [Thread-26] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+17:22:24.155 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+17:22:24.156 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+17:22:24.262 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 105ms. Found 0 repository interfaces.
+17:22:24.568 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:22:24.584 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:22:24.615 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:22:24.641 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:22:24.654 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:22:24.659 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:22:24.662 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:22:24.885 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+17:22:24.909 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+17:22:24.940 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+17:22:24.942 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+17:22:24.975 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+17:22:24.977 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 2078 ms
+17:22:25.295 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.448031853473367499.8550/]
+17:22:25.523 default [restartedMain] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'robotConfig': Injection of resource dependencies failed; nested exception is org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'sessionServiceImpl': Injection of resource dependencies failed; nested exception is org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'robotServiceImpl': Injection of resource dependencies failed; nested exception is org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'robotEventBus' defined in file [/home/mola/IdeaProjects/molachat/target/classes/com/mola/molachat/robot/bus/RobotEventBus.class]: Invocation of init method failed; nested exception is java.lang.NoClassDefFoundError: com/mola/molachat/robot/handler/impl/Gpt3RobotHandler
+17:22:25.551 default [restartedMain] INFO  o.a.catalina.core.StandardService - Stopping service [Tomcat]
+17:22:25.617 default [restartedMain] INFO  o.s.b.a.l.ConditionEvaluationReportLoggingListener - 
+
+Error starting ApplicationContext. To display the conditions report re-run your application with 'debug' enabled.
+17:23:17.324 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+17:23:17.326 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+17:23:19.086 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+17:23:19.093 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+17:23:19.208 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 69ms. Found 0 repository interfaces.
+17:23:20.008 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:23:20.016 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:23:20.059 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:23:20.071 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:23:20.076 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:23:20.079 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:23:20.080 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+17:23:20.633 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+17:23:20.654 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+17:23:20.669 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+17:23:20.670 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+17:23:20.772 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+17:23:20.773 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 3446 ms
+17:23:20.994 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.7741339750213287140.8550/]
+17:23:21.513 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+17:23:21.515 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+17:23:21.768 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+17:23:21.938 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+17:23:21.967 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+17:23:22.554 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+17:23:22.644 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+17:23:23.075 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+17:23:23.178 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+17:23:23.179 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+17:23:23.180 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+17:23:23.181 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+17:23:23.187 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+17:23:23.188 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 108 ms
+17:23:23.220 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+17:23:23.294 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+17:23:23.496 default [https-jsse-nio-8550-exec-6] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+17:23:23.497 default [https-jsse-nio-8550-exec-6] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+17:23:23.506 default [https-jsse-nio-8550-exec-6] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 9 ms
+17:23:23.531 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+17:23:24.015 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+17:23:24.017 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library
+20:10:01.240 default [Thread-23] INFO  o.s.s.c.ThreadPoolTaskExecutor - Shutting down ExecutorService 'applicationTaskExecutor'
+20:10:01.241 default [Thread-23] INFO  o.s.s.c.ThreadPoolTaskScheduler - Shutting down ExecutorService 'taskScheduler'
+20:10:05.920 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+20:10:05.921 default [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+20:10:07.857 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode!
+20:10:07.860 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data repositories in DEFAULT mode.
+20:10:07.909 default [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 34ms. Found 0 repository interfaces.
+20:10:08.358 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'selfConfig' of type [com.mola.molachat.config.SelfConfig] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+20:10:08.363 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverFactory' of type [com.mola.molachat.data.impl.cache.ServerFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+20:10:08.394 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'serverServiceImpl' of type [com.mola.molachat.service.impl.ServerServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+20:10:08.404 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'refreshChatterAdviceExecutor' of type [com.mola.molachat.aspect.exec.RefreshChatterAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+20:10:08.409 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterFactory' of type [com.mola.molachat.data.impl.cache.ChatterFactory] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+20:10:08.410 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'chatterServiceImpl' of type [com.mola.molachat.service.impl.ChatterServiceImpl] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+20:10:08.411 default [restartedMain] INFO  o.s.c.s.PostProcessorRegistrationDelegate$BeanPostProcessorChecker - Bean 'addPointAdviceExecutor' of type [com.mola.molachat.aspect.exec.AddPointAdviceExecutor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+20:10:08.910 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8550 (https)
+20:10:08.929 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-8550"]
+20:10:08.946 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+20:10:08.947 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+20:10:09.036 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring embedded WebApplicationContext
+20:10:09.037 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 3115 ms
+20:10:09.323 default [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/chat] - Set web app root system property: 'webapp.root' = [/tmp/tomcat-docbase.188531954200412749.8550/]
+20:10:10.077 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService
+20:10:10.079 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+20:10:10.326 default [restartedMain] INFO  o.s.s.c.ThreadPoolTaskExecutor - Initializing ExecutorService 'applicationTaskExecutor'
+20:10:10.493 default [restartedMain] WARN  o.t.templatemode.TemplateMode - [THYMELEAF][restartedMain] Template Mode 'LEGACYHTML5' is deprecated. Using Template Mode 'HTML' instead.
+20:10:10.524 default [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page template: index
+20:10:11.015 default [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+20:10:11.087 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-8550"]
+20:10:11.491 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8550 (https) with context path '/chat'
+20:10:11.578 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9001 (https)
+20:10:11.579 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+20:10:11.580 default [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+20:10:11.580 default [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.21]
+20:10:11.584 default [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+20:10:11.585 default [restartedMain] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 88 ms
+20:10:11.609 default [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 16 endpoint(s) beneath base path '/actuator'
+20:10:11.667 default [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["https-jsse-nio-127.0.0.1-9001"]
+20:10:11.845 default [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 9001 (https) with context path ''
+20:10:12.327 default [RMI TCP Connection(13)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/chat] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+20:10:12.328 default [RMI TCP Connection(13)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+20:10:12.346 default [RMI TCP Connection(13)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 18 ms
+20:10:12.528 default [parallel-1] INFO  io.lettuce.core.EpollProvider - Starting without optional epoll library
+20:10:12.531 default [parallel-1] INFO  io.lettuce.core.KqueueProvider - Starting without optional kqueue library

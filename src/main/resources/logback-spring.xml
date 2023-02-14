@@ -100,5 +100,6 @@
 
     <logger name="com.mola.molachat" level="DEBUG" additivity="false">
         <appender-ref ref="packageAllInfo" />
+        <appender-ref ref="fileErrorLog"/>
     </logger>
 </configuration>
