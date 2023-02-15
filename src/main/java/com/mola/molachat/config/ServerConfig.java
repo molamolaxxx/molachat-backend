@@ -1,6 +1,5 @@
 package com.mola.molachat.config;
 
-import com.mola.molachat.common.MyApplicationContextAware;
 import com.mola.molachat.server.spring.SpringWebSocketChatServer;
 import com.mola.molachat.server.spring.SpringWebSocketInterceptor;
 import com.mola.molachat.server.tomcat.TomcatChatServer;
@@ -8,6 +7,7 @@ import com.mola.molachat.utils.BeanUtilsPlug;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
@@ -31,6 +31,9 @@ public class ServerConfig implements WebSocketConfigurer, InitializingBean {
 
     @Resource
     private AppConfig appConfig;
+
+    @Resource
+    private ApplicationContext applicationContext;
 
     private static Set<String> typeSet = new HashSet<>();
     static {
@@ -57,13 +60,11 @@ public class ServerConfig implements WebSocketConfigurer, InitializingBean {
     public void afterPropertiesSet() throws Exception {
         if ("tomcat".equals(appConfig.getServerType())) {
             log.info("[molachat] 使用了tomcat提供的websocket引擎");
-            BeanUtilsPlug.registerBean("tomcatChatServer", TomcatChatServer.class, () -> new TomcatChatServer());
-            BeanUtilsPlug.registerBean("serverEndpointExporter", ServerEndpointExporter.class, () -> new ServerEndpointExporter());
+            BeanUtilsPlug.registerBean("tomcatChatServer", TomcatChatServer.class, () -> new TomcatChatServer(), applicationContext);
+            BeanUtilsPlug.registerBean("serverEndpointExporter", ServerEndpointExporter.class, () -> new ServerEndpointExporter(), applicationContext);
             // 动态添加beanDefination后，如果需要执行钩子函数，需要重新调用beanFactory.preInstantiateSingletons方法
             // 因为第一次执行
-            DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory)MyApplicationContextAware
-                    .getApplicationContext()
-                    .getAutowireCapableBeanFactory();
+            DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory)applicationContext.getAutowireCapableBeanFactory();
             beanFactory.preInstantiateSingletons();
         }
     }

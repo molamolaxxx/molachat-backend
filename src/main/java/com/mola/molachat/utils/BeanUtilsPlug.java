@@ -1,6 +1,5 @@
 package com.mola.molachat.utils;
 
-import com.mola.molachat.common.MyApplicationContextAware;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -40,8 +39,7 @@ public class BeanUtilsPlug {
     }
 
 
-    public static <T> T registerBean(String name, Class<T> clazz, Supplier<T> factoryMethod) {
-        ApplicationContext applicationContext = MyApplicationContextAware.getApplicationContext();
+    public static <T> T registerBean(String name, Class<T> clazz, Supplier<T> factoryMethod, ApplicationContext applicationContext) {
         BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(clazz, factoryMethod);
         BeanDefinition beanDefinition = beanDefinitionBuilder.getBeanDefinition();
         BeanDefinitionRegistry beanFactory = (BeanDefinitionRegistry) applicationContext.getAutowireCapableBeanFactory();

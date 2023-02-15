@@ -63,9 +63,9 @@ public class Gpt3RobotHandler implements IRobotEventHandler<MessageReceiveEvent,
             usedAppKey = RandomUtils.getRandomElement(availableChildApiKeys);
         }
         // 失败重试
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 12; i++) {
             // 子账号五次都失败，换成主账号，移除子账号
-            if (i > 5 && !StringUtils.equals(usedAppKey, robotChatter.getApiKey())) {
+            if (i > 8 && !StringUtils.equals(usedAppKey, robotChatter.getApiKey())) {
                 log.error("sub api key error retry failed all time, switch main remove sub, sub api key = " + usedAppKey);
                 if (availableChildApiKeys.contains(usedAppKey)) {
                     availableChildApiKeys.remove(usedAppKey);
@@ -113,10 +113,8 @@ public class Gpt3RobotHandler implements IRobotEventHandler<MessageReceiveEvent,
         try {
             log.error("RemoteRobotChatHandler Gpt3RobotHandler error retry failed all time , event:" + JSONObject.toJSONString(messageReceiveEvent));
             ChatServer server = serverService.selectByChatterId(messageReceiveEvent.getMessage().getChatterId());
-//            server.getSession().sendToClient(WSResponse
-//                    .exception("exception", "消息发送异常，请重试"));
             // 不可用告警
-            String alertText = "调用出现异常, 请重试";
+            String alertText = "刚刚开小差了, 请重试";
             messageSendAction.setResponsesText(alertText);
         } catch (Exception exception) {
             // ignore exception
