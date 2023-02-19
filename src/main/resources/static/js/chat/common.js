@@ -155,6 +155,14 @@ function times(value) {
     return tt;
 }
 
+function isEmpty(param) {
+    return typeof param === "undefined" || param === null || param === ""
+}
+
+function isNull(param) {
+    return typeof param === "undefined" || param === null
+}
+
 //通过字节截取string
 function cutStrByByte(str,lenLimit){
     var len = 0;

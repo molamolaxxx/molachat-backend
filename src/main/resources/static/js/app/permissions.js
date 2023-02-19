@@ -40,4 +40,8 @@ $(document).ready(function() {
     },function() {
         swal("permission", "获取权限失败，请手动添加权限" , "warning");
     })
+    // 剪切板权限
+    requestPermission(permissions.RECORD_AUDIO, function(){},function(){
+        swal("permission", "获取权限失败，请手动添加权限" , "warning");
+    })
 })

@@ -122,6 +122,101 @@ $(document).ready(function() {
         });
     }
 
+    /**
+     * 更改用户
+     */
+    changeChatter = function(base64Secret) {
+        // 解析base64，拆出preId和token
+        var decodedData = atob(base64Secret);
+        if(isEmpty(decodedData)){
+            showToast("序列为空无法解析", 1000)
+            return
+        }
+        let arr = decodedData.split(";")
+        if (arr.length != 2) {
+            showToast("序列解析失败", 1000)
+            return
+        }
+        // 取出当前的preId和token，存储在localstore中
+        const localPreId = localStorage.getItem("preId")
+        const localToken = localStorage.getItem("token")
+        if (!isNull(localPreId) && !isNull(localToken)) {
+            const localSecret = btoa(localPreId + ";" + localToken)
+            let secretHistoryStr = localStorage.getItem("secretHistory")
+            var set = new Set()
+            if (!isEmpty(secretHistoryStr)) {
+                set = new Set(Array.from(JSON.parse(secretHistoryStr)));
+            }
+            set.add(localSecret)
+            localStorage.setItem("secretHistory", JSON.stringify(Array.from(set)))
+        }
+        
+        // 赋值
+        localStorage.setItem("preId", arr[0])
+        token = arr[1]
+        if (socket !==  null) {
+            socket.close()
+        }
+        // 重连
+        recoverChatter()
+        // 弹出
+        if ($(".chat.active").length !== 0) {
+            $(".chat__back")[0].click();
+        }
+        
+    }
+
+    getHistoryChatters = function(renderMethod) {
+        const base64List = JSON.parse(localStorage.getItem("secretHistory"))
+        if (!base64List) {
+            return []
+        }
+        const chatterIdList = []
+        for (let index = 0; index < base64List.length; index++) {
+            const decodedData = atob(base64List[index]);
+            let arr = decodedData.split(";")
+            if (arr.length != 2) {
+                continue
+            }
+            chatterIdList.push(arr[0])
+        }
+        if (chatterIdList.length === 0) {
+            return []
+        }
+        let selfChatterId = (chatterId ? chatterId : localStorage.getItem("preId"))
+        $.ajax({
+            url: getPrefix() + "/chat/chatter/getChatterListById",
+            type: "post",
+            xhrFields: {withCredentials:true},
+            crossDomain: true,
+            dataType: "json",
+            timeout: 10000,
+            data: {
+                chatterId: selfChatterId,
+                token,
+                chatterIdList : JSON.stringify(chatterIdList)
+            },
+            success: function(result) {
+                const historyUsers = result.data
+                for (let index = 0; index < historyUsers.length; index++) {
+                    const element = historyUsers[index];
+                    element.base64 = base64List[index]
+                }
+                // 渲染
+                if (renderMethod) {
+                    renderMethod(historyUsers)
+                }
+            },
+            error: function(result) {
+                showToast("加载历史登录记录失败", 1000)
+            }
+        })
+    }
+
+    getSecret = function() {
+        return btoa(chatterId + ";" + token)
+    }
+
     //创建用户信息，获取chatterId
     createChatter = function() {
         $.ajax({
@@ -416,6 +511,7 @@ $(document).ready(function() {
         chatterSign = sign;
         $(".collapsible-body").find('p')[1].innerHTML = "<a class='material-icons' style='font-size: 14px;color: #716060;' href='javascript:changeSign();'>create</a>&nbsp;" + chatterSign;
         setNavSign(sign)
+        localStorage.setItem("sign", sign);
     }
 
     getChatterSign = function() {
@@ -426,12 +522,14 @@ $(document).ready(function() {
         chatterName = name;
         $(".collapsible-body").find('p')[0].innerHTML = "<i class='material-icons' style='font-size: 16px;color: #716060;vertical-align: middle;'>account_box</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + name + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class='material-icons' style='font-size: 16px;color: #716060;vertical-align: middle;' href='javascript:changeName();'>create</a>";
         setNavName(name)
+        localStorage.setItem("chatterName", name);
     }
 
     setChatterImage = function(src) {
         chatterImg = src;
         $("img.gravatar")[0].src = chatterImg
         setNavImg(src)
+        localStorage.setItem("imgUrl", src);
     }
 
     getChatterImage = function() {

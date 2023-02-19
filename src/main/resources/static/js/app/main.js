@@ -179,7 +179,7 @@ $(document).ready(function() {
         $clone.css({ top: "1.8rem", left: "25rem" });
     }
 
-    function ripple(elem, e) {
+    ripple = function(elem, e) {
         var elTop = elem.offset().top,
             elLeft = elem.offset().left,
             x = e.pageX - elLeft,

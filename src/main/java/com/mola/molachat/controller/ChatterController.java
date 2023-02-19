@@ -1,5 +1,6 @@
 package com.mola.molachat.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.mola.molachat.common.ResponseCode;
 import com.mola.molachat.common.ServerResponse;
 import com.mola.molachat.entity.Chatter;
@@ -21,6 +22,7 @@ import com.mola.molachat.utils.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.util.CollectionUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -118,6 +120,32 @@ public class ChatterController {
             return ServerResponse.createByErrorCodeMessage(e.getCode(), e.getMessage());
         }
         return ServerResponse.createBySuccess();
+    }
+
+    @PostMapping("/getChatterListById")
+    private ServerResponse<List<ChatterDTO>> getChatterListById( @RequestParam("chatterId") String chatterId,
+            @RequestParam("chatterIdList") String chatterIdListStr,
+            @RequestParam("token") String token,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        //jwt验证
+        if (!tokenCheckHandler.checkToken(chatterId, token, request)){
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.ERROR.getCode(),
+                    "token验证错误");
+        }
+        List<String> chatterIdList = JSONObject.parseArray(chatterIdListStr, String.class);
+        if (CollectionUtils.isEmpty(chatterIdList)) {
+            return ServerResponse.createBySuccess();
+        }
+        List<ChatterDTO> chatterDTOList = new ArrayList<>(chatterIdList.size());
+        for (String id : chatterIdList) {
+            ChatterDTO chatterDTO = chatterService.selectById(id);
+            if (null != chatterDTO) {
+                chatterDTOList.add(chatterDTO);
+            }
+        }
+        return ServerResponse.createBySuccess(chatterDTOList);
     }
 
     /**

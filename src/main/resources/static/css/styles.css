@@ -139,6 +139,11 @@ body {
     height: 45rem;
 }
 
+.history-list {
+    overflow: auto;
+    max-height: 35rem;
+}
+
 .sidebar-outside {
 
     position: fixed;
@@ -172,6 +177,23 @@ body {
 }
 
 .contact {
+    position: relative;
+    width: 100%;
+    height: 5rem;
+    padding-left: 1.7rem;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.history_contact {
     position: relative;
     width: 100%;
     height: 5rem;

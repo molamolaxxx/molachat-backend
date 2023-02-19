@@ -29,7 +29,7 @@ function getIpAndPort() {
             port = configArr[1]
         } else if (configArr.length == 1) {
             ip = configArr[0]
-            if ( ip === '127.0.0.1') { // 测试使用
+            if ( ip === '127.0.0.1' || ip === 'localhost' || ip === '192.168.1.7') { // 测试使用
                 ip = DEFAULT_HOST
             }
             port = DEFAULT_PORT
