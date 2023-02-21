@@ -44,6 +44,7 @@ $(document).ready(function () {
         })
         
     }
+
     // 收起用户栏
     hideUserBar = function() {
         isOutside = false
@@ -81,6 +82,21 @@ $(document).ready(function () {
             e2()
         }
     }
+
+    addResizeEventListener(function() {
+        if (isOutside) {
+            if (window.innerWidth >= min_Width) {
+                $sidebar.removeClass("sidebar-outside-mobile")
+                $(".search").css("display", "")
+                $(".contact__status").removeClass("mobile")
+            } else {
+                $sidebar.addClass("sidebar-outside-mobile")
+                $frendlist.css("height", "40.5rem")
+                $(".contact__status").addClass("mobile")
+                $(".search").css("display", "none")
+            }
+        }
+    })
 
     var isVisible = true
     $("#tool-contacts").on('click', function() {

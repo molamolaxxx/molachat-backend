@@ -2,6 +2,7 @@ package com.mola.molachat.robot.handler.impl;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.mola.molachat.data.OtherDataInterface;
 import com.mola.molachat.entity.Message;
 import com.mola.molachat.entity.RobotChatter;
 import com.mola.molachat.entity.dto.SessionDTO;
@@ -27,7 +28,6 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * @author : molamola
@@ -48,10 +48,8 @@ public class Gpt3RobotHandler implements IRobotEventHandler<MessageReceiveEvent,
     @Resource
     private GptRobotEventBus gptRobotEventBus;
 
-    /**
-     * 有效的
-     */
-    private Set<String> availableChildApiKeys = new ConcurrentSkipListSet<>();
+    @Resource
+    private OtherDataInterface otherDataInterface;
 
     @Override
     public MessageSendAction handler(MessageReceiveEvent messageReceiveEvent) {
@@ -59,16 +57,19 @@ public class Gpt3RobotHandler implements IRobotEventHandler<MessageReceiveEvent,
         RobotChatter robotChatter = messageReceiveEvent.getRobotChatter();
         // 默认主账号
         String usedAppKey = robotChatter.getApiKey();
-        if (availableChildApiKeys.size() != 0) {
-            usedAppKey = RandomUtils.getRandomElement(availableChildApiKeys);
+
+        Set<String> gpt3ChildTokens = otherDataInterface.getGpt3ChildTokens();
+        if (gpt3ChildTokens.size() != 0) {
+            usedAppKey = RandomUtils.getRandomElement(gpt3ChildTokens);
         }
         // 失败重试
         for (int i = 0; i < 12; i++) {
-            // 子账号五次都失败，换成主账号，移除子账号
+            // 子账号多次都失败，换成主账号，移除子账号
             if (i > 8 && !StringUtils.equals(usedAppKey, robotChatter.getApiKey())) {
                 log.error("sub api key error retry failed all time, switch main remove sub, sub api key = " + usedAppKey);
-                if (availableChildApiKeys.contains(usedAppKey)) {
-                    availableChildApiKeys.remove(usedAppKey);
+                if (gpt3ChildTokens.contains(usedAppKey)) {
+                    final String usedAppKeyFinal = usedAppKey;
+                    otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.remove(usedAppKeyFinal));
                 }
                 usedAppKey = robotChatter.getApiKey();
             }
@@ -125,10 +126,6 @@ public class Gpt3RobotHandler implements IRobotEventHandler<MessageReceiveEvent,
     @Override
     public Class<? extends BaseRobotEvent> acceptEvent() {
         return MessageReceiveEvent.class;
-    }
-
-    public Set<String> getAvailableChildApiKeys() {
-        return availableChildApiKeys;
     }
 
     /**

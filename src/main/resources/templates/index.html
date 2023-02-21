@@ -16,6 +16,9 @@
     <link rel="stylesheet" type="text/css" href="css/video.css">
     <link rel="stylesheet" type="text/css" href="css/spinner.css">
     <link rel="stylesheet" type="text/css" href="css/github.css">
+    <!-- <link rel="stylesheet" type="text/css" href="css/default.min.css"> -->
+    <link rel="stylesheet" type="text/css" href="css/atelier-heath-light.css">
+    <!-- <link rel="stylesheet" type="text/css" href="css/Dracula.css"> -->
     <link rel="shortcut icon" href="img/mola.png" />
 </head>
 
@@ -66,6 +69,7 @@
                         style="font-size: 18px;">contacts</i></div>
             </div>
             <div class="chat-container">
+                <span id="open-text-btn" class="open-text-btn"><i class="material-icons" style="font-size: 15px;color: #868e8a;position:absolute;z-index: 99;">launch</i></span>
                 <input type="text" class="chat__input" placeholder="Your message">
                 <button class="send ripple-effect">Send</button>
             </div>
@@ -188,13 +192,39 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
     <!-- 切换历史用户模态 -->
     <div id="history-user-modal" class="modal bottom-sheet">
         <div class="history-root">
-            <div class="modal-content">
+            <div class="modal-content" style="padding-bottom: 0;">
                 <h5>切换历史用户</h5>
                 <div class="history-list"></div>
             </div>
             <div class="modal-footer">
                 <button id="changeUserBtn"  class=" modal-action modal-close waves-effect waves-green btn blue">输入序列</a>
-                <button id="copyBtn" style="margin: 6px;" class=" modal-action modal-close waves-effect waves-green btn-flat">复制序列</a>
+                <button id="copyBtn" style="margin: 6px;" class=" modal-action waves-effect waves-green btn-flat">复制序列</a>
+            </div>
+        </div>
+    </div>
+    <div id="message-view-modal" class="modal bottom-sheet">
+        <div class="history-root">
+            <div class="modal-content" style="background-color: rgb(240, 248, 255);padding-bottom: 0;">
+                <pre style="max-height: 40rem;padding: 1rem; background-color: white;border-radius: 10px;font-size: 1.3rem;"><code id="viewContent" class="view-content"></code></pre>
+            </div>
+            <div class="modal-footer" style="background-color: rgb(240, 248, 255);">
+                <button id="copyViewBtn" style="margin: 6px;" class=" modal-action waves-effect waves-green btn-flat">复制</a>
+            </div>
+        </div>
+    </div>
+    <div id="message-edit-modal" class="modal bottom-sheet">
+        <div class="history-root">
+            <div class="modal-content" style="padding-bottom: 0;">
+                <textarea id="chatEditor" class="chat__input" style="
+                position: relative;
+                width: 100%;
+                height: 20rem;
+                padding: 1rem;
+                outline-color:#8abce0 !important
+            "></textarea>
+            </div>
+            <div class="modal-footer" style="background-color: rgb(240, 248, 255);">
+                <button id="editCompleteBtn" style="margin: 6px;" class=" modal-action modal-close waves-effect waves-green btn-flat">发送</a>
             </div>
         </div>
     </div>
@@ -253,6 +283,7 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
         </svg>
     </a>
 
+    
     <script type="text/javascript" src="cordova.js"></script>
     <script type="text/javascript" src="js/utils/stopExecutionOnTimeout.js?t=1"></script>
     <script type="text/javascript" src="js/utils/jquery-3.4.1.min.js"></script>
@@ -264,6 +295,7 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
     <script type="text/javascript" src="js/emoji/twemoji.min.js"></script>
     <script type="text/javascript" src="js/emoji/emoji-popup.js"></script>
     <script type="text/javascript" src="js/chat/common.js"></script>
+    <script type="text/javascript" src="js/app/resizelistener.js"></script>
     <script type="text/javascript" src="js/app/main.js"></script>
     <script type="text/javascript" src="js/chat/user.js"></script>
     <script type="text/javascript" src="js/chat/chatter.js"></script>
@@ -280,6 +312,9 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
     <script type="text/javascript" src="js/app/nav.js"></script>
     <script type="text/javascript" src="js/chat/history.js"></script>
     <script src="js/utils/materialize.min.js"></script>
+    <script type="text/javascript" src="js/utils/highlight.min.js"></script>
+    <!-- and it's easy to individually load additional languages -->
+    <script type="text/javascript" src="js/utils/go.min.js"></script>
 
 </body>
 

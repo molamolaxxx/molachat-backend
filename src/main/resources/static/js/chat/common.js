@@ -68,6 +68,25 @@ function changeName() {
     });;
 }
 
+function copyText(text) {
+    if (typeof cordova !== 'undefined') {
+        try {
+            // 执行代码
+            cordova.plugins.clipboard.copy(text);
+            showToast("已复制到剪切板", 1000)
+        } catch (error) {
+            // 捕获异常
+            showToast("复制到剪切板失败, " + error, 1000)
+        }
+        return
+    }
+    navigator.clipboard.writeText(text).then(function() {
+        showToast("已复制到剪切板", 1000)
+    }, function(err) {
+        showToast("复制到剪切板失败, " + err, 1000)
+    });
+}
+
 
 //更改签名
 function changeSign() {

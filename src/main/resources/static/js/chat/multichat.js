@@ -4,6 +4,9 @@ $(document).ready(function () {
     const CREATE_SESSION = 220;
 
     var $friend_list = $(".friend-list")[0];
+    var $copyViewBtn = $('#copyViewBtn')
+    var $viewContent = $("#viewContent")
+    var $viewModal = $("#message-view-modal")
 
     $chatMsg = $(".chat__messages")[0];
 
@@ -137,11 +140,37 @@ $(document).ready(function () {
             $(commonName).addClass("chat-common-left")
         }
 
+        $(mainDocChild).css('position', 'relative');
         mainDoc.append(imgDoc);
         // mainDocChild.innerHTML = twemoji.parse(content,{"folder":"svg","ext":".svg","base":"asset/","size":15});
         mainDocChild.innerText = content
         mainDoc.append(commonName);
         mainDoc.append(mainDocChild);
+
+        // 明细view
+        if (content.length > 80) {
+            var copyIcon = document.createElement("span");
+            $(copyIcon).addClass("copy_icon");
+            $(copyIcon).css('position', 'absolute');
+            $(copyIcon).css('right', '0');
+            $(copyIcon).css('bottom', '0');
+            $(copyIcon).css('padding', '4px');
+            $(copyIcon).css('cursor', 'pointer');
+            $(copyIcon).on('click', (e) => {
+                $copyViewBtn[0].copyContent = content
+                $viewContent[0].innerHTML = hljs.highlightAuto(content).value
+                $viewModal.modal('open')
+            })
+            $(mainDocChild).on('click', (e) => {
+                $copyViewBtn[0].copyContent = content
+                $viewContent[0].innerHTML = hljs.highlightAuto(content).value
+                $viewModal.modal('open')
+            })
+            $(mainDocChild).css("cursor", "pointer")
+            copyIcon.innerHTML = '<i class="material-icons" style="font-size: 15px;color: #868e8a;">launch</i>'
+            mainDocChild.append(copyIcon)
+        }
+
 
         return mainDoc;
         

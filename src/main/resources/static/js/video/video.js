@@ -113,12 +113,17 @@ $(document).ready(function() {
         $modal.css("left",(window.innerWidth - $modal.innerWidth())/2)
     }
     $off.css("left",($modal.innerWidth() - 56)/2)
-    window.onresize = function() {
-        $off.css("left",($modal.innerWidth - 56)/2)
+    
+    addResizeEventListener(function() {
+        
         if (window.innerWidth > 800) {
             $modal.css("left",(window.innerWidth - 800)/2)
+            $off.css("left",($modal.innerWidth - 56)/2)
+        } else {
+            $modal.css("left",0)
+            $off.css("left",(window.innerWidth - 56)/2)
         }
-    }
+    })
     
 
     /*

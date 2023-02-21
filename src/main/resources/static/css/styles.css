@@ -600,6 +600,18 @@ svg {
     margin-left: 3.7rem;
 }
 
+.open-text-btn {
+    font-size: 15px;
+    color: #868e8af0;
+    position:absolute;
+    z-index: 99;
+    right: 26%;
+    padding: 4px;
+    top: 0;
+    cursor: pointer;
+    padding-right: 6px;
+}
+
 @-webkit-keyframes animRipple {
     to {
         -webkit-transform: scale(2.5);
@@ -630,4 +642,9 @@ svg {
         transform: translateX(100%) rotate(45deg);
         opacity: 0;
     }
+}
+
+/* 手机点击不显示蓝色框 */
+* {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }

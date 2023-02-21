@@ -2,7 +2,25 @@
 $(document).ready(function () {
     var $send = $(".send"),
         $chatInput = $(".chat__input")[0],
+        $viewContent = $("#viewContent"),
+        $viewModal = $("#message-view-modal"),
+        $copyViewBtn = $('#copyViewBtn'),
         $chatMsg = $(".chat__messages")[0];
+    var inEditMode = false
+
+    // dom初始化位置
+    $viewModal.css("max-width",800)
+    if (window.innerWidth > 800) {
+        $viewModal.css("left",(window.innerWidth - $viewModal.innerWidth())/2)
+    }
+
+    addResizeEventListener(function() {
+        if (window.innerWidth > 800) {
+            $viewModal.css("left",(window.innerWidth - $viewModal.innerWidth())/2)
+        } else {
+            $viewModal.css("left",0)
+        }
+    })
 
     //const
     const SEND_MESSAGE = 595;
@@ -64,12 +82,35 @@ $(document).ready(function () {
             $(mainDocChild).css('margin-left', '0.5rem');
             $(mainDocChild).addClass("chat__message mine");
         }
+        $(mainDocChild).css('position', 'relative');
 
         mainDoc.append(imgDoc);
         // mainDocChild.innerHTML = twemoji.parse(content,{"folder":"svg","ext":".svg","base":"asset/","size":15});
         mainDocChild.innerText = content
         mainDoc.append(mainDocChild);
-
+        // 明细view
+        if (content.length > 80) {
+            var copyIcon = document.createElement("span");
+            $(copyIcon).addClass("copy_icon");
+            $(copyIcon).css('position', 'absolute');
+            $(copyIcon).css('right', '0');
+            $(copyIcon).css('bottom', '0');
+            $(copyIcon).css('padding', '4px');
+            $(copyIcon).css('cursor', 'pointer');
+            $(copyIcon).on('click', (e) => {
+                $copyViewBtn[0].copyContent = content
+                $viewContent[0].innerHTML = hljs.highlightAuto(content).value
+                $viewModal.modal('open')
+            })
+            $(mainDocChild).on('click', (e) => {
+                $copyViewBtn[0].copyContent = content
+                $viewContent[0].innerHTML = hljs.highlightAuto(content).value
+                $viewModal.modal('open')
+            })
+            $(mainDocChild).css("cursor", "pointer")
+            copyIcon.innerHTML = '<i class="material-icons" style="font-size: 15px;color: #868e8a;">launch</i>'
+            mainDocChild.append(copyIcon)
+        }
         return mainDoc;
     }
 
@@ -96,8 +137,10 @@ $(document).ready(function () {
     // 判断输入是否完成
     var isInputFinished = true
     $(".chat__input").bind("keyup", function (ev) {
+        if (inEditMode) {
+            return
+        }
         if (ev.keyCode == "13" && isInputFinished) {
-            console.log("click")
             $send.click();
         }
     });
@@ -145,4 +188,131 @@ $(document).ready(function () {
 
         socket.send(JSON.stringify(action));
     });
+
+    // 明细模态框初始化
+    $viewModal.modal({
+        dismissible: true, // Modal can be dismissed by clicking outside of the modal
+        opacity: .2, // Opacity of modal background
+        in_duration: 300, // Transition in duration
+        out_duration: 200, // Transition out duration
+        starting_top: '4%', // Starting top style attribute
+        ending_top: '100%', // Ending top style attribute
+        ready: function(modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
+            
+        },
+        complete: function() { 
+            
+        } 
+    });
+
+    $copyViewBtn.on('click', function(e) {
+        copyText(this.copyContent)
+    })
+
+     // 明细模态框初始化
+     $viewModal.modal({
+        dismissible: true, // Modal can be dismissed by clicking outside of the modal
+        opacity: .2, // Opacity of modal background
+        in_duration: 300, // Transition in duration
+        out_duration: 200, // Transition out duration
+        starting_top: '4%', // Starting top style attribute
+        ending_top: '100%', // Ending top style attribute
+        ready: function(modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
+            
+        },
+        complete: function() { 
+            
+        } 
+    });
+
+    var $editModal = $("#message-edit-modal")
+    var $openEditBtn = $("#open-text-btn")
+    
+    $editModal.modal({
+        dismissible: true, // Modal can be dismissed by clicking outside of the modal
+        opacity: .2, // Opacity of modal background
+        in_duration: 300, // Transition in duration
+        out_duration: 200, // Transition out duration
+        starting_top: '4%', // Starting top style attribute
+        ending_top: '100%', // Ending top style attribute
+        ready: function(modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
+            inEditMode = true
+        },
+        complete: function() { 
+            inEditMode = false
+        } 
+    });
+
+    // dom初始化位置
+    $editModal.css("max-width",800)
+    if (window.innerWidth > 800) {
+        $editModal.css("left",(window.innerWidth - $editModal.innerWidth())/2)
+    }
+
+    addResizeEventListener(function() {
+        if (window.innerWidth > 800) {
+            $editModal.css("left",(window.innerWidth - $editModal.innerWidth())/2)
+        } else {
+            $editModal.css("left",0)
+        }
+    })
+
+    var $chatEditor = $("#chatEditor")
+    $chatEditor.keydown(function(e) {
+        if(e.keyCode === 9) { // tab was pressed
+            // get caret position/selection
+            var start = this.selectionStart;
+            var end = this.selectionEnd;
+    
+            var $this = $(this);
+            var value = $this.val();
+    
+            // set textarea value to: text before caret + tab + text after caret
+            $this.val(value.substring(0, start)
+                        + "\t"
+                        + value.substring(end));
+    
+            // put caret at right position again (add one for the tab)
+            this.selectionStart = this.selectionEnd = start + 1;
+    
+            // prevent the focus lose
+            e.preventDefault();
+        }
+    });
+    $openEditBtn.on('click', function() {
+        $editModal.modal('open')
+        if ($chatEditor.val() === '' && $chatInput.value !== '') {
+            $chatEditor.val($chatInput.value)
+        }
+    })
+
+    var $editCompleteBtn = $("#editCompleteBtn")
+    $editCompleteBtn.on('click', function() {
+        const content = $chatEditor.val()
+        if (content === "") {
+            swal("stop!","输入不能为空","warning");
+            return;
+        }
+
+        //清空文本框
+        $chatEditor.val('')
+        $chatInput.value = "";
+
+        //显示在屏幕上，滚动
+        addMessage($chatMsg, content, true);
+
+        //获取socket
+        var socket = getSocket();
+        //构建message对象
+        var action = new Object();
+        action.code = SEND_MESSAGE;
+        action.msg = "ok";
+        var data = new Object();
+        data.chatterId = getChatterId();
+        data.sessionId = getActiveSessionId();
+        data.content = content;
+        action.data = data;
+
+        socket.send(JSON.stringify(action));
+    })
 });

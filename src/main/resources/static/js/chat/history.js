@@ -6,6 +6,13 @@ $(document).ready(function() {
     if (window.innerWidth > 600) {
         $historyModal.css("left",(window.innerWidth - $historyModal.innerWidth())/2)
     }
+    addResizeEventListener(function() {
+        if (window.innerWidth > 600) {
+            $historyModal.css("left",(window.innerWidth - $historyModal.innerWidth())/2)
+        } else {
+            $historyModal.css("left",0)
+        }
+    })
     var $menuBtn = $("#history")
     var $innerBtn = $("#tool-histroy")
     var $historyList = $(".history-list")[0]
@@ -14,7 +21,6 @@ $(document).ready(function() {
 
     var globalHistoryUsers = []
     openModal = function() {
-        $historyModal.modal("open")
         getHistoryChatters(
             function(historyUsers) {
                 globalHistoryUsers = historyUsers
@@ -22,8 +28,9 @@ $(document).ready(function() {
                     $historyList.removeChild($historyList.firstChild)
                 }
                 historyUsers.forEach((user, idx) => {
-                    $historyList.append(historyChatterDom(user.name, user.imgUrl,idx))
+                    $historyList.append(historyChatterDom(user.id, user.name, user.imgUrl,idx))
                 });
+                $historyModal.modal("open")
             }
         )
     }
@@ -54,7 +61,7 @@ $(document).ready(function() {
      * @param {*} status　是否为新消息
      * @param {*} intro　个人简介
      */
-     historyChatterDom = function (name, url, idx) {
+     historyChatterDom = function (id, name, url, idx) {
         //main
         var mainDoc = document.createElement("div");
         $(mainDoc).addClass("history_contact");
@@ -69,6 +76,13 @@ $(document).ready(function() {
         //拼接
         mainDoc.append(imgDoc);
         mainDoc.append(nameDoc);
+        //status，显示当前用户
+        if (id === getChatterId()) {
+            var statusDoc = document.createElement("span");
+            $(statusDoc).addClass("contact__status");
+            $(statusDoc).addClass("online");
+            mainDoc.append(statusDoc);
+        }
         mainDoc.idx = idx
         return mainDoc;
     }
@@ -90,22 +104,7 @@ $(document).ready(function() {
 
     // 复制序列
     $copyBtn.on('click', function() {
-        if (typeof cordova !== 'undefined') {
-            try {
-                // 执行代码
-                cordova.plugins.clipboard.copy(getSecret());
-                showToast("已复制到剪切板", 1000)
-            } catch (error) {
-                // 捕获异常
-                showToast("复制到剪切板失败, " + error, 1000)
-            }
-            return
-        }
-        navigator.clipboard.writeText(getSecret()).then(function() {
-            showToast("已复制到剪切板", 1000)
-        }, function(err) {
-            showToast("复制到剪切板失败, " + err, 1000)
-        });
+        copyText(getSecret())
     })
 
     // 粘贴序列
