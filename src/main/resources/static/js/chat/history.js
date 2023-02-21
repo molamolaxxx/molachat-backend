@@ -31,6 +31,9 @@ $(document).ready(function() {
                     $historyList.append(historyChatterDom(user.id, user.name, user.imgUrl,idx))
                 });
                 $historyModal.modal("open")
+            },
+            function() {
+                $historyModal.modal("open")
             }
         )
     }

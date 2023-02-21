@@ -166,10 +166,13 @@ $(document).ready(function() {
         
     }
 
-    getHistoryChatters = function(renderMethod) {
+    getHistoryChatters = function(renderMethod, renderEmpty) {
         const base64List = JSON.parse(localStorage.getItem("secretHistory"))
         if (!base64List) {
-            return []
+            if (renderEmpty) {
+                renderEmpty()
+            }
+            return
         }
         const chatterIdList = []
         for (let index = 0; index < base64List.length; index++) {
@@ -181,7 +184,10 @@ $(document).ready(function() {
             chatterIdList.push(arr[0])
         }
         if (chatterIdList.length === 0) {
-            return []
+            if (renderEmpty) {
+                renderEmpty()
+            }
+            return
         }
         let selfChatterId = (chatterId ? chatterId : localStorage.getItem("preId"))
         $.ajax({
