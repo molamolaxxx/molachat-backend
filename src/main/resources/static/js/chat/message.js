@@ -9,13 +9,13 @@ $(document).ready(function () {
     var inEditMode = false
 
     // dom初始化位置
-    $viewModal.css("max-width",800)
-    if (window.innerWidth > 800) {
+    $viewModal.css("max-width",1000)
+    if (window.innerWidth > 1000) {
         $viewModal.css("left",(window.innerWidth - $viewModal.innerWidth())/2)
     }
 
     addResizeEventListener(function() {
-        if (window.innerWidth > 800) {
+        if (window.innerWidth > 1000) {
             $viewModal.css("left",(window.innerWidth - $viewModal.innerWidth())/2)
         } else {
             $viewModal.css("left",0)
@@ -97,16 +97,30 @@ $(document).ready(function () {
             $(copyIcon).css('bottom', '0');
             $(copyIcon).css('padding', '4px');
             $(copyIcon).css('cursor', 'pointer');
-            $(copyIcon).on('click', (e) => {
+            const onClickCallback = (e) => {
+                const codeObj = hljs.highlightAuto(content)
+                // 主流语言，显示用pre方便看
+                const isCommonCode = codeObj.language === 'java' 
+                || codeObj.language === 'python'
+                || codeObj.language === 'c++' 
+                || codeObj.language === 'kotlin'
+                || codeObj.language === 'c'
+                || codeObj.language === 'bash'
+                || codeObj.language === 'csharp'
+                || codeObj.language === 'javascript'
+                || codeObj.language === 'xml'
+                if (isCommonCode) {
+                    $viewContent.addClass("view-content")
+                } else {
+                    $viewContent.removeClass("view-content")
+                }
                 $copyViewBtn[0].copyContent = content
-                $viewContent[0].innerHTML = hljs.highlightAuto(content).value
+                $viewContent[0].innerHTML = codeObj.value
+                console.log(codeObj);
                 $viewModal.modal('open')
-            })
-            $(mainDocChild).on('click', (e) => {
-                $copyViewBtn[0].copyContent = content
-                $viewContent[0].innerHTML = hljs.highlightAuto(content).value
-                $viewModal.modal('open')
-            })
+            }
+            $(copyIcon).on('click', onClickCallback)
+            $(mainDocChild).on('click', onClickCallback)
             $(mainDocChild).css("cursor", "pointer")
             copyIcon.innerHTML = '<i class="material-icons" style="font-size: 15px;color: #868e8a;">launch</i>'
             mainDocChild.append(copyIcon)

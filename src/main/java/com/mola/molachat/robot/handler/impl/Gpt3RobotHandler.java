@@ -149,7 +149,7 @@ public class Gpt3RobotHandler implements IRobotEventHandler<MessageReceiveEvent,
                 String content = message.getContent();
                 if (content.length() > 200) {
                     content = content.substring(0, 200);
-                    content +=  "...";
+                    content +=  "\n";
                 }
                 prompt.append(content);
                 prompt.append("\n");

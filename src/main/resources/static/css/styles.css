@@ -559,6 +559,10 @@ svg {
     padding: 2px;
 }
 
+.view-content {
+    white-space : pre
+}
+
 .chat__messages::-webkit-scrollbar {
     width: 0px;
     height: 0px;
