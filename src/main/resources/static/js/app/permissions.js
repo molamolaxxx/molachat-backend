@@ -1,4 +1,8 @@
-$(document).ready(function() {
+window.onload = function() {
+    if (typeof cordova === 'undefined') {
+        console.log("cordova 未加载");
+        return
+    }
     var permissions = cordova.plugins.permissions;
 
     function requestPermission(permission, succCallback,failedCallback) {
@@ -40,8 +44,4 @@ $(document).ready(function() {
     },function() {
         swal("permission", "获取权限失败，请手动添加权限" , "warning");
     })
-    // 剪切板权限
-    requestPermission(permissions.RECORD_AUDIO, function(){},function(){
-        swal("permission", "获取权限失败，请手动添加权限" , "warning");
-    })
-})
+}

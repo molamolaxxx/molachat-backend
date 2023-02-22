@@ -22,6 +22,7 @@ import javax.websocket.EncodeException;
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @Author: molamola
@@ -60,6 +61,11 @@ public class ChatServer {
     private Long lastHeartBeat;
 
     /**
+     * 相同chatterId连接了多少个客户端
+     */
+    private AtomicInteger connectClientCount = new AtomicInteger(0);
+
+    /**
      * 登录之后，开始连接
      * @param session
      * @param chatterId
@@ -78,10 +84,11 @@ public class ChatServer {
                 serverService.create(this);
             }
         } catch (ServerServiceException e) {
+            log.error("ChatServer onOpen error!" + chatterId, e);
             //发送异常信息
             this.session.sendToClient(WSResponse
                     .exception("exception", e.getCode()+":"+e.getMessage()));
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         //2.如果对应chatter的消息队列里有消息，则消费送出
         BlockingQueue<Message> queue = chatterService.getQueueById(chatterId);
@@ -89,7 +96,7 @@ public class ChatServer {
             Message message = queue.poll(100, TimeUnit.MILLISECONDS);
             this.session.sendToClient(WSResponse.message("send content!", message));
         }
-
+        connectClientCount.getAndIncrement();
     }
 
     /**
@@ -97,6 +104,9 @@ public class ChatServer {
      */
     public void onClose() throws IOException, EncodeException{
         log.info("chatterId:"+chatterId+"断开连接");
+        if (connectClientCount.get() > 0) {
+            connectClientCount.decrementAndGet();
+        }
 
         //1.移除服务器对象
         serverService.remove(this);

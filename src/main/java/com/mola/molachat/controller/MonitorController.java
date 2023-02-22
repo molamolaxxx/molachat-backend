@@ -5,6 +5,7 @@ import com.mola.molachat.data.SessionFactoryInterface;
 import com.mola.molachat.entity.Group;
 import com.mola.molachat.entity.VideoSession;
 import com.mola.molachat.entity.dto.ChatterDTO;
+import com.mola.molachat.server.ChatServer;
 import com.mola.molachat.service.ChatterService;
 import com.mola.molachat.service.GroupService;
 import com.mola.molachat.service.ServerService;
@@ -57,9 +58,13 @@ public class MonitorController {
 
     @GetMapping("/serverList")
     private ServerResponse catServerList(){
-        List<String> serverNameList = serverService.list()
-                .stream().map(e -> e.getChatterId()).collect(Collectors.toList());
-        return ServerResponse.createBySuccess(serverNameList);
+        return ServerResponse.createBySuccess(serverService.list().stream().map(e -> {
+            ChatServer cs = new ChatServer();
+            cs.setChatterId(e.getChatterId());
+            cs.setLastHeartBeat(e.getLastHeartBeat());
+            cs.setConnectClientCount(e.getConnectClientCount());
+            return cs;
+        }).collect(Collectors.toList()));
     }
 
     @GetMapping("/groupList")
