@@ -116,12 +116,17 @@ $(document).ready(function() {
                     swal("sorry", "抱歉，会话人数已达上限", "warning")
                     return
                 }
-                swal("error", "重连错误，是否重新创建chatter？" + response.msg, "error")
+                if (localStorage.getItem("preId")) {
+                    swal("error", "重连错误，是否重新创建chatter？提示是：" + response.msg, "error")
                     .then((value) => {
                         if (value) {
                             createChatter()
                         }
                     });
+                } else {
+                    createChatter()
+                }
+                
             },
             complete: function(xhr, status) {
                 if (status == 'timeout') {
@@ -403,7 +408,7 @@ $(document).ready(function() {
     }
 
     //重新连接
-    reconnect = function() {
+    reconnect = function(onSuccess) {
         $.ajax({
             url: getPrefix() + "/chat/chatter/reconnect",
             type: "post",
@@ -425,6 +430,9 @@ $(document).ready(function() {
                     // swal("success", "重连成功", "success")
                     // window.openSideBar()
                     showToast("服务器连接成功，欢迎回来",1000)
+                    if (onSuccess) {
+                        onSuccess()
+                    }
                 } else {
                     swal("error", "id不一致，重连失败", "error")
                 }
@@ -467,7 +475,7 @@ $(document).ready(function() {
         });
     }
 
-    //判断弹窗是否弹出
+    //心跳检测异常次数
     var heartBeatErrorCnt = 0
     //发送心跳包
     var timer = setInterval(function() {
@@ -494,27 +502,29 @@ $(document).ready(function() {
             success: function(result) {
                 if (result.msg == "reconnect") {
                     console.log("ip改变，需要重连");
-                    reconnect();
+                    reconnect(()=>{heartBeatErrorCnt=0});
                 }
                 else if(result.msg == "no-server-exist") {
                     console.log("服务器对象被移除");
-                    reconnect();
+                    reconnect(()=>{heartBeatErrorCnt=0});
                 }
-                heartBeatErrorCnt = 0
+                else if (heartBeatErrorCnt > 0) {
+                    reconnect(()=>{heartBeatErrorCnt=0});
+                }
             },
             error: function(result) {
                 heartBeatErrorCnt++
                 if (heartBeatErrorCnt >= 3) {
                     showToast("心跳检查异常，尝试重新连接服务器", 1000)
                 }
-                reconnect();
+                reconnect(()=>{heartBeatErrorCnt=0});
             },
             complete: function(xhr, status) {
                 if (status == 'timeout') {
                     // 超时后中断请求
                     xhr.abort();
                     heartBeatErrorCnt++
-                    reconnect();
+                    reconnect(()=>{heartBeatErrorCnt=0});
                 }
             }
         });
