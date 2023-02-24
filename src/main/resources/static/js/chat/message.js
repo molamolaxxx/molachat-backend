@@ -109,6 +109,7 @@ $(document).ready(function () {
                 || codeObj.language === 'csharp'
                 || codeObj.language === 'javascript'
                 || codeObj.language === 'xml'
+                || codeObj.language === 'php'
                 // 只有关键字的文本，不需要按照代码格式展示
                 isCommonCode = isCommonCode && (content.includes("{") || content.includes("}") || content.includes(":"))
                 if (isCommonCode) {
