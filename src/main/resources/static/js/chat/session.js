@@ -230,7 +230,7 @@ $(document).ready(function () {
         else{
             var senderId = message.chatterId;
             // 这个信息必须不是公共信息
-            if (!message.common){
+            if (!message.common && senderId != getChatterId()){
                 changeStatus(senderId,true);
             }
             // 提醒要求

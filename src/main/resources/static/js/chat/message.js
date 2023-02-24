@@ -100,7 +100,7 @@ $(document).ready(function () {
             const onClickCallback = (e) => {
                 const codeObj = hljs.highlightAuto(content)
                 // 主流语言，显示用pre方便看
-                const isCommonCode = codeObj.language === 'java' 
+                let isCommonCode = codeObj.language === 'java' 
                 || codeObj.language === 'python'
                 || codeObj.language === 'c++' 
                 || codeObj.language === 'kotlin'
@@ -109,6 +109,8 @@ $(document).ready(function () {
                 || codeObj.language === 'csharp'
                 || codeObj.language === 'javascript'
                 || codeObj.language === 'xml'
+                // 只有关键字的文本，不需要按照代码格式展示
+                isCommonCode = isCommonCode && (content.includes("{") || content.includes("}") || content.includes(":"))
                 if (isCommonCode) {
                     $viewContent.addClass("view-content")
                 } else {
@@ -175,7 +177,8 @@ $(document).ready(function () {
         //获取文本框内容
         var content = $chatInput.value;
         if (content === "") {
-            swal("stop!","输入不能为空","warning");
+            // swal("stop!","输入不能为空","warning");
+            showToast("输入不能为空",1000)
             return;
         }
 
@@ -304,7 +307,8 @@ $(document).ready(function () {
     $editCompleteBtn.on('click', function() {
         const content = $chatEditor.val()
         if (content === "") {
-            swal("stop!","输入不能为空","warning");
+            // swal("stop!","输入不能为空","warning");
+            showToast("输入不能为空",1000)
             return;
         }
 

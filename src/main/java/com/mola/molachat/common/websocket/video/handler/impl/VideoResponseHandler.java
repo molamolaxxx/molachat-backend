@@ -61,7 +61,7 @@ public class VideoResponseHandler implements IVideoHandler {
         if (toChatter.getVideoState().get() != VideoStateEnum.READY.getCode()) {
             // 对方线路不在等待中
             serverService.sendResponse(from, VideoWSResponse
-                    .failed("对方线路不在等待中", null));
+                    .failed("对方线路已经被占用", null));
             return;
         }
         // 改变双方状态

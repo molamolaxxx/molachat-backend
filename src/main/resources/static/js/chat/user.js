@@ -100,7 +100,11 @@ $(document).ready(function() {
                         setChatterSign(data.signature)
                     }
                     linkToServer();
-                    swal("Welcome!", "重连成功", "success")
+                    // swal("Welcome!", "重连成功", "success")
+                    if (!$("#sidebar").hasClass("active")) {
+                        window.openSideBar()
+                    }
+                    showToast("服务器连接成功，欢迎回来",1000)
                     
                 } else {
                     swal("error", "id不一致，重连失败", "error")
@@ -112,11 +116,21 @@ $(document).ready(function() {
                     swal("sorry", "抱歉，会话人数已达上限", "warning")
                     return
                 }
-                createChatter()
+                swal("error", "重连错误，是否重新创建chatter？" + response.msg, "error")
+                    .then((value) => {
+                        if (value) {
+                            createChatter()
+                        }
+                    });
             },
             complete: function(xhr, status) {
                 if (status == 'timeout') {
-                    createChatter()
+                    swal("error", "连接超时，请重试", "error")
+                    .then((value) => {
+                        if (value) {
+                            recoverChatter()
+                        }
+                    });
                 }
             }
         });
@@ -126,6 +140,15 @@ $(document).ready(function() {
      * 更改用户
      */
     changeChatter = function(base64Secret) {
+        // 正在和其他人通话
+        if (getEngines().videoEngine.isOpen()) {
+            showToast("您正在通话中，无法切换用户", 1000)
+            return
+        }
+        if (window.uploadLock) {
+            showToast("文件正在上传，无法切换用户", 1000)
+            return
+        }
         // 解析base64，拆出preId和token
         var decodedData = atob(base64Secret);
         if(isEmpty(decodedData)){
@@ -146,6 +169,14 @@ $(document).ready(function() {
             var set = new Set()
             if (!isEmpty(secretHistoryStr)) {
                 set = new Set(Array.from(JSON.parse(secretHistoryStr)));
+                set.forEach(e => {
+                    let tmp = atob(e);
+                    if (!isEmpty(tmp) && (arrTmp = tmp.split(";")).length === 2) {
+                        if (arrTmp[0] === localPreId) {
+                            set.delete(e)
+                        }
+                    }
+                })
             }
             set.add(localSecret)
             localStorage.setItem("secretHistory", JSON.stringify(Array.from(set)))
@@ -391,8 +422,9 @@ $(document).ready(function() {
                     if (result.data.token) {
                         localStorage.setItem("token", result.data.token)
                     }
-                    swal("success", "重连成功", "success")
-                
+                    // swal("success", "重连成功", "success")
+                    // window.openSideBar()
+                    showToast("服务器连接成功，欢迎回来",1000)
                 } else {
                     swal("error", "id不一致，重连失败", "error")
                 }
@@ -403,38 +435,40 @@ $(document).ready(function() {
                     swal("sorry", "抱歉，会话人数已达上限", "warning")
                     return
                 }
-                swal("Sometimes Bad", "重新连接失败,请重连或刷新重试", "error", {
-                    buttons: {
-                        catch: {
-                            text: "重连",
-                            value: "refresh",
-                        }
-                    },
-                }).then((value) => {
-                    reconnect();
-                });
+                // swal("Sometimes Bad", "重新连接失败,请重连或刷新重试", "error", {
+                //     buttons: {
+                //         catch: {
+                //             text: "重连",
+                //             value: "refresh",
+                //         }
+                //     },
+                // }).then((value) => {
+                //     reconnect();
+                // });
+                reconnect()
             },
             complete: function(xhr, status) {
                 if (status == 'timeout') {
                     // 超时后中断请求
                     xhr.abort();
-                    swal("Sometimes Bad", "重新连接超时,请重连或刷新重试", "error", {
-                        buttons: {
-                            catch: {
-                                text: "重连",
-                                value: "refresh",
-                            }
-                        },
-                    }).then((value) => {
-                        reconnect();
-                    });
+                    // swal("Sometimes Bad", "重新连接超时,请重连或刷新重试", "error", {
+                    //     buttons: {
+                    //         catch: {
+                    //             text: "重连",
+                    //             value: "refresh",
+                    //         }
+                    //     },
+                    // }).then((value) => {
+                    //     reconnect();
+                    // });
+                    reconnect()
                 }
             }
         });
     }
 
     //判断弹窗是否弹出
-    var errorAlert = false;
+    var heartBeatErrorCnt = 0
     //发送心跳包
     var timer = setInterval(function() {
         var action = new Object();
@@ -466,37 +500,21 @@ $(document).ready(function() {
                     console.log("服务器对象被移除");
                     reconnect();
                 }
+                heartBeatErrorCnt = 0
             },
             error: function(result) {
-                if (!errorAlert) {
-                    errorAlert -= true;
-                    swal("Sometimes Bad", "连接失败，请重新连接", "error", {
-                        buttons: {
-                            catch: {
-                                text: "刷新",
-                                value: "refresh",
-                            }
-                        },
-                    }).then((value) => {
-                        errorCounter = false;
-                        reconnect();
-                    });
+                heartBeatErrorCnt++
+                if (heartBeatErrorCnt >= 3) {
+                    showToast("心跳检查异常，尝试重新连接服务器", 1000)
                 }
+                reconnect();
             },
             complete: function(xhr, status) {
                 if (status == 'timeout') {
                     // 超时后中断请求
                     xhr.abort();
-                    swal("Sometimes Bad", "心跳发送超时,请重连或刷新重试", "error", {
-                        buttons: {
-                            catch: {
-                                text: "重连",
-                                value: "refresh",
-                            }
-                        },
-                    }).then((value) => {
-                        reconnect();
-                    });
+                    heartBeatErrorCnt++
+                    reconnect();
                 }
             }
         });

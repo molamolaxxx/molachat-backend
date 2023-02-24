@@ -116,7 +116,8 @@ function changeSign() {
         }
 
         if (chatterSign.indexOf(" ") != -1 || chatterSign.indexOf("　") != -1) {
-            swal("Sad", "签名不能包含空格", "error");
+            // swal("Sad", "签名不能包含空格", "error");
+            showToast("签名不能包含空格",1000)
             return;
         }
 

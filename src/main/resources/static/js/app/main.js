@@ -123,6 +123,19 @@ $(document).ready(function() {
 
     handlers1();
 
+    openSideBar = function() {
+        animatePathD($path, finalD, animTime, false, function() {
+            $sCont.addClass("active");
+            setTimeout(function() {
+                $("#keyboard_arrow_left").on("click", e => {
+                    // closeSidebar(e); // 关闭侧栏
+                    openTerminal(); // 打开控制台
+                }
+            );
+            }, sContTrans);
+        });
+    }
+
 
     function openTerminal() {
         swal({
@@ -194,7 +207,8 @@ $(document).ready(function() {
     $(document).on("click", ".contact", function(e) {
         //判断是否在上传文件，上传则不能退出
         if (window.uploadLock) {
-            swal("warning", "文件正在上传，请勿退出", "warning");
+            // swal("warning", "文件正在上传，请勿退出", "warning");
+            showToast("正在上传文件，请稍后切换会话",1000)
             return;
         }
         var that = this,
@@ -265,7 +279,8 @@ $(document).ready(function() {
     $(document).on("click", ".chat__back", function() {
         //判断是否在上传文件，上传则不能退出
         if (window.uploadLock) {
-            swal("warning", "文件正在上传，请勿退出", "warning");
+            // swal("warning", "文件正在上传，请勿退出", "warning");
+            showToast("正在上传文件，请稍后返回",1000)
             return;
         }
         if (animating) return;
