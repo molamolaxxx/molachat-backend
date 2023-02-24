@@ -514,7 +514,7 @@ $(document).ready(function() {
             },
             error: function(result) {
                 heartBeatErrorCnt++
-                if (heartBeatErrorCnt >= 3) {
+                if (heartBeatErrorCnt % 3 == 1) {
                     showToast("心跳检查异常，尝试重新连接服务器", 1000)
                 }
                 reconnect(()=>{heartBeatErrorCnt=0});
@@ -524,7 +524,6 @@ $(document).ready(function() {
                     // 超时后中断请求
                     xhr.abort();
                     heartBeatErrorCnt++
-                    reconnect(()=>{heartBeatErrorCnt=0});
                 }
             }
         });
