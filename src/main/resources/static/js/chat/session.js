@@ -50,7 +50,6 @@ $(document).ready(function () {
             dom.index = i;
             dom.addEventListener("click", function () {
                 if (window.uploadLock) {
-                    showToast("文件正在上传，请勿切换窗口", 800)
                     return
                 }
                 //获取当前chatter

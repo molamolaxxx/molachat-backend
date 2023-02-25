@@ -207,7 +207,6 @@ $(document).ready(function() {
     $(document).on("click", ".contact", function(e) {
         //判断是否在上传文件，上传则不能退出
         if (window.uploadLock) {
-            // swal("warning", "文件正在上传，请勿退出", "warning");
             showToast("正在上传文件，请稍后切换会话",1000)
             return;
         }
@@ -279,7 +278,6 @@ $(document).ready(function() {
     $(document).on("click", ".chat__back", function() {
         //判断是否在上传文件，上传则不能退出
         if (window.uploadLock) {
-            // swal("warning", "文件正在上传，请勿退出", "warning");
             showToast("正在上传文件，请稍后返回",1000)
             return;
         }
