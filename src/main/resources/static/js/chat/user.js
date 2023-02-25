@@ -75,6 +75,7 @@ $(document).ready(function() {
     }
 
     recoverChatter = function() {
+        addSpinner("app_content", true)
         // 先检测有没有残留的chatterId
         var preId = localStorage.getItem("preId");
         $.ajax({
@@ -105,6 +106,7 @@ $(document).ready(function() {
                         window.openSideBar()
                     }
                     showToast("服务器连接成功，欢迎回来",1000)
+                    removeSpinner()
                     
                 } else {
                     swal("error", "id不一致，重连失败", "error")
@@ -502,22 +504,23 @@ $(document).ready(function() {
             success: function(result) {
                 if (result.msg == "reconnect") {
                     console.log("ip改变，需要重连");
-                    reconnect(()=>{heartBeatErrorCnt=0});
+                    reconnect(()=>{heartBeatErrorCnt=0;removeSpinner()});
                 }
                 else if(result.msg == "no-server-exist") {
                     console.log("服务器对象被移除");
-                    reconnect(()=>{heartBeatErrorCnt=0});
+                    reconnect(()=>{heartBeatErrorCnt=0;removeSpinner()});
                 }
                 else if (heartBeatErrorCnt > 0) {
-                    reconnect(()=>{heartBeatErrorCnt=0});
+                    reconnect(()=>{heartBeatErrorCnt=0;removeSpinner()});
                 }
             },
             error: function(result) {
                 heartBeatErrorCnt++
                 if (heartBeatErrorCnt % 3 == 1) {
-                    showToast("心跳检查异常，尝试重新连接服务器", 1000)
+                    // showToast("心跳检查异常，尝试重新连接服务器", 1000)
+                    addSpinner("app_content", true)
                 }
-                reconnect(()=>{heartBeatErrorCnt=0});
+                reconnect(()=>{heartBeatErrorCnt=0;removeSpinner()});
             },
             complete: function(xhr, status) {
                 if (status == 'timeout') {

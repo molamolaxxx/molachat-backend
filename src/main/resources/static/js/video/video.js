@@ -287,24 +287,6 @@ $(document).ready(function() {
         state.remoteChatterId = remote
     }
 
-    addSpinner = function(id) {
-        var spinner = "<div class=\"spinner\">\n"+
-            "      <div class=\"rect1\"></div>\n"+
-            "      <div class=\"rect2\"></div>\n"+
-            "      <div class=\"rect3\"></div>\n"+
-            "      <div class=\"rect4\"></div>\n"+
-            "      <div class=\"rect5\"></div>\n"+
-            "      <div class=\"rect6\"></div>\n"+
-            "      <div class=\"rect7\"></div>\n"+
-            "      <div class=\"rect8\"></div>\n"+
-            "  </div>"
-        $("#"+id).append(spinner)
-    }
-
-    removeSpinner = function(){
-        $(".spinner").remove();
-    }
-
     // 双击放大
     var isFull = false
     $videoOther.on("dblclick",function(e) {
