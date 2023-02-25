@@ -481,6 +481,10 @@ $(document).ready(function() {
     var heartBeatErrorCnt = 0
     //发送心跳包
     var timer = setInterval(function() {
+        if (socket.readyState == WebSocket.CLOSED) {
+            reconnect(()=>{heartBeatErrorCnt=0;removeSpinner()});
+            return
+        }
         var action = new Object();
         action.code = HEART_BEAT;
         action.msg = "heart-beat";
