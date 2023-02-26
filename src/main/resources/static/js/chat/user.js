@@ -301,6 +301,10 @@ $(document).ready(function() {
                         //链接到ws服务器
                         linkToServer();
                         swal("Welcome!", "已成功创建chatter!", "success");
+                        removeSpinner()
+                        if (!$("#sidebar").hasClass("active")) {
+                            window.openSideBar()
+                        }
                     },
                     error: function(result) {
                         console.log(result.responseText);
