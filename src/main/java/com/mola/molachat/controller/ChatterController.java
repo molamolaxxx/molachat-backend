@@ -240,6 +240,7 @@ public class ChatterController {
         ChatServer server = serverService.selectByChatterId(chatterId);
         if (null == chatterDTO){
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            log.error("重连失败,chatter不存在, id = {}", chatterId);
             return ServerResponse.createByErrorMessage("重连失败,chatter不存在");
         }
         //2.判断jwt的相同
@@ -247,41 +248,31 @@ public class ChatterController {
         if (jwtUtil.canRefresh(token)) {
             token = jwtUtil.generateToken(chatterId);
         }
-        if (tokenCheckHandler.checkToken(chatterId, token, request)){
-            //3.保存session，close掉server，重新创建chatter(内部创建，保持一致)
-//            List<SessionDTO> saveSessionList = new ArrayList<>();
-//            for (SessionDTO sessionDTO : sessionService.list()){
-//                if (sessionDTO.getSessionId().contains(chatterId)){
-//                    saveSessionList.add(sessionDTO);
-//                }
-//            }
-            try {
-                // 如果还存在server，则关闭它
-                if (null != server) {
-                    server.onClose();
-                }
-            } catch (IOException | EncodeException e) {
-                e.printStackTrace();
-                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                return ServerResponse.createByErrorMessage("重连失败,内部错误");
-            }
-            //4.保存session,返回成功与chatterId，通知前端重新建立socket
-            log.info("数据恢复");
-//            sessionService.save(saveSessionList);
-            //替换chatter数据，只有ip需要更新
-            chatterDTO.setIp(IpUtils.getIp(request));
-            //设置为在线
-            if (chatterDTO.getStatus() != ChatterStatusEnum.ONLINE.getCode()){
-                chatterDTO.setStatus(ChatterStatusEnum.ONLINE.getCode());
-            }
-            chatterService.save(chatterDTO);
-            // 为dto设置token
-            chatterDTO.setToken(token);
-
-            return ServerResponse.createBySuccess(chatterDTO);
+        if (!tokenCheckHandler.checkToken(chatterId, token, request)) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            log.error("重连失败,token错误, id = {}", chatterId);
+            return ServerResponse.createByErrorMessage("重连失败,token错误");
         }
-        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        return ServerResponse.createByErrorMessage("重连失败,token错误");
+        try {
+            // 如果还存在server，则关闭它
+            if (null != server) {
+                server.onClose();
+            }
+        } catch (IOException | EncodeException e) {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            log.error("重连失败,内部错误, id = {}", chatterId, e);
+            return ServerResponse.createByErrorMessage("重连失败,内部错误");
+        }
+        //4.保存session,返回成功与chatterId，通知前端重新建立socket
+        chatterDTO.setIp(IpUtils.getIp(request));
+        //设置为在线
+        if (chatterDTO.getStatus() != ChatterStatusEnum.ONLINE.getCode()){
+            chatterDTO.setStatus(ChatterStatusEnum.ONLINE.getCode());
+        }
+        chatterService.save(chatterDTO);
+        // 为dto设置token
+        chatterDTO.setToken(token);
+        return ServerResponse.createBySuccess(chatterDTO);
     }
 
     /**

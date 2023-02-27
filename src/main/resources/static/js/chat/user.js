@@ -119,12 +119,7 @@ $(document).ready(function() {
                     return
                 }
                 if (localStorage.getItem("preId")) {
-                    swal("error", "重连错误，是否重新创建chatter？提示是：" + response.msg, "error")
-                    .then((value) => {
-                        if (value) {
-                            createChatter()
-                        }
-                    });
+                    createChatter()
                 } else {
                     createChatter()
                 }
@@ -433,8 +428,6 @@ $(document).ready(function() {
                     if (result.data.token) {
                         localStorage.setItem("token", result.data.token)
                     }
-                    // swal("success", "重连成功", "success")
-                    // window.openSideBar()
                     showToast("服务器连接成功，欢迎回来",1000)
                     if (onSuccess) {
                         onSuccess()
@@ -449,32 +442,14 @@ $(document).ready(function() {
                     swal("sorry", "抱歉，会话人数已达上限", "warning")
                     return
                 }
-                // swal("Sometimes Bad", "重新连接失败,请重连或刷新重试", "error", {
-                //     buttons: {
-                //         catch: {
-                //             text: "重连",
-                //             value: "refresh",
-                //         }
-                //     },
-                // }).then((value) => {
-                //     reconnect();
-                // });
-                reconnect()
+                setTimeout(function() {
+                    reconnect()
+                }, 2000);
             },
             complete: function(xhr, status) {
                 if (status == 'timeout') {
                     // 超时后中断请求
                     xhr.abort();
-                    // swal("Sometimes Bad", "重新连接超时,请重连或刷新重试", "error", {
-                    //     buttons: {
-                    //         catch: {
-                    //             text: "重连",
-                    //             value: "refresh",
-                    //         }
-                    //     },
-                    // }).then((value) => {
-                    //     reconnect();
-                    // });
                     reconnect()
                 }
             }
