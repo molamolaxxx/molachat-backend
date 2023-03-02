@@ -43,8 +43,11 @@ app:
   # websocket的类型 1、spring 2、tomcat 3、netty（待开发）
   server-type: tomcat
   secret: molamolaxxx
-  robot-list: robot1234;chat-gpt3
+  robot-list: chatGpt
+  robot-api-key:
+    chatGpt : sk-xxx
 #  http-proxy: 192.168.31.233:8080
+
 
 # jwt
 jwt:

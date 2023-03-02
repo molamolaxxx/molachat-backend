@@ -1,9 +1,12 @@
 package com.mola.molachat.config;
 
+import com.google.common.collect.Maps;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
 
 /**
  * @author : molamola
@@ -51,4 +54,7 @@ public class AppConfig {
      * http代理地址
      */
     private String httpProxy;
+
+
+    private Map<String, String> robotApiKey = Maps.newHashMap();
 }

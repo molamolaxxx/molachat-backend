@@ -36,7 +36,7 @@ public class RobotConfig {
     public void initRobot() {
         String robotList = appConfig.getRobotList();
         if (StringUtils.isNotEmpty(robotList)) {
-            for (String appKey : robotList.split(";")) {
+            for (String appKey : robotList.split(",")) {
                 addRobot(appKey);
             }
         }
@@ -52,14 +52,15 @@ public class RobotConfig {
         if (null == chatter) {
             robot = new RobotChatter();
             robot.setId(appKey);
-            robot.setName("机器人");
-            robot.setSignature("我是一个机器人");
+            robot.setName("翻斗鱼");
+            robot.setSignature("我是一个24岁的学生");
             robot.setStatus(ChatterStatusEnum.ONLINE.getCode());
             robot.setTag(ChatterTagEnum.ROBOT.getCode());
-            robot.setImgUrl("img/header/6.jpeg");
+            robot.setImgUrl("img/mola2.jpg");
             robot.setIp("127.0.0.1");
             robot.setAppKey(appKey);
-            robot.setApiKey("ed24ed075d65c44df2f674d0f2730734");
+            robot.setApiKey(appConfig.getRobotApiKey().get(appKey));
+            robot.setEventBusBeanName("chatGptRobotEventBus");
             chatterFactory.create(robot);
         } else {
             robot = (RobotChatter) BeanUtilsPlug.copyPropertiesReturnTarget(chatter, new RobotChatter());
