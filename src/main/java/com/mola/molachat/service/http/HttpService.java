@@ -1,10 +1,7 @@
 package com.mola.molachat.service.http;
 
 import com.alibaba.fastjson.JSONObject;
-import org.apache.http.Header;
-import org.apache.http.HeaderElement;
-import org.apache.http.HeaderElementIterator;
-import org.apache.http.NameValuePair;
+import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -16,6 +13,7 @@ import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeaderElementIterator;
@@ -27,7 +25,10 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -51,15 +52,18 @@ public enum HttpService {
 
     private Thread monitorThread = new IdleConnectionMonitorThread(connectionManager);
 
-    private volatile HttpClient httpClient = buildHttpClient(connectionManager);
+    private volatile HttpClient httpClient;
 
     private boolean debug = false;
 
-    private HttpClient buildHttpClient(HttpClientConnectionManager connectionManager) {
-        return HttpClients.custom()
+    public void init(String proxy) {
+        HttpClientBuilder httpClientBuilder = HttpClients.custom()
                 .setConnectionManager(connectionManager)
-                .setKeepAliveStrategy(buildKeepAliveStrategy())
-                .build();
+                .setKeepAliveStrategy(buildKeepAliveStrategy());
+        if (proxy != null) {
+            this.httpClient = httpClientBuilder.setProxy(HttpHost.create(proxy)).build();
+        }
+        this.httpClient = httpClientBuilder.build();
     }
 
     private HttpClientConnectionManager buildConnectionManager() {

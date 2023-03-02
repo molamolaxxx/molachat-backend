@@ -2,6 +2,7 @@ package com.mola.molachat.condition;
 
 import com.mola.molachat.common.ConditionClassCache;
 import com.mola.molachat.data.impl.cache.ChatterFactory;
+import com.mola.molachat.data.impl.cache.OtherData;
 import com.mola.molachat.data.impl.cache.ServerFactory;
 import com.mola.molachat.data.impl.cache.SessionFactory;
 import com.mola.molachat.utils.EnvUtils;
@@ -54,6 +55,9 @@ public class BaseExistCondition implements Condition {
                 });
         createDefaultDataSupport(beanFactory, "serverFactory",
                 ServerFactory.class, bdb -> bdb);
+
+        createDefaultDataSupport(beanFactory, "otherData",
+                OtherData.class, bdb -> bdb);
     }
 
     /**

@@ -41,4 +41,14 @@ public class AppConfig {
      * 机器人appKey
      */
     private String robotList;
+
+    /**
+     * levelDB的本地存储位置
+     */
+    private String levelDBStoragePrefix = "/tmp/levelDB";
+
+    /**
+     * http代理地址
+     */
+    private String httpProxy;
 }

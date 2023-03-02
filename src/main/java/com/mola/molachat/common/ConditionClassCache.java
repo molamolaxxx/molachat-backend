@@ -1,6 +1,7 @@
 package com.mola.molachat.common;
 
 import com.mola.molachat.condition.CacheCondition;
+import com.mola.molachat.condition.LevelDBCondition;
 import com.mola.molachat.condition.RedisExistCondition;
 import org.springframework.context.annotation.Condition;
 
@@ -20,6 +21,7 @@ public class ConditionClassCache {
     static {
         conditionClassCache.put(RedisExistCondition.class, "redis");
         conditionClassCache.put(CacheCondition.class, "cache");
+        conditionClassCache.put(LevelDBCondition.class, "leveldb");
     }
 
     public static String getCache(Class<? extends Condition> clazz) {

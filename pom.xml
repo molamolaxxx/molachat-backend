@@ -133,6 +133,18 @@
 			<version>4.5.11</version>
 		</dependency>
 
+		<!-- levelDB 支持-->
+		<dependency>
+			<groupId>org.iq80.leveldb</groupId>
+			<artifactId>leveldb</artifactId>
+			<version>0.7</version>
+		</dependency>
+		<dependency>
+			<groupId>org.iq80.leveldb</groupId>
+			<artifactId>leveldb-api</artifactId>
+			<version>0.7</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
