@@ -44,7 +44,7 @@ app:
   server-type: tomcat
   secret: molamolaxxx
   robot-list: robot1234;chat-gpt3
-  http-proxy: 192.168.31.233:8080
+#  http-proxy: 192.168.31.233:8080
 
 # jwt
 jwt:
