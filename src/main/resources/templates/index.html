@@ -119,7 +119,12 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
             <i class="large material-icons" id="menu-icon">menu</i>
         </a>
         <ul>
-            <!-- 视频 -->
+
+            <!-- 服务器切换 -->
+            <li><a class="btn-floating waves-effect waves-light blue lighten-1 tooltipped" html="true"
+                data-position="left" data-delay="50" data-tooltip="服务器切换" id="settingsRemote"><i
+                    class="material-icons">settings_remote</i></a></li>
+            <!-- 历史用户 -->
             <li><a class="btn-floating waves-effect waves-light blue darken-1 tooltipped" html="true"
                     data-position="left" data-delay="50" data-tooltip="历史用户" id="history"><i
                         class="material-icons">recent_actors</i></a></li>
@@ -139,9 +144,9 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
             <li><a class="btn-floating waves-effect waves-light green tooltipped" data-position="left" data-delay="50"
                     data-tooltip="文件传输" id="file_copy"><i class="material-icons">file_copy</i></a></li>
             <!-- 关闭窗口 -->
-            <li><a class="btn-floating waves-effect waves-light blue darken-1 tooltipped" data-position="left"
+            <!-- <li><a class="btn-floating waves-effect waves-light blue darken-1 tooltipped" data-position="left"
                     data-delay="50" data-tooltip="终端" id="keyboard_arrow_left"><i
-                        class="material-icons">keyboard_arrow_left</i></a></li>
+                        class="material-icons">keyboard_arrow_left</i></a></li> -->
             <!-- 名片 -->
             <li><a class="btn-floating waves-effect waves-light gray tooltipped" id="account_box" data-position="left"
                     data-delay="50" data-tooltip="个人名片"><i class="material-icons">account_box</i></a></li>
@@ -202,10 +207,23 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
             </div>
         </div>
     </div>
+    <!-- 切换服务器模态 -->
+    <div id="change-server-modal" class="modal bottom-sheet">
+        <div class="history-root">
+            <div class="modal-content" style="padding-bottom: 0;">
+                <h5>切换服务器</h5>
+                <div class="server-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="changeServerBtn"  class=" modal-action modal-close waves-effect waves-green btn blue">输入服务器地址</a>
+                <button id="copyServerBtn" style="margin: 6px;" class=" modal-action waves-effect waves-green btn-flat">复制当前服务器地址</a>
+            </div>
+        </div>
+    </div>
     <div id="message-view-modal" class="modal bottom-sheet">
         <div class="history-root">
             <div class="modal-content" style="background-color: rgb(240, 248, 255);padding-bottom: 0;">
-                <pre style="max-height: 40rem;padding: 1rem; background-color: white;border-radius: 10px;"><code id="viewContent" class="view-content"></code></pre>
+                <pre style="max-height: 40rem;padding: 0.5rem; background-color: white;border-radius: 5px;"><code id="viewContent" class="view-content" style="background: white;"></code></pre>
             </div>
             <div class="modal-footer" style="background-color: rgb(240, 248, 255);">
                 <button id="copyViewBtn" style="margin: 6px;" class=" modal-action waves-effect waves-green btn-flat">复制</a>
@@ -283,7 +301,8 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
         </svg>
     </a>
 
-    
+    <script src="js/utils/marked.min.js"></script>
+    <script type="text/javascript" src="js/utils/highlight.min.js"></script>
     <script type="text/javascript" src="cordova.js"></script>
     <script type="text/javascript" src="js/utils/stopExecutionOnTimeout.js?t=1"></script>
     <script type="text/javascript" src="js/utils/jquery-3.4.1.min.js"></script>
@@ -296,6 +315,7 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
     <script type="text/javascript" src="js/emoji/emoji-popup.js"></script>
     <script type="text/javascript" src="js/chat/common.js"></script>
     <script type="text/javascript" src="js/app/resizelistener.js"></script>
+    <script type="text/javascript" src="js/app/remote.js"></script>
     <script type="text/javascript" src="js/app/main.js"></script>
     <script type="text/javascript" src="js/chat/user.js"></script>
     <script type="text/javascript" src="js/chat/chatter.js"></script>
@@ -313,7 +333,6 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
     <script type="text/javascript" src="js/utils/spinner.js"></script>
     <script type="text/javascript" src="js/chat/history.js"></script>
     <script src="js/utils/materialize.min.js"></script>
-    <script type="text/javascript" src="js/utils/highlight.min.js"></script>
     <!-- and it's easy to individually load additional languages -->
     <script type="text/javascript" src="js/utils/go.min.js"></script>
 

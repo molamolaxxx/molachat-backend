@@ -29,14 +29,16 @@ function getIpAndPort() {
             port = configArr[1]
         } else if (configArr.length == 1) {
             ip = configArr[0]
-            if ( ip === '127.0.0.1' || ip === 'localhost' || ip === '192.168.1.7') { // 测试使用
-                ip = DEFAULT_HOST
-            }
+            // if ( ip === '127.0.0.1' || ip === 'localhost' || ip === '192.168.1.7') { // 测试使用
+            //     ip = DEFAULT_HOST
+            // }
             port = DEFAULT_PORT
         } else {
             ip = DEFAULT_HOST
             port = DEFAULT_PORT
         }
+        ip = localStorage.getItem("_ip") ? localStorage.getItem("_ip") : ip
+        port = localStorage.getItem("_port") ? localStorage.getItem("_port") :port
     }
     return {ip, port}
 }
@@ -63,6 +65,10 @@ function getPort() {
 //获取前缀
 function getPrefix() {
     return "https://" + _ip + ":" + _port
+}
+
+function getHost() {
+    return _ip + ":" + _port;
 }
 
 // 获取socket前缀

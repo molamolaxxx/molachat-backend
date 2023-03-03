@@ -266,6 +266,8 @@ $(document).ready(function() {
         $("#file_copy").css("display", "");
         $("#keyboard_arrow_left").css("display", "none");
         $("#multichat").css("display", "none");
+        $("#settingsRemote").css("display", "none");
+        $("#history").css("display", "none");
         if (window.innerWidth <= 1000) {
             $menu.css("display", "none");
             setTimeout(function() {
@@ -309,6 +311,8 @@ $(document).ready(function() {
         $("#video").css("display", "none");
         $("#keyboard_arrow_left").css("display", "");
         $("#multichat").css("display", "");
+        $("#settingsRemote").css("display", "");
+        $("#history").css("display", "");
         if (window.innerWidth <= 1000) {
             setTimeout(function() {
                 $menu.animate({ opacity: 1 }, function() {

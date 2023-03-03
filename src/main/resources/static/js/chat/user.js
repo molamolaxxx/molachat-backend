@@ -11,6 +11,29 @@ $(document).ready(function() {
 
     //唯一用户标识
     var chatterId;
+    //获取随机的chatterName
+    createChatterName = function() {
+
+        //从存储中读取chatterName
+        if (localStorage.getItem("chatterName") != null) {
+            return localStorage.getItem("chatterName");
+        }
+
+        var str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var namePrefixList = ["星巴克","米奇","米妮","四月春风","博丽灵梦",
+                            "大灰狼","神里凌华","乌鸦哥","甘雨","jojo",
+                            "黄鹤","嘉然","初音未来","猫头鹰","兔子",
+                            "狼人","预言家","女巫","编译器","猎人",
+                            "自动状态机","虚拟机","神经网络","缓存","数据库",
+                            "西施","貂蝉","自助酱大骨","螃蟹","龙虾",
+                            "青口","生蚝","扇贝","喷射战士","dio"]
+        var name = namePrefixList[Math.round(Math.random() * namePrefixList.length)] + "_";
+        for (var i = 0; i < 5; i++) {
+            name += str[Math.round(Math.random() * 61)]
+        }
+        console.log(name)
+        return name;
+    }
     //唯一用户昵称
     var chatterName = createChatterName();
     // 用户签名
@@ -90,12 +113,16 @@ $(document).ready(function() {
                 "token":token
             },
             success: function(result) {
+                if (window.changeUserLock) {
+                    window.changeUserLock = false
+                }
                 if (preId == result.data.id) {
                     chatterId = preId;
                     // 将更新的token插入缓存
                     if (result.data.token) {
                         let data = result.data
                         localStorage.setItem("token", data.token)
+                        token = data.token
                         setChatterName(data.name)
                         setChatterImage(data.imgUrl)
                         setChatterSign(data.signature)
@@ -105,7 +132,7 @@ $(document).ready(function() {
                     if (!$("#sidebar").hasClass("active")) {
                         window.openSideBar()
                     }
-                    showToast("服务器连接成功，欢迎回来",1000)
+                    notRepeatToast("服务器连接成功，欢迎回来",1000)
                     removeSpinner()
                     
                 } else {
@@ -113,6 +140,10 @@ $(document).ready(function() {
                 }
             },
             error: function(result) {
+                if (!result || !result.responseText) {
+                    checkHost()
+                    return
+                }
                 response = JSON.parse(result.responseText)
                 if (response.data && response.data.isOverFlow) {
                     swal("sorry", "抱歉，会话人数已达上限", "warning")
@@ -127,7 +158,7 @@ $(document).ready(function() {
             },
             complete: function(xhr, status) {
                 if (status == 'timeout') {
-                    swal("error", "连接超时，请重试", "error")
+                    swal("sorry", "连接超时，请重试", "info")
                     .then((value) => {
                         if (value) {
                             recoverChatter()
@@ -183,7 +214,8 @@ $(document).ready(function() {
             set.add(localSecret)
             localStorage.setItem("secretHistory", JSON.stringify(Array.from(set)))
         }
-        
+        // 锁。防止在换用户期间发生心跳，导致id、token不一致的情况
+        window.changeUserLock = true
         // 赋值
         localStorage.setItem("preId", arr[0])
         token = arr[1]
@@ -237,10 +269,13 @@ $(document).ready(function() {
             },
             success: function(result) {
                 const historyUsers = result.data
+                const newBase64List = []
                 for (let index = 0; index < historyUsers.length; index++) {
                     const element = historyUsers[index];
                     element.base64 = base64List[index]
+                    newBase64List.push(element.base64)
                 }
+                localStorage.setItem("secretHistory", JSON.stringify(newBase64List))
                 // 渲染
                 if (renderMethod) {
                     renderMethod(historyUsers)
@@ -312,14 +347,17 @@ $(document).ready(function() {
         
     }
 
+    var socketErrorTimes = 0
     linkToServer = function() {
 
         if (chatterId == null) {
             swal("error", "未获取chatterId，连接服务器失败!", "error");
             return;
         }
+        if (socket) {
+            socket.close()
+        }
         socket = new WebSocket(getSocketPrefix() + "/chat/server/" + chatterId);
-
         socket.onopen = function(ev) {
             console.info("socket已经打开");
             console.info(ev);
@@ -354,18 +392,16 @@ $(document).ready(function() {
         };
 
         socket.onerror = function(ev) {
+            if (socketErrorTimes > 10) {
+                swal("出错啦", "服务器连接崩溃了，请重新连接", "info").then((value) => {
+                    socketErrorTimes = 0
+                    reconnect();
+                })
+            } else {
+                socketErrorTimes++
+            }
             console.info("socket出错");
             console.info(ev);
-            swal("Sometimes Bad", "服务器出现错误,请刷新", "error", {
-                buttons: {
-                    catch: {
-                        text: "重连",
-                        value: "refresh",
-                    }
-                },
-            }).then((value) => {
-                reconnect();
-            });
         }
 
         socket.onclose = function(ev) {
@@ -373,30 +409,6 @@ $(document).ready(function() {
             console.info(ev);
             
         }
-    }
-
-    //获取随机的chatterName
-    function createChatterName() {
-
-        //从存储中读取chatterName
-        if (localStorage.getItem("chatterName") != null) {
-            return localStorage.getItem("chatterName");
-        }
-
-        var str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        var namePrefixList = ["星巴克","米奇","米妮","四月春风","博丽灵梦",
-                            "大灰狼","神里凌华","乌鸦哥","甘雨","jojo",
-                            "黄鹤","嘉然","初音未来","猫头鹰","兔子",
-                            "狼人","预言家","女巫","编译器","猎人",
-                            "自动状态机","虚拟机","神经网络","缓存","数据库",
-                            "西施","貂蝉","自助酱大骨","螃蟹","龙虾",
-                            "青口","生蚝","扇贝","喷射战士","dio"]
-        var name = namePrefixList[Math.round(Math.random() * namePrefixList.length)] + "_";
-        for (var i = 0; i < 5; i++) {
-            name += str[Math.round(Math.random() * 61)]
-        }
-        console.log(name)
-        return name;
     }
 
     // 获取签名
@@ -428,7 +440,7 @@ $(document).ready(function() {
                     if (result.data.token) {
                         localStorage.setItem("token", result.data.token)
                     }
-                    showToast("服务器连接成功，欢迎回来",1000)
+                    notRepeatToast("服务器连接成功，欢迎回来",1000)
                     if (onSuccess) {
                         onSuccess()
                     }
@@ -442,9 +454,10 @@ $(document).ready(function() {
                     swal("sorry", "抱歉，会话人数已达上限", "warning")
                     return
                 }
-                setTimeout(function() {
-                    reconnect()
-                }, 2000);
+                // setTimeout(function() {
+                //     reconnect()
+                // }, 2000);
+                notRepeatToast("重连失败，原因是:" + response.msg,1000)
             },
             complete: function(xhr, status) {
                 if (status == 'timeout') {
@@ -460,7 +473,15 @@ $(document).ready(function() {
     var heartBeatErrorCnt = 0
     //发送心跳包
     var timer = setInterval(function() {
+        if (window.changeUserLock) {
+            console.log("更换用户锁住，心跳停止");
+            return
+        }
+        if (!socket) {
+            return
+        }
         if (socket.readyState == WebSocket.CLOSED) {
+            addSpinner("app_content", true)
             reconnect(()=>{heartBeatErrorCnt=0;removeSpinner()});
             return
         }
@@ -469,9 +490,10 @@ $(document).ready(function() {
         action.msg = "heart-beat";
         action.data = chatterId;
         //未连接时，不发送心跳
-        if (null == socket)
-            return;
-        socket.send(JSON.stringify(action));
+        if (null != socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify(action));
+        }
+        
         //测试连接url
         $.ajax({
             url: getPrefix() + "/chat/chatter/heartBeat",
@@ -551,11 +573,15 @@ $(document).ready(function() {
         localStorage.setItem("imgUrl", src);
     }
 
+    setToken = function(newToken) {
+        token = newToken
+        localStorage.setItem("token", newToken);
+    }
+
     getChatterImage = function() {
         return chatterImg;
     }
 
     // 检查版本
     checkVersion(validAlert);
-
 });

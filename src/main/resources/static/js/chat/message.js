@@ -86,7 +86,7 @@ $(document).ready(function () {
 
         mainDoc.append(imgDoc);
         // mainDocChild.innerHTML = twemoji.parse(content,{"folder":"svg","ext":".svg","base":"asset/","size":15});
-        mainDocChild.innerText = content
+        mainDocChild.innerText = content.length > 200 ? content.slice(0,200) + "\n...." : content
         mainDoc.append(mainDocChild);
         // 明细view
         if (content.length > 80) {
@@ -99,17 +99,18 @@ $(document).ready(function () {
             $(copyIcon).css('cursor', 'pointer');
             const onClickCallback = (e) => {
                 const codeObj = hljs.highlightAuto(content)
+                console.log(codeObj);
                 // 主流语言，显示用pre方便看
                 let isCommonCode = codeObj.language === 'java' 
                 || codeObj.language === 'python'
-                || codeObj.language === 'c++' 
+                || codeObj.language === 'cpp' 
                 || codeObj.language === 'kotlin'
                 || codeObj.language === 'c'
-                || codeObj.language === 'bash'
                 || codeObj.language === 'csharp'
                 || codeObj.language === 'javascript'
                 || codeObj.language === 'xml'
                 || codeObj.language === 'php'
+                || codeObj.language === 'perl'
                 // 只有关键字的文本，不需要按照代码格式展示
                 isCommonCode = isCommonCode && (content.includes("{") || content.includes("}") || content.includes(":"))
                 if (isCommonCode) {
@@ -118,8 +119,15 @@ $(document).ready(function () {
                     $viewContent.removeClass("view-content")
                 }
                 $copyViewBtn[0].copyContent = content
-                $viewContent[0].innerHTML = codeObj.value
-                console.log(codeObj);
+                const divBlock = document.createElement("div");
+                if (isMarkdown(content)) {
+                    console.log("is markdown");
+                    divBlock.innerHTML = marked.parse(content);
+                } else {
+                    divBlock.innerHTML = content
+                }
+                hljs.highlightElement(divBlock)
+                $viewContent[0].innerHTML = divBlock.innerHTML
                 $viewModal.modal('open')
             }
             $(copyIcon).on('click', onClickCallback)

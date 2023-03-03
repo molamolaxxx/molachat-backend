@@ -4,6 +4,7 @@ checkVersion = function (callback) {
         url: getPrefix() + "/chat/app/version",
         type: "get",
         dataType: "json",
+        timeout:1000,
         success: function(result) {
             if (version !== result.data) {
                 // 提示下载新版本

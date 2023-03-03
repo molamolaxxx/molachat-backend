@@ -298,3 +298,39 @@ netPing = function (url, onFailed) {
     });
 }
 
+const set = new Set()
+notRepeatToast = function(message, time) {
+    if (set.has(message))  {
+        return
+    }
+    set.add(message)
+    showToast(message, time)
+    setTimeout(function() {
+        set.delete(message)
+    }, time)
+}
+
+isMarkdown = function(text) {
+    var regex = {
+        h1: /^#\s/,
+        h2: /^#{2}\s/,
+        h3: /^#{3}\s/,
+        h4: /^#{4}\s/,
+        h5: /^#{5}\s/,
+        h6: /^#{6}\s/,
+        ul: /^[\*\-]\s/,
+        ol: /^[0-9]+\.\s/,
+        bolditalic: /[\_\*]{3}[\S]+[\_\*]{3}|[\_\*]{2}[\S]+[\_\*]{2}|[\_]{1}[\S]+[\_]{1}|[\*]{1}[\S]+[\*]{1}/,
+        codelang: /^```/gm,
+        img: /!\[[^\]]*\]\((.*?)\)/g,
+        link: /\[([^\]]+)\]\((.*?)\)/g
+    };
+    var isMd = false;
+    for (var key in regex) {
+        if (text.match(regex[key])) {
+            isMd = true;
+            break;
+        }
+    }
+    return isMd;
+}

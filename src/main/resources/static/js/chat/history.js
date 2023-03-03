@@ -33,6 +33,9 @@ $(document).ready(function() {
                 $historyModal.modal("open")
             },
             function() {
+                while($historyList.firstChild) {
+                    $historyList.removeChild($historyList.firstChild)
+                }
                 $historyModal.modal("open")
             }
         )

@@ -8,6 +8,7 @@ import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.Options;
 import org.iq80.leveldb.impl.Iq80DBFactory;
 
+import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
@@ -79,6 +80,17 @@ public class LevelDBClient {
             }
         }
         return result;
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (db != null)  {
+            try {
+                db.close();
+            } catch (IOException e) {
+                log.error("levelDB, close error accur", e);
+            }
+        }
     }
 
 }

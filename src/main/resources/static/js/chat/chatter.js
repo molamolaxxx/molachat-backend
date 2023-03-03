@@ -16,6 +16,7 @@ $(document).ready(function () {
         url: getPrefix() + "/chat/chatter/common/chatter",
         type: "get",
         dataType: "json",
+        timeout:3000,
         success: function(result) {
             var chatterList = result.data;
             for (let i in chatterList) {
