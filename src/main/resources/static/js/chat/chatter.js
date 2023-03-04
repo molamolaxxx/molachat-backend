@@ -9,23 +9,27 @@ $(document).ready(function () {
     var indexMap;
 
     // chatterId -> Chatter
-    var chatterMap = new Map();
+    var chatterMap;
 
-    // 初始化chatterMap
-    $.ajax({
-        url: getPrefix() + "/chat/chatter/common/chatter",
-        type: "get",
-        dataType: "json",
-        timeout:3000,
-        success: function(result) {
-            var chatterList = result.data;
-            for (let i in chatterList) {
-                chatterMap.set(chatterList[i].id, chatterList[i])
+    initChatterMap = function() {
+        chatterMap = new Map();
+        // 初始化chatterMap
+        $.ajax({
+            url: getPrefix() + "/chat/chatter/common/chatter",
+            type: "get",
+            dataType: "json",
+            timeout:3000,
+            success: function(result) {
+                var chatterList = result.data;
+                for (let i in chatterList) {
+                    chatterMap.set(chatterList[i].id, chatterList[i])
+                }
+            },
+            error: function(result) {
             }
-        },
-        error: function(result) {
-        }
-    });
+        });
+    }
+    initChatterMap()
 
     /**
      * 返回聊天者的dom

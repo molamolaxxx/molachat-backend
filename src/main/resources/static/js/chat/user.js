@@ -98,6 +98,7 @@ $(document).ready(function() {
     }
 
     recoverChatter = function() {
+        initChatterMap()
         addSpinner("app_content", true)
         // 先检测有没有残留的chatterId
         var preId = localStorage.getItem("preId");
