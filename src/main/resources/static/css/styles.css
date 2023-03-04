@@ -260,6 +260,13 @@ body {
     transition: opacity 0.3s;
 }
 
+.history_delete {
+    position: absolute;
+    right: 0rem;
+    padding: 1.1rem;
+    color: #888888;
+}
+
 .contact__status.online {
     opacity: 1;
     border: 5px solid #50b7f1;
@@ -339,6 +346,17 @@ svg {
     transition: opacity 0.2s 0;
     opacity: 0;
 }
+
+.swal_delete {
+    background-color: #ff0000a1;
+    margin-right: 0.5rem;
+    width: 8rem;
+}
+
+.swal_connect {
+    width: 8rem;
+}
+
 
 .chat {
     display: none;

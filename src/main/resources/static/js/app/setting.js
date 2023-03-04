@@ -9,17 +9,16 @@ var _ip = ipAndPort['ip']
 // 端口
 var _port = ipAndPort['port']
 
-var isApp = false
+var isApp = location.href.indexOf("http") === -1 ? true : false
 
 function getIpAndPort() {
     var ip = ""
     var port = ""
     // 判断是否web页面
-    if (location.href.indexOf("file://") >= 0) {
+    if (isApp) {
         // web-app， 此处可进行服务器选择
         ip = localStorage.getItem("_ip") ? localStorage.getItem("_ip") : DEFAULT_HOST
         port = localStorage.getItem("_port") ? localStorage.getItem("_port") :DEFAULT_PORT
-        isApp = true
     } else {
         // web页面，不可进行选择
         let str = location.href.split("/")[2]
@@ -109,4 +108,46 @@ function testHostValid() {
             return false
         }
     })
+}
+
+generateUUID = function() {
+    let d = new Date().getTime();
+    let uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      let r = (d + Math.random()*16)%16 | 0;
+      d = Math.floor(d/16);
+      return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    });
+    return uuid;
+  }
+const lock = generateUUID()
+window.onbeforeunload = isApp ? undefined : function() {
+    var warning="确认退出?";          
+    return warning;
+}
+window.onunload = function (){  
+    if (isApp) {
+        return
+    }
+    if (getChatterId() && lock === localStorage.getItem("pageLock")) {
+        localStorage.removeItem("pageLock")
+    }
+}  
+
+addPageLock = function() {
+    if (isApp) {
+        return true
+    }
+    const curLock = localStorage.getItem("pageLock") 
+    const heartBeat = localStorage.getItem("lastHeartBeat")
+    if (!heartBeat) {
+        localStorage.setItem("pageLock", lock)
+        return true
+    }
+    // 存在不属于当前页面的锁，且心跳时间小于两分钟（足够新鲜＋再给我两分钟）
+    if (curLock && curLock !== lock && heartBeat && Date.now() - heartBeat < 300 * 1000) {
+        swal("sorry", "请确保相同浏览器只开一个应用", "info")
+        return false
+    }
+    localStorage.setItem("pageLock", lock)
+    return true
 }

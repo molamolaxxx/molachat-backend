@@ -81,6 +81,12 @@ $(document).ready(function() {
             $(statusDoc).addClass("contact__status");
             $(statusDoc).addClass("online");
             mainDoc.append(statusDoc);
+        } else {
+            var statusDoc = document.createElement("span");
+            $(statusDoc).addClass("history_delete");
+            statusDoc.innerHTML = '<i class="material-icons"style="font-size: 18px;">delete</i>'
+            mainDoc.append(statusDoc);
+            statusDoc.host = name
         }
         mainDoc.idx = idx
         mainDoc.host = name
@@ -93,9 +99,32 @@ $(document).ready(function() {
             showToast("已处于当前服务器",1000)
             return
         }
-        swal("切换服务器","是否切换服务器地址到["+this.host+"]?\n","info").then((change) => {
+        swal("切换服务器","是否切换到["+this.host+"]?\n","info").then((change) => {
             if (change) {
                 changeServer(this.host)
+                $serverModal.modal("close")
+            }
+        });
+    })
+
+    $(document).on("click", ".history_delete", function(e) {
+        e.stopPropagation();
+        const self = this
+        swal({
+            title: "删除服务器与用户信息",
+            text: "是否删除[" + self.host + "]的所有数据?\n",
+            icon: "warning",
+            buttons: {
+                confirm: {
+                    text: "确认",
+                    value: "delete",
+                    className: "swal_delete"
+                }
+            }
+        }).then((value) => {
+            if (value) {
+                localStorage.removeItem("_host_" + self.host)
+                showToast("删除成功", 1000)
                 $serverModal.modal("close")
             }
         });
@@ -122,7 +151,7 @@ $(document).ready(function() {
                     showToast("已处于当前服务器",1000)
                     return
                 }
-                swal("切换服务器","是否切换服务器地址到["+value+"]?\n","info").then((change) => {
+                swal("切换服务器","是否切换到["+value+"]?\n","info").then((change) => {
                     if (change) {
                         changeServer(value)
                     }
@@ -139,14 +168,8 @@ $(document).ready(function() {
         // 判断server是否可用
         checkConnect(host, (res) => {
             if (res === 'error') {
-                const contains = localStorage.getItem("_host_" + host)
-                swal("连接失败", "服务器不可用" +(contains ? "，是否删除?" : ""),"info").then((change) => {
-                    if (change) {
-                        localStorage.removeItem("_host_" + host)
-                        if (contains) {
-                            showToast("删除成功",1000)
-                        }
-                    }
+                swal("连接失败", "服务器连接超时，请切换其他服务器","info").then((change) => {
+                    openServerModal()
                 });
                 return
             }
@@ -222,10 +245,8 @@ $(document).ready(function() {
     checkHost = function() {
         checkConnect(getHost(), function(res) {
             if (res === 'error') {
-                swal("连接失败", "服务器不可用，是否切换其他服务器?","info").then((change) => {
-                    if (change) {
-                        openServerModal()
-                    }
+                swal("连接失败", "服务器连接超时，请切换其他服务器","info").then((change) => {
+                    openServerModal()
                 });
             }
         })

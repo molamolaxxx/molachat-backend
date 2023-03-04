@@ -201,6 +201,15 @@ $(document).ready(function() {
         $ripple.css({ top: y, left: x });
         elem.append($ripple);
     }
+    rippleWithPos = function(elem, pageX, pageY) {
+        var elTop = elem.offset().top,
+            elLeft = elem.offset().left,
+            x = pageX - elLeft,
+            y = pageY - elTop;
+        var $ripple = $("<div class='ripple-contact'></div>");
+        $ripple.css({ top: y, left: x });
+        elem.append($ripple);
+    }
     //初始化提示框
     $('.tooltipped').tooltip({ delay: 50 });
 

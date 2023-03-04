@@ -68,6 +68,10 @@ $(document).ready(function() {
                 className: "none-bg",
                 button: false,
             }).then((value) => {
+                    // 相同域名重复登录校验
+                    if (!addPageLock()) {
+                        return false
+                    }
                     setChatterName(chatterName)
                     //头像
                     setChatterImage((null == localStorage.getItem("imgUrl") ? "img/mola.png" : localStorage.getItem("imgUrl")))
@@ -350,7 +354,6 @@ $(document).ready(function() {
 
     var socketErrorTimes = 0
     linkToServer = function() {
-
         if (chatterId == null) {
             swal("error", "未获取chatterId，连接服务器失败!", "error");
             return;
@@ -481,6 +484,7 @@ $(document).ready(function() {
         if (!socket) {
             return
         }
+        localStorage.setItem("lastHeartBeat", Date.now())
         if (socket.readyState == WebSocket.CLOSED) {
             addSpinner("app_content", true)
             reconnect(()=>{heartBeatErrorCnt=0;removeSpinner()});
