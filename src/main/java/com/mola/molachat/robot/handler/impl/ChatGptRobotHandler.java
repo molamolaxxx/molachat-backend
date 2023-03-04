@@ -13,7 +13,6 @@ import com.mola.molachat.robot.bus.GptRobotEventBus;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
-import com.mola.molachat.server.ChatServer;
 import com.mola.molachat.service.ServerService;
 import com.mola.molachat.service.SessionService;
 import com.mola.molachat.service.http.HttpService;
@@ -56,6 +55,10 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
 
     private static final String ALERT_TEXT = "刚刚开小差了, 请重试";
 
+    private static final int RETRY_TIME = 12;
+
+    private static final int CHANGE_API_KEY_TIME = 8;
+
     @Override
     public MessageSendAction handler(MessageReceiveEvent messageReceiveEvent) {
         MessageSendAction messageSendAction = new MessageSendAction();
@@ -67,9 +70,9 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             usedAppKey = RandomUtils.getRandomElement(gpt3ChildTokens);
         }
         // 失败重试
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < RETRY_TIME; i++) {
             // 子账号多次都失败，换成主账号，移除子账号
-            if (i > 8 && !StringUtils.equals(usedAppKey, robotChatter.getApiKey())) {
+            if (i > CHANGE_API_KEY_TIME && !StringUtils.equals(usedAppKey, robotChatter.getApiKey())) {
                 log.error("sub api key error retry failed all time, switch main remove sub, sub api key = " + usedAppKey);
                 if (gpt3ChildTokens.contains(usedAppKey)) {
                     final String usedAppKeyFinal = usedAppKey;
@@ -106,6 +109,14 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 }
             } catch (Exception e) {
                 log.error("RemoteRobotChatHandler ChatGptRobotHandler error retry, time = " + i + " event:" + JSONObject.toJSONString(messageReceiveEvent), e);
+                // 网络失败
+                if (StringUtils.containsIgnoreCase(e.getMessage(), "Network is unreachable")
+                        || StringUtils.containsIgnoreCase(e.getMessage(), "Connection refused")
+                        && i >= CHANGE_API_KEY_TIME / 2) {
+                    // 不可用告警
+                    messageSendAction.setResponsesText(ALERT_TEXT);
+                    return messageSendAction;
+                }
                 continue;
             }
             log.info("RemoteRobotChatHandler ChatGptRobotHandler success, apiKey=" +  usedAppKey + " action:" + JSONObject.toJSONString(messageSendAction));
@@ -113,7 +124,6 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         }
         try {
             log.error("RemoteRobotChatHandler ChatGptRobotHandler error retry failed all time , event:" + JSONObject.toJSONString(messageReceiveEvent));
-            ChatServer server = serverService.selectByChatterId(messageReceiveEvent.getMessage().getChatterId());
             // 不可用告警
             messageSendAction.setResponsesText(ALERT_TEXT);
         } catch (Exception exception) {
