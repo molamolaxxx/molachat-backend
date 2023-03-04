@@ -110,8 +110,9 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             } catch (Exception e) {
                 log.error("RemoteRobotChatHandler ChatGptRobotHandler error retry, time = " + i + " event:" + JSONObject.toJSONString(messageReceiveEvent), e);
                 // 网络失败
-                if (StringUtils.containsIgnoreCase(e.getMessage(), "Network is unreachable")
-                        || StringUtils.containsIgnoreCase(e.getMessage(), "Connection refused")
+                if ((StringUtils.containsIgnoreCase(e.getMessage(), "Network is unreachable")
+                        || StringUtils.containsIgnoreCase(e.getMessage(), "Bad Gateway")
+                        || StringUtils.containsIgnoreCase(e.getMessage(), "Connection refused"))
                         && i >= CHANGE_API_KEY_TIME / 2) {
                     // 不可用告警
                     messageSendAction.setResponsesText(ALERT_TEXT);
