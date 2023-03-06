@@ -128,7 +128,7 @@ window.onunload = function (){
     if (isApp) {
         return
     }
-    if (getChatterId() && lock === localStorage.getItem("pageLock")) {
+    if (getChatterId()) {
         localStorage.removeItem("pageLock")
     }
 }  
