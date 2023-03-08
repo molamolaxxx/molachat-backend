@@ -144,7 +144,6 @@ public class ChatterServiceImpl implements ChatterService {
 
     @Override
     public List<ChatterDTO> list() {
-
         List<Chatter> chatterList = chatterFactory.list();
         List<ChatterDTO> chatterDTOList = chatterList.stream().map(e -> {
             ChatterDTO dto =  (ChatterDTO)BeanUtilsPlug.copyPropertiesReturnTarget(e, new ChatterDTO());

@@ -1,16 +1,17 @@
 package com.mola.molachat.schedule;
 
+import com.mola.molachat.config.AppConfig;
 import com.mola.molachat.entity.dto.ChatterDTO;
 import com.mola.molachat.enumeration.ChatterStatusEnum;
 import com.mola.molachat.enumeration.ChatterTagEnum;
 import com.mola.molachat.service.ChatterService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,8 +28,11 @@ public class ChatterScheduleTask {
 
     private static final float DELETE_RATE = 0.5f;
 
-    @Autowired
+    @Resource
     private ChatterService chatterService;
+
+    @Resource
+    private AppConfig appConfig;
 
     /**
      * 检查chatter最后在线时间，删除长时间不在线的chatter
@@ -36,6 +40,10 @@ public class ChatterScheduleTask {
     @Scheduled(fixedRate = 60000*10)
     private void deleteChatters() {
         List<ChatterDTO> chatters = chatterService.list();
+        // 如果chatter个数小于等于最大保留的chatter个数，则不用执行删除操作
+        if (appConfig.getMaxRemainChatterCount() >= chatters.size()) {
+            return;
+        }
         // 获得逻辑删除的阈值
         Integer threshold = getDeleteThreshold(chatters).intValue();
         log.info("check:开始检查长时间离线chatter，逻辑删除阈值为：{}",threshold);

@@ -55,6 +55,13 @@ public class AppConfig {
      */
     private String httpProxy;
 
-
+    /**
+     * 机器人的外部apikey
+     */
     private Map<String, String> robotApiKey = Maps.newHashMap();
+
+    /**
+     * 最大保留chatter的数量
+     */
+    private Integer maxRemainChatterCount = 5;
 }
