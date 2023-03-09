@@ -64,4 +64,9 @@ public class AppConfig {
      * 最大保留chatter的数量
      */
     private Integer maxRemainChatterCount = 5;
+
+    /**
+     * 如果需要被服务器rpc代理（客户端），则需要开启，就会启动provider
+     */
+    private Boolean isRpcProxyClient = false;
 }
