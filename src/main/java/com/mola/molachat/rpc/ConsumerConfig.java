@@ -32,7 +32,7 @@ public class ConsumerConfig implements InitializingBean {
     private AppConfig appConfig;
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         if (!appConfig.getIsRpcProxyClient()) {
             log.error("配置为代理消费，不启动provider");
             return;
