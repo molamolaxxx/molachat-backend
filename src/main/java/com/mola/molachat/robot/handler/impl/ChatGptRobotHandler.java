@@ -65,6 +65,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
 
     private static final String ALERT_TEXT = "刚刚开小差了, 请重试";
 
+    private static final String PROXY_ERROR = "代理异常, 请重试";
+
     private static final int RETRY_TIME = 12;
 
     private static final int CHANGE_API_KEY_TIME = 8;
@@ -103,9 +105,16 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 body.put("messages", prompt);
                 String res = null;
                 if (appConfig.getIsRpcProxyClient()) {
-                    ServerResponse<String> serverResponse = reverseProxyService.getChatGptResFromProxyServer(body, usedAppKey);
-                    Assert.isTrue(serverResponse.getStatus() == ResponseCode.SUCCESS.getCode(), "rpc反向代理失败，msg = " + serverResponse.getMsg());
-                    res = serverResponse.getData();
+                    try {
+                        ServerResponse<String> serverResponse = reverseProxyService.getChatGptResFromProxyServer(body, usedAppKey);
+                        Assert.isTrue(serverResponse.getStatus() == ResponseCode.SUCCESS.getCode(), "rpc反向代理失败，msg = " + serverResponse.getMsg());
+                        res = serverResponse.getData();
+                    } catch (Exception e) {
+                        log.error("反向代理异常", e);
+                        // 不可用告警
+                        messageSendAction.setResponsesText(PROXY_ERROR);
+                        return messageSendAction;
+                    }
                 } else {
                     res = HttpService.INSTANCE.post("https://api.openai.com/v1/chat/completions", body, 300000, headers.toArray(new Header[]{}));
                 }
@@ -179,7 +188,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 if (content.length() > 200) {
                     content = content.substring(0, 200);
                 }
-                if (ALERT_TEXT.equals(content)) {
+                if (ALERT_TEXT.equals(content) || PROXY_ERROR.equals(content)) {
                     continue;
                 }
                 if (message.getChatterId().equals(messageReceiveEvent.getRobotChatter().getId())) {

@@ -22,7 +22,7 @@ import javax.annotation.Resource;
 @Configuration
 public class ConsumerConfig implements InitializingBean {
 
-    @RpcConsumer(reverseMode = true, timeout = 120000)
+    @RpcConsumer(reverseMode = true, timeout = 90000)
     private ReverseProxyService reverseProxyService;
 
     @Resource
