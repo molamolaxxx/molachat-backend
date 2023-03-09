@@ -22,7 +22,7 @@ import javax.annotation.Resource;
 @Configuration
 public class ConsumerConfig implements InitializingBean {
 
-    @RpcConsumer(reverseMode = true)
+    @RpcConsumer(reverseMode = true, timeout = 120000)
     private ReverseProxyService reverseProxyService;
 
     @Resource
@@ -33,17 +33,21 @@ public class ConsumerConfig implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        if (!appConfig.getIsRpcProxyClient()) {
-            log.error("配置为代理消费，不启动provider");
+        if (appConfig.getIsRpcProxyClient()) {
+            log.error("配置为代理消费者，不启动provider");
             return;
         }
-        RpcMetaData rpcMetaData = new RpcMetaData();
-        rpcMetaData.setReverseMode(Boolean.TRUE);
-        rpcMetaData.setReverseModeConsumerAddress(Lists.newArrayList("120.27.230.24:9003"));
-        RpcInvoker.provider(
-                ReverseProxyService.class,
-                reverseProxyServiceProvider,
-                rpcMetaData
-        );
+        try {
+            RpcMetaData rpcMetaData = new RpcMetaData();
+            rpcMetaData.setReverseMode(Boolean.TRUE);
+            rpcMetaData.setReverseModeConsumerAddress(Lists.newArrayList("120.27.230.24:9003"));
+            RpcInvoker.provider(
+                    ReverseProxyService.class,
+                    reverseProxyServiceProvider,
+                    rpcMetaData
+            );
+        } catch (Exception e) {
+            log.error("provider反向代理失败, msg = "+ e.getMessage());
+        }
     }
 }

@@ -4,6 +4,9 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.mola.molachat.common.ResponseCode;
+import com.mola.molachat.common.ServerResponse;
+import com.mola.molachat.config.AppConfig;
 import com.mola.molachat.data.OtherDataInterface;
 import com.mola.molachat.entity.Message;
 import com.mola.molachat.entity.RobotChatter;
@@ -13,6 +16,7 @@ import com.mola.molachat.robot.bus.GptRobotEventBus;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
+import com.mola.molachat.rpc.client.ReverseProxyService;
 import com.mola.molachat.service.ServerService;
 import com.mola.molachat.service.SessionService;
 import com.mola.molachat.service.http.HttpService;
@@ -53,6 +57,12 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     @Resource
     private OtherDataInterface otherDataInterface;
 
+    @Resource
+    private ReverseProxyService reverseProxyService;
+
+    @Resource
+    private AppConfig appConfig;
+
     private static final String ALERT_TEXT = "刚刚开小差了, 请重试";
 
     private static final int RETRY_TIME = 12;
@@ -91,7 +101,15 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 List<Map<String, String>> prompt = getPrompt(messageReceiveEvent);
                 log.info(JSONObject.toJSONString(prompt));
                 body.put("messages", prompt);
-                String res = HttpService.INSTANCE.post("https://api.openai.com/v1/chat/completions", body, 300000, headers.toArray(new Header[]{}));
+                String res = null;
+                if (appConfig.getIsRpcProxyClient()) {
+                    ServerResponse<String> serverResponse = reverseProxyService.getChatGptResFromProxyServer(body, usedAppKey);
+                    Assert.isTrue(serverResponse.getStatus() == ResponseCode.SUCCESS.getCode(), "rpc反向代理失败，msg = " + serverResponse.getMsg());
+                    res = serverResponse.getData();
+                } else {
+                    res = HttpService.INSTANCE.post("https://api.openai.com/v1/chat/completions", body, 300000, headers.toArray(new Header[]{}));
+                }
+
                 JSONObject jsonObject = JSONObject.parseObject(res);
                 Assert.isTrue(jsonObject.containsKey("choices"), "choices is empty");
                 JSONArray choices = jsonObject.getJSONArray("choices");
