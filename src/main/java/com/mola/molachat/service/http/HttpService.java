@@ -176,9 +176,10 @@ public enum HttpService {
             if (isSuccess(statusCode)) {
                 return EntityUtils.toString(response.getEntity());
             } else {
-                String errorMsg = EntityUtils.toString(response.getEntity());
-                throw new RuntimeException(String.format("requestPost remote error, url=%s, code=%d, errMsg=%s",
-                        uri.toString(), statusCode, errorMsg));
+                String errorMsg = String.format("requestPost remote error, url=%s, code=%d, errMsg=%s",
+                        uri.toString(), statusCode, EntityUtils.toString(response.getEntity()));
+                logger.error(errorMsg);
+                throw new RuntimeException(errorMsg);
 
             }
         }, buildContext(timeout));
