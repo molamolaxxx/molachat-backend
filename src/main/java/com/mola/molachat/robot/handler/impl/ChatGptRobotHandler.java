@@ -111,6 +111,10 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                         res = serverResponse.getData();
                     } catch (Exception e) {
                         log.error("反向代理异常", e);
+                        if (e.getMessage().contains("You exceeded your current quota")) {
+                            final String usedAppKeyFinal = usedAppKey;
+                            otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.remove(usedAppKeyFinal));
+                        }
                         // 不可用告警
                         messageSendAction.setResponsesText(PROXY_ERROR);
                         return messageSendAction;
@@ -136,6 +140,13 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 }
             } catch (Exception e) {
                 log.error("RemoteRobotChatHandler ChatGptRobotHandler error retry, time = " + i + " event:" + JSONObject.toJSONString(messageReceiveEvent), e);
+                if (StringUtils.containsIgnoreCase(e.getMessage(), "You exceeded your current quota")) {
+                    final String usedAppKeyFinal = usedAppKey;
+                    otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.remove(usedAppKeyFinal));
+                    // 不可用告警
+                    messageSendAction.setResponsesText(ALERT_TEXT);
+                    return messageSendAction;
+                }
                 // 网络失败
                 if ((StringUtils.containsIgnoreCase(e.getMessage(), "Network is unreachable")
                         || StringUtils.containsIgnoreCase(e.getMessage(), "Bad Gateway")
