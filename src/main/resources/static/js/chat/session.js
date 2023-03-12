@@ -114,7 +114,7 @@ $(document).ready(function () {
         }
         let laterDuring = isSideBarOutside() ? 100 : 1000
         setTimeout(function(){
-            document.querySelector(".chat__messages").scrollBy({ top: 12500, left: 0, behavior: 'smooth' });
+            document.querySelector(".chat__messages").scrollBy({ top: 500000, left: 0, behavior: 'smooth' });
         },laterDuring);
         
         
@@ -163,7 +163,7 @@ $(document).ready(function () {
                 
                 $messageBox.append(dom);
                 setTimeout(()=> {
-                    document.querySelector(".chat__messages").scrollBy({ top: 12500, left: 0, behavior: 'smooth' });
+                    document.querySelector(".chat__messages").scrollBy({ top: 500000, left: 0, behavior: 'smooth' });
                 },100)
                 
                 // 判断是不是当前页
@@ -218,7 +218,7 @@ $(document).ready(function () {
 
             $messageBox.append(dom);
             setTimeout(()=> {
-                document.querySelector(".chat__messages").scrollBy({ top: 12500, left: 0, behavior: 'smooth' });
+                document.querySelector(".chat__messages").scrollBy({ top: 500000, left: 0, behavior: 'smooth' });
             },100)
             // 判断是不是当前页
             if (!isCurrentPage) {
