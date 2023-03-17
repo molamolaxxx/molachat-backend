@@ -20,6 +20,7 @@ public class HttpConfig implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        HttpService.INSTANCE.init(appConfig.getHttpProxy());
+        HttpService.PROXY.init(appConfig.getHttpProxy());
+        HttpService.INSTANCE.init(null);
     }
 }

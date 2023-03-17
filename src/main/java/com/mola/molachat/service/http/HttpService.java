@@ -42,7 +42,7 @@ import static org.apache.http.client.config.RequestConfig.custom;
  **/
 public enum HttpService {
 
-    INSTANCE;
+    PROXY, INSTANCE;
 
     private Logger logger = LoggerFactory.getLogger(HttpService.class);
 

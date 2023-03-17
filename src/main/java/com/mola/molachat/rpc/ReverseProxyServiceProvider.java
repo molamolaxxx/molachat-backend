@@ -29,7 +29,7 @@ public class ReverseProxyServiceProvider implements ReverseProxyService {
             List<Header> headers = new ArrayList<>();
             headers.add(new BasicHeader("Content-Type", "application/json"));
             headers.add(new BasicHeader("Authorization", "Bearer " + appKey));
-            String res = HttpService.INSTANCE.post("https://api.openai.com/v1/chat/completions", body, 300000, headers.toArray(new Header[]{}));
+            String res = HttpService.PROXY.post("https://api.openai.com/v1/chat/completions", body, 300000, headers.toArray(new Header[]{}));
             return ServerResponse.createBySuccess(res);
         } catch (Exception e) {
             log.error("getChatGptResFromProxyServer error, appKey = " + appKey, e);
