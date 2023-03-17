@@ -1,5 +1,7 @@
 package com.mola.molachat.robot.handler.impl;
 
+import com.mola.molachat.entity.Message;
+import com.mola.molachat.entity.RobotChatter;
 import com.mola.molachat.entity.dto.SessionDTO;
 import com.mola.molachat.robot.action.EmptyAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
@@ -42,5 +44,18 @@ public class RobotHeuristicHandler implements IRobotEventHandler<MessageSendEven
     @Override
     public Class<? extends BaseRobotEvent> acceptEvent() {
         return MessageSendEvent.class;
+    }
+
+
+    public static MessageSendEvent getHeuristicEvent(String content, RobotChatter robotChatter, String sessionId) {
+        Message msg = new Message();
+        msg.setContent("图片正在光速生成中，请耐心等待喔~");
+        msg.setChatterId(robotChatter.getId());
+        MessageSendEvent messageSendEvent = new MessageSendEvent();
+        messageSendEvent.setMessage(msg);
+        messageSendEvent.setRobotChatter(robotChatter);
+        messageSendEvent.setSessionId(sessionId);
+        messageSendEvent.setDelayTime(1000L);
+        return messageSendEvent;
     }
 }

@@ -2,6 +2,7 @@ package com.mola.molachat.robot.bus;
 
 import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.robot.handler.impl.ImageGenerateChatHandler;
+import com.mola.molachat.robot.handler.impl.RobotHeuristicHandler;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -20,8 +21,10 @@ public class ImageGenerateRobotEventBus extends RobotEventBus {
     @Resource
     private ImageGenerateChatHandler imageGenerateChatHandler;
 
+    @Resource
+    private RobotHeuristicHandler robotHeuristicHandler;
 
     protected List<IRobotEventHandler> getRobotEventHandlers() {
-        return Arrays.asList(imageGenerateChatHandler);
+        return Arrays.asList(imageGenerateChatHandler, robotHeuristicHandler);
     }
 }

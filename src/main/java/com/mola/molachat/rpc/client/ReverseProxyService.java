@@ -14,4 +14,5 @@ public interface ReverseProxyService {
      * @return
      */
     ServerResponse<String> getChatGptResFromProxyServer(JSONObject body, String appKey);
+
 }
