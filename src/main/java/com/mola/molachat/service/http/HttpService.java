@@ -185,6 +185,30 @@ public enum HttpService {
         }, buildContext(timeout));
     }
 
+    public byte[] postReturnByte(String url, JSONObject body, int timeout, Header[] headers) throws Exception {
+        bootMonitorThread();
+        URI uri = new URIBuilder(url).build();
+        HttpPost httpPost = new HttpPost(uri);
+        if (null != body) {
+            httpPost.setEntity(new StringEntity(body.toJSONString(), ContentType.APPLICATION_JSON));
+        }
+        if (null != headers) {
+            httpPost.setHeaders(headers);
+        }
+        return httpClient.execute(httpPost, response -> {
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (isSuccess(statusCode)) {
+                return EntityUtils.toByteArray(response.getEntity());
+            } else {
+                String errorMsg = String.format("requestPost remote error, url=%s, code=%d, errMsg=%s",
+                        uri.toString(), statusCode, EntityUtils.toString(response.getEntity()));
+                logger.error(errorMsg);
+                throw new RuntimeException(errorMsg);
+
+            }
+        }, buildContext(timeout));
+    }
+
     public String post(String url, JSONObject body, int timeout) throws Exception {
         return post(url, body, timeout, null);
     }

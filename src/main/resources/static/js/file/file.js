@@ -226,7 +226,7 @@ $(document).ready(function() {
         
         //滚动
         setTimeout(()=> {
-            document.querySelector(".chat__messages").scrollBy({ top: 12500, left: 0, behavior: 'smooth' });
+            document.querySelector(".chat__messages").scrollBy({ top: 500000, left: 0, behavior: 'smooth' });
         },100)
         //设置相关监听器 1.点击取消上传监听 2.鼠标移动放大监听
         $("#cancel" + xhr.currentUploadFileId).on("click", function() {

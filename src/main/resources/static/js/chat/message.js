@@ -150,7 +150,7 @@ $(document).ready(function () {
 
         //滚动
         setTimeout(()=> {
-            document.querySelector(".chat__messages").scrollBy({ top: 12500, left: 0, behavior: 'smooth' });
+            document.querySelector(".chat__messages").scrollBy({ top: 500000, left: 0, behavior: 'smooth' });
         },100)
     }
 

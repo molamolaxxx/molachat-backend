@@ -179,13 +179,6 @@ public class RobotServiceImpl implements RobotService, InitializingBean {
         }
 
         private Message getMessageByAction(BaseAction action) {
-            // 普通消息构建
-            if (action instanceof MessageSendAction) {
-                Message msg = new Message();
-                msg.setContent(((MessageSendAction)action).getResponsesText());
-                msg.setChatterId(robot.getId());
-                return msg;
-            }
             // 文件消息构建
             if (action instanceof FileMessageSendAction) {
                 //创建message
@@ -201,6 +194,13 @@ public class RobotServiceImpl implements RobotService, InitializingBean {
 //                    fileMessage.setCommon(true);
 //                }
                 return fileMessage;
+            }
+            // 普通消息构建
+            if (action instanceof MessageSendAction) {
+                Message msg = new Message();
+                msg.setContent(((MessageSendAction)action).getResponsesText());
+                msg.setChatterId(robot.getId());
+                return msg;
             }
             return null;
         }

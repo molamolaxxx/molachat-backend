@@ -49,7 +49,7 @@ public class RobotConfig {
     private void addRobot(String appKey) {
         Chatter chatter = chatterFactory.select(appKey);
         RobotChatter robot = null;
-        if (null == chatter) {
+        if (null == chatter && "chatGpt".equals(appKey)) {
             robot = new RobotChatter();
             robot.setId(appKey);
             robot.setName("翻斗鱼");
@@ -61,6 +61,19 @@ public class RobotConfig {
             robot.setAppKey(appKey);
             robot.setApiKey(appConfig.getRobotApiKey().get(appKey));
             robot.setEventBusBeanName("chatGptRobotEventBus");
+            chatterFactory.create(robot);
+        } if (null == chatter && "stableDiffusion".equals(appKey)) {
+            robot = new RobotChatter();
+            robot.setId(appKey);
+            robot.setName("小图师");
+            robot.setSignature("请输入文字，我来生成图片");
+            robot.setStatus(ChatterStatusEnum.ONLINE.getCode());
+            robot.setTag(ChatterTagEnum.ROBOT.getCode());
+            robot.setImgUrl("img/blue.jpg");
+            robot.setIp("127.0.0.1");
+            robot.setAppKey(appKey);
+            robot.setApiKey(appConfig.getRobotApiKey().get(appKey));
+            robot.setEventBusBeanName("imageGenerateRobotEventBus");
             chatterFactory.create(robot);
         } else {
             robot = (RobotChatter) BeanUtilsPlug.copyPropertiesReturnTarget(chatter, new RobotChatter());
