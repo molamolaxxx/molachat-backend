@@ -68,7 +68,7 @@ public class ImageGenerateChatHandler implements IRobotEventHandler<MessageRecei
                 messageSendAction.setFileName(fileName);
                 imageGenerateRobotEventBus.handler(
                         RobotHeuristicHandler.getHeuristicEvent(
-                                "图片已生成完成，请查收～", robotChatter, messageReceiveEvent.getSessionId()));
+                                "图片已生成，请查收～", robotChatter, messageReceiveEvent.getSessionId()));
                 return messageSendAction;
             }
             // 不可用告警
