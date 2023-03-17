@@ -49,7 +49,7 @@ public class RobotHeuristicHandler implements IRobotEventHandler<MessageSendEven
 
     public static MessageSendEvent getHeuristicEvent(String content, RobotChatter robotChatter, String sessionId) {
         Message msg = new Message();
-        msg.setContent("图片正在光速生成中，请耐心等待喔~");
+        msg.setContent(content);
         msg.setChatterId(robotChatter.getId());
         MessageSendEvent messageSendEvent = new MessageSendEvent();
         messageSendEvent.setMessage(msg);
