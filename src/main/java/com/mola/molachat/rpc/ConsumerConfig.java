@@ -40,7 +40,7 @@ public class ConsumerConfig implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        if (appConfig.getIsRpcProxyClient()) {
+        if (!appConfig.getStartProxyProvider()) {
             log.error("端点配置为代理消费者");
             return;
         }

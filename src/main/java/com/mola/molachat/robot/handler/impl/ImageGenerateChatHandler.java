@@ -3,6 +3,7 @@ package com.mola.molachat.robot.handler.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.mola.molachat.common.ResponseCode;
 import com.mola.molachat.common.ServerResponse;
+import com.mola.molachat.config.AppConfig;
 import com.mola.molachat.config.SelfConfig;
 import com.mola.molachat.entity.RobotChatter;
 import com.mola.molachat.robot.action.FileMessageSendAction;
@@ -11,6 +12,7 @@ import com.mola.molachat.robot.bus.ImageGenerateRobotEventBus;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
+import com.mola.molachat.rpc.ImageGenerateServiceProvider;
 import com.mola.molachat.rpc.client.ImageGenerateService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.RandomStringUtils;
@@ -38,7 +40,13 @@ public class ImageGenerateChatHandler implements IRobotEventHandler<MessageRecei
     private SelfConfig config;
 
     @Resource
+    private AppConfig appConfig;
+
+    @Resource
     private ImageGenerateService imageGenerateService;
+
+    @Resource
+    private ImageGenerateServiceProvider imageGenerateServiceProvider;
 
     @Resource
     private ImageGenerateRobotEventBus imageGenerateRobotEventBus;
@@ -47,6 +55,9 @@ public class ImageGenerateChatHandler implements IRobotEventHandler<MessageRecei
     public MessageSendAction handler(MessageReceiveEvent messageReceiveEvent) {
         FileMessageSendAction messageSendAction = new FileMessageSendAction();
         try {
+            if (!appConfig.getUseProxyConsumer()) {
+                imageGenerateService = imageGenerateServiceProvider;
+            }
             String content = messageReceiveEvent.getMessage().getContent();
             RobotChatter robotChatter = messageReceiveEvent.getRobotChatter();
             Assert.notNull(robotChatter, "robotChatter is null");

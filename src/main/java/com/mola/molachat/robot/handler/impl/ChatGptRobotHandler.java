@@ -104,7 +104,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 log.info(JSONObject.toJSONString(prompt));
                 body.put("messages", prompt);
                 String res = null;
-                if (appConfig.getIsRpcProxyClient()) {
+                if (appConfig.getUseProxyConsumer()) {
                     try {
                         ServerResponse<String> serverResponse = reverseProxyService.getChatGptResFromProxyServer(body, usedAppKey);
                         Assert.isTrue(serverResponse.getStatus() == ResponseCode.SUCCESS.getCode(), "rpc反向代理失败，msg = " + serverResponse.getMsg());

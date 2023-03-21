@@ -46,7 +46,8 @@ app:
   robot-list: chatGpt,stableDiffusion
   robot-api-key:
     chatGpt : sk-xxx
-  is-rpc-proxy-client: false
+  use-proxy-consumer: false
+  start-proxy-provider: false
 #  http-proxy: 192.168.31.233:8080
 
 

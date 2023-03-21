@@ -66,7 +66,12 @@ public class AppConfig {
     private Integer maxRemainChatterCount = 5;
 
     /**
-     * 如果需要被服务器rpc代理（客户端），则需要开启，就会启动provider
+     * 是否启动作为代理的provider
      */
-    private Boolean isRpcProxyClient = false;
+    private Boolean startProxyProvider = false;
+
+    /**
+     * 是否消费代理
+     */
+    private Boolean useProxyConsumer = false;
 }
