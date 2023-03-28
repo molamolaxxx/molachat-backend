@@ -158,7 +158,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             Message message = messageList.get(i);
             if (StringUtils.isNotBlank(message.getContent())) {
                 String content = message.getContent();
-                if (content.length() > 200) {
+                if (content.length() > 200 && i != messageList.size() - 1) {
                     content = content.substring(0, 200);
                 }
                 if (ALERT_TEXT.equals(content)) {
