@@ -111,7 +111,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                         res = serverResponse.getData();
                     } catch (Exception e) {
                         log.error("反向代理异常", e);
-                        if (e.getMessage().contains("You exceeded your current quota")) {
+                        if (StringUtils.containsIgnoreCase(e.getMessage(), "You exceeded your current quota")
+                                || StringUtils.containsIgnoreCase(e.getMessage(), "Incorrect API key provided")) {
                             final String usedAppKeyFinal = usedAppKey;
                             otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.remove(usedAppKeyFinal));
                         }
