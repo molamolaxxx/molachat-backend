@@ -61,6 +61,11 @@ public class RefreshChatterAdviceExecutor implements AnnotationAdviceExecutor {
                 Integer s2 = o2.getStatus();
                 return s1 > s2 ? -1 : 1;
             });
+            for (ChatterDTO chatterDTO : chatterList) {
+                if (chatterDTO.isRobot()) {
+                    chatterDTO.setApiKey(null);
+                }
+            }
             for (ChatServer server : serverService.list()){
                 // 按group成员，对chatterList进行过滤
                 ChatterDTO chatter = chatterService.selectById(server.getChatterId());
