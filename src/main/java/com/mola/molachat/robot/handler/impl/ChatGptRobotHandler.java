@@ -63,9 +63,9 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     @Resource
     private AppConfig appConfig;
 
-    private static final String ALERT_TEXT = "刚刚开小差了, 请重试";
+    public static final String ALERT_TEXT = "刚刚开小差了, 请重试";
 
-    private static final String PROXY_ERROR = "代理异常, 请重试";
+    public static final String PROXY_ERROR = "代理异常, 请重试";
 
     private static final int RETRY_TIME = 12;
 
@@ -75,28 +75,29 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     public MessageSendAction handler(MessageReceiveEvent messageReceiveEvent) {
         MessageSendAction messageSendAction = new MessageSendAction();
         RobotChatter robotChatter = messageReceiveEvent.getRobotChatter();
+        Message message = messageReceiveEvent.getMessage();
         // 默认主账号
-        String usedAppKey = robotChatter.getApiKey();
+        String usedApiKey = robotChatter.getApiKey();
         Set<String> gpt3ChildTokens = otherDataInterface.getGpt3ChildTokens();
         if (gpt3ChildTokens.size() != 0) {
-            usedAppKey = RandomUtils.getRandomElement(gpt3ChildTokens);
+            usedApiKey = RandomUtils.getRandomElement(gpt3ChildTokens);
         }
         // 失败重试
         for (int i = 0; i < RETRY_TIME; i++) {
             // 子账号多次都失败，换成主账号，移除子账号
-            if (i > CHANGE_API_KEY_TIME && !StringUtils.equals(usedAppKey, robotChatter.getApiKey())) {
-                log.error("sub api key error retry failed all time, switch main remove sub, sub api key = " + usedAppKey);
-                if (gpt3ChildTokens.contains(usedAppKey)) {
-                    final String usedAppKeyFinal = usedAppKey;
-                    otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.remove(usedAppKeyFinal));
+            if (i > CHANGE_API_KEY_TIME && !StringUtils.equals(usedApiKey, robotChatter.getApiKey())) {
+                log.error("sub api key error retry failed all time, switch main remove sub, sub api key = " + usedApiKey);
+                if (gpt3ChildTokens.contains(usedApiKey)) {
+                    final String usedApiKeyFinal = usedApiKey;
+                    otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.remove(usedApiKeyFinal));
                 }
-                usedAppKey = robotChatter.getApiKey();
+                usedApiKey = robotChatter.getApiKey();
             }
             try {
                 // headers
                 List<Header> headers = new ArrayList<>();
                 headers.add(new BasicHeader("Content-Type", "application/json"));
-                headers.add(new BasicHeader("Authorization", "Bearer " + usedAppKey));
+                headers.add(new BasicHeader("Authorization", "Bearer " + usedApiKey));
                 // prompt 拼接最近20条历史记录
                 JSONObject body = new JSONObject();
                 body.put("model", "gpt-3.5-turbo");
@@ -106,20 +107,17 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 String res = null;
                 if (appConfig.getUseProxyConsumer()) {
                     try {
-                        ServerResponse<String> serverResponse = reverseProxyService.getChatGptResFromProxyServer(body, usedAppKey);
+                        ServerResponse<String> serverResponse = reverseProxyService.processChatGptRequestAndSendBackInProxy(
+                                body, usedApiKey, message.getChatterId(), robotChatter.getAppKey());
                         Assert.isTrue(serverResponse.getStatus() == ResponseCode.SUCCESS.getCode(), "rpc反向代理失败，msg = " + serverResponse.getMsg());
-                        res = serverResponse.getData();
                     } catch (Exception e) {
-                        log.error("反向代理异常", e);
-                        if (StringUtils.containsIgnoreCase(e.getMessage(), "You exceeded your current quota")
-                                || StringUtils.containsIgnoreCase(e.getMessage(), "Incorrect API key provided")) {
-                            final String usedAppKeyFinal = usedAppKey;
-                            otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.remove(usedAppKeyFinal));
-                        }
+                        log.error("提交任务到代理服务器异常", e);
                         // 不可用告警
                         messageSendAction.setResponsesText(PROXY_ERROR);
                         return messageSendAction;
                     }
+                    messageSendAction.setSkip(Boolean.TRUE);
+                    return messageSendAction;
                 } else {
                     res = HttpService.INSTANCE.post("https://api.openai.com/v1/chat/completions", body, 300000, headers.toArray(new Header[]{}));
                 }
@@ -142,7 +140,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             } catch (Exception e) {
                 log.error("RemoteRobotChatHandler ChatGptRobotHandler error retry, time = " + i + " event:" + JSONObject.toJSONString(messageReceiveEvent), e);
                 if (StringUtils.containsIgnoreCase(e.getMessage(), "You exceeded your current quota")) {
-                    final String usedAppKeyFinal = usedAppKey;
+                    final String usedAppKeyFinal = usedApiKey;
                     otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.remove(usedAppKeyFinal));
                     // 不可用告警
                     messageSendAction.setResponsesText(ALERT_TEXT);
@@ -159,7 +157,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 }
                 continue;
             }
-            log.info("RemoteRobotChatHandler ChatGptRobotHandler success, apiKey=" +  usedAppKey + " action:" + JSONObject.toJSONString(messageSendAction));
+            log.info("RemoteRobotChatHandler ChatGptRobotHandler success, apiKey=" +  usedApiKey + " action:" + JSONObject.toJSONString(messageSendAction));
             return messageSendAction;
         }
         try {

@@ -11,8 +11,9 @@ public interface ReverseProxyService {
     /**
      * 客户端代理服务端的chatgpt
      * @param body
+     * @param toChatterId 发送请求的人
      * @return
      */
-    ServerResponse<String> getChatGptResFromProxyServer(JSONObject body, String appKey);
+    ServerResponse<String> processChatGptRequestAndSendBackInProxy(JSONObject body, String apiKey, String toChatterId, String appKey);
 
 }
