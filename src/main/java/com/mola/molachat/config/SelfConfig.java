@@ -44,7 +44,7 @@ public class SelfConfig {
      * chatter消息缓冲队列最大消息数
      */
     @Value("${self-conf.max-message-queue-num}")
-    private int intMAX_MESSAGE_QUEUE_NUM;
+    private int MAX_MESSAGE_QUEUE_NUM;
     /**
      * 上传文件保存地址
      */

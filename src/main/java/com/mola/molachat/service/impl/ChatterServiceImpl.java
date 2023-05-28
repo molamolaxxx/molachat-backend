@@ -18,10 +18,10 @@ import com.mola.molachat.utils.BeanUtilsPlug;
 import com.mola.molachat.utils.CopyUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import javax.annotation.Resource;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -36,10 +36,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ChatterServiceImpl implements ChatterService {
 
-    @Autowired
+    @Resource
     private ChatterFactoryInterface chatterFactory;
 
-    @Autowired
+    @Resource
     private SelfConfig selfConfig;
 
     @Override
@@ -211,11 +211,11 @@ public class ChatterServiceImpl implements ChatterService {
         if (null != queue) {
             queue.offer(message);
             // 如果队列大于最大值，弹出多余元素
-            while (queue.size() > selfConfig.getIntMAX_MESSAGE_QUEUE_NUM()) {
+            while (queue.size() > selfConfig.getMAX_MESSAGE_QUEUE_NUM()) {
                 try {
                     queue.poll(100, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    // ignore
                 }
             }
         }

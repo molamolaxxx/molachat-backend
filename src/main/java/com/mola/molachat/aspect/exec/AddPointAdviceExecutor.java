@@ -29,7 +29,7 @@ public class AddPointAdviceExecutor implements AnnotationAdviceExecutor {
         try {
             obj = invocation.proceed();
         } catch (Throwable throwable) {
-            throwable.printStackTrace();
+            throw new RuntimeException(throwable);
         }
         Method method = invocation.getMethod();
         AddPoint annotation = method.getAnnotation(AddPoint.class);

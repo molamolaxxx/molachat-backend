@@ -63,6 +63,7 @@ public class OwnthinkRobotChatHandler implements IRobotEventHandler<MessageRecei
                     Message msg = new Message();
                     msg.setContent(heuristicText);
                     msg.setChatterId(robotChatter.getId());
+                    msg.setSessionId(messageReceiveEvent.getSessionId());
                     MessageSendEvent messageSendEvent = new MessageSendEvent();
                     messageSendEvent.setMessage(msg);
                     messageSendEvent.setRobotChatter(messageReceiveEvent.getRobotChatter());

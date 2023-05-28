@@ -1,10 +1,16 @@
 package com.mola.molachat.schedule;
 
 import com.mola.molachat.config.AppConfig;
+import com.mola.molachat.entity.Message;
+import com.mola.molachat.entity.RobotChatter;
 import com.mola.molachat.entity.dto.ChatterDTO;
 import com.mola.molachat.enumeration.ChatterStatusEnum;
 import com.mola.molachat.enumeration.ChatterTagEnum;
+import com.mola.molachat.rpc.client.ReverseProxyService;
 import com.mola.molachat.service.ChatterService;
+import com.mola.molachat.service.RobotService;
+import com.mola.molachat.utils.BeanUtilsPlug;
+import com.mola.rpc.core.system.ReverseInvokeHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -13,6 +19,9 @@ import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +39,9 @@ public class ChatterScheduleTask {
 
     @Resource
     private ChatterService chatterService;
+
+    @Resource
+    private RobotService robotService;
 
     @Resource
     private AppConfig appConfig;
@@ -69,6 +81,47 @@ public class ChatterScheduleTask {
             }
             // 分数衰减，一天未登录=》每一次检查-1*未登录天数
             pointDecay(chatter);
+        }
+    }
+
+    /**
+     * 机器人状态变更
+     */
+    @Scheduled(fixedRate = 5000)
+    private void handleRobotStatusChange() throws Exception {
+        List<ChatterDTO> chatters = chatterService.list();
+        for (ChatterDTO chatter : chatters) {
+            if (!chatter.isRobot()) {
+                continue;
+            }
+            // chatgpt反向代理，代理状态同步chatter状态
+            boolean requireSyncProxyStatusToChatter = Objects.equals(chatter.getEventBusBeanName(),"chatGptRobotEventBus")
+                    && appConfig.getUseProxyConsumer();
+            if (!requireSyncProxyStatusToChatter) {
+                continue;
+            }
+            // 取代理状态
+            boolean serviceAvailable = ReverseInvokeHelper
+                    .instance()
+                    .serviceAvailable(String.format("%s:%s:%s", ReverseProxyService.class.getName(),
+                            "default", "1.0.0"));
+            if (!serviceAvailable && Objects.equals(chatter.getStatus(), ChatterStatusEnum.ONLINE.getCode())) {
+                chatterService.setChatterStatus(chatter.getId(), ChatterStatusEnum.OFFLINE.getCode());
+                continue;
+            }
+            if (serviceAvailable && Objects.equals(chatter.getStatus(), ChatterStatusEnum.OFFLINE.getCode())) {
+                chatterService.setChatterStatus(chatter.getId(), ChatterStatusEnum.ONLINE.getCode());
+                // 取最新的一条消息，发送给机器人
+                BlockingQueue<Message> queue = chatterService.getQueueById(chatter.getId());
+                if (queue.size() != 0){
+                    Message message = queue.poll(100, TimeUnit.MILLISECONDS);
+                    if (message.getSessionId() != null) {
+                        RobotChatter robotChatter = (RobotChatter) BeanUtilsPlug
+                                .copyPropertiesReturnTarget(chatterService.selectById(chatter.getId()), new RobotChatter());
+                        robotService.onReceiveMessage(message, message.getSessionId(), robotChatter);
+                    }
+                }
+            }
         }
     }
 

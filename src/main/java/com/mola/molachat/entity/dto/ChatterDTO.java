@@ -96,4 +96,9 @@ public class ChatterDTO {
      */
     private AtomicInteger videoState = new AtomicInteger(0);
 
+    /**
+     * 唯一appkey，用于外部api调用
+     */
+    private String appKey;
+
 }

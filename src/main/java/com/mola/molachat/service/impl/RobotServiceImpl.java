@@ -1,5 +1,6 @@
 package com.mola.molachat.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.mola.molachat.data.ChatterFactoryInterface;
 import com.mola.molachat.entity.Chatter;
 import com.mola.molachat.entity.FileMessage;
@@ -7,6 +8,7 @@ import com.mola.molachat.entity.Message;
 import com.mola.molachat.entity.RobotChatter;
 import com.mola.molachat.entity.dto.ChatterDTO;
 import com.mola.molachat.entity.dto.SessionDTO;
+import com.mola.molachat.enumeration.ChatterStatusEnum;
 import com.mola.molachat.event.action.BaseAction;
 import com.mola.molachat.robot.action.FileMessageSendAction;
 import com.mola.molachat.robot.action.MessageSendAction;
@@ -84,6 +86,12 @@ public class RobotServiceImpl implements RobotService, InitializingBean {
             task.run();
             return;
         }
+        if (ChatterStatusEnum.OFFLINE.getCode().equals(robot.getStatus())) {
+            log.info("机器人已经下线, message = " + JSONObject.toJSONString(message));
+            // 将消息存入消息队列
+            chatterService.offerMessageIntoQueue(message, robot.getId());
+            return;
+        }
         bizProcessThreadPool.submit(task);
     }
 
@@ -127,6 +135,7 @@ public class RobotServiceImpl implements RobotService, InitializingBean {
 
         // 1、查询session，没有则创建
         SessionDTO session = sessionService.findOrCreateSession(appKey, toChatterId);
+        msg.setSessionId(session.getSessionId());
         // 2、向session发送消息
         sessionService.insertMessage(session.getSessionId(), msg);
     }
@@ -168,7 +177,7 @@ public class RobotServiceImpl implements RobotService, InitializingBean {
                 }
             }
             BaseAction action = eventBus.handler(messageReceiveEvent);
-            Message messageByAction = getMessageByAction(action);
+            Message messageByAction = getMessageByAction(action, sessionId);
             if (null == messageByAction) {
                 return;
             }
@@ -178,7 +187,7 @@ public class RobotServiceImpl implements RobotService, InitializingBean {
             sessionService.insertMessage(session.getSessionId(), messageByAction);
         }
 
-        private Message getMessageByAction(BaseAction action) {
+        private Message getMessageByAction(BaseAction action, String sessionId) {
             // 文件消息构建
             if (action instanceof FileMessageSendAction) {
                 //创建message
@@ -188,6 +197,7 @@ public class RobotServiceImpl implements RobotService, InitializingBean {
                 fileMessage.setFileStorage("1024");
                 fileMessage.setUrl(fileMessageSendAction.getUrl());
                 fileMessage.setSnapshotUrl(fileMessageSendAction.getUrl());
+                fileMessage.setSessionId(sessionId);
                 fileMessage.setChatterId(robot.getId());
                 // 判断是否是群聊
 //                if (sessionId.equals("common-session")) {
@@ -200,6 +210,7 @@ public class RobotServiceImpl implements RobotService, InitializingBean {
                 Message msg = new Message();
                 msg.setContent(((MessageSendAction)action).getResponsesText());
                 msg.setChatterId(robot.getId());
+                msg.setSessionId(sessionId);
                 return msg;
             }
             return null;

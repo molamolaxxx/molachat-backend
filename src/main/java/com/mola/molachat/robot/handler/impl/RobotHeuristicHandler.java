@@ -50,6 +50,7 @@ public class RobotHeuristicHandler implements IRobotEventHandler<MessageSendEven
     public static MessageSendEvent getHeuristicEvent(String content, RobotChatter robotChatter, String sessionId) {
         Message msg = new Message();
         msg.setContent(content);
+        msg.setSessionId(sessionId);
         msg.setChatterId(robotChatter.getId());
         MessageSendEvent messageSendEvent = new MessageSendEvent();
         messageSendEvent.setMessage(msg);

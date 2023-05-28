@@ -38,4 +38,9 @@ public class Message {
      */
     private boolean isCommon = false;
 
+    /**
+     * 会话id
+     */
+    private String sessionId;
+
 }

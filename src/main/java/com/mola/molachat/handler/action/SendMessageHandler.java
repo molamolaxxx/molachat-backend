@@ -48,6 +48,7 @@ public class SendMessageHandler implements WSRequestActionHandler{
         if ("common-session".equals(data.getString("sessionId"))) {
             message.setCommon(true);
         }
+        message.setSessionId(data.getString("sessionId"));
 
         //3.调用session
         try {
