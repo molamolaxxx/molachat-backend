@@ -120,6 +120,7 @@ public class ChatterScheduleTask {
                                 .copyPropertiesReturnTarget(chatterService.selectById(chatter.getId()), new RobotChatter());
                         robotService.onReceiveMessage(message, message.getSessionId(), robotChatter);
                     }
+                    queue.clear();
                 }
             }
         }
