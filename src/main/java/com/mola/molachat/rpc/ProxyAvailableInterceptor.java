@@ -1,6 +1,7 @@
 package com.mola.molachat.rpc;
 
 import com.alibaba.nacos.common.utils.Objects;
+import com.mola.molachat.rpc.client.ReverseProxyService;
 import com.mola.molachat.service.http.HttpService;
 import com.mola.rpc.common.entity.RpcMetaData;
 import com.mola.rpc.common.interceptor.ReverseProxyRegisterInterceptor;
@@ -19,6 +20,9 @@ public class ProxyAvailableInterceptor extends ReverseProxyRegisterInterceptor {
 
     @Override
     public boolean intercept(RpcMetaData proxyProviderMetaData) {
+        if (!proxyProviderMetaData.getInterfaceClazz().equals(ReverseProxyService.class)) {
+            return false;
+        }
         try {
             String res = HttpService.PROXY.get("https://google.com", "",
                     null, 5000);
