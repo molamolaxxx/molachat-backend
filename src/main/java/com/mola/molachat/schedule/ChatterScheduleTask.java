@@ -10,6 +10,7 @@ import com.mola.molachat.rpc.client.ReverseProxyService;
 import com.mola.molachat.service.ChatterService;
 import com.mola.molachat.service.RobotService;
 import com.mola.molachat.utils.BeanUtilsPlug;
+import com.mola.rpc.core.remoting.netty.pool.ChannelWrapper;
 import com.mola.rpc.core.system.ReverseInvokeHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,7 @@ import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -100,11 +102,9 @@ public class ChatterScheduleTask {
             if (!requireSyncProxyStatusToChatter) {
                 continue;
             }
-            // 取代理状态
-            boolean serviceAvailable = ReverseInvokeHelper
-                    .instance()
-                    .serviceAvailable(String.format("%s:%s:%s", ReverseProxyService.class.getName(),
-                            "default", "1.0.0"));
+
+            boolean serviceAvailable = serviceAvailable();
+
             if (!serviceAvailable && Objects.equals(chatter.getStatus(), ChatterStatusEnum.ONLINE.getCode())) {
                 chatterService.setChatterStatus(chatter.getId(), ChatterStatusEnum.OFFLINE.getCode());
                 continue;
@@ -124,6 +124,23 @@ public class ChatterScheduleTask {
                 }
             }
         }
+    }
+
+    private boolean serviceAvailable() {
+        // 取代理状态
+        Map<String, ChannelWrapper> channelWrapperMap = ReverseInvokeHelper
+                .instance()
+                .fetchAvailableProxyService(String.format("%s:%s:%s", ReverseProxyService.class.getName(),
+                        "default", "1.0.0"));
+        if (channelWrapperMap == null || channelWrapperMap.size() == 0) {
+            return false;
+        }
+        for (ChannelWrapper cw : channelWrapperMap.values()) {
+            if (System.currentTimeMillis() - cw.getLastAliveTime() < 60 * 1000) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Float getDeleteThreshold(List<ChatterDTO> chatters) {
