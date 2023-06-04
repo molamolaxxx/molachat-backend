@@ -52,7 +52,7 @@ public class RobotConfig {
         if (null == chatter && "chatGpt".equals(appKey)) {
             robot = new RobotChatter();
             robot.setId(appKey);
-            robot.setName("翻斗鱼");
+            robot.setName("turbo3.5x");
             robot.setSignature("我是一个24岁的学生");
             robot.setStatus(ChatterStatusEnum.ONLINE.getCode());
             robot.setTag(ChatterTagEnum.ROBOT.getCode());
