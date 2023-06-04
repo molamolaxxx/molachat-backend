@@ -12,7 +12,7 @@ import com.mola.molachat.robot.bus.ImageGenerateRobotEventBus;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
-import com.mola.molachat.rpc.ImageGenerateServiceProvider;
+import com.mola.molachat.rpc.proxyservice.ImageGenerateServiceProvider;
 import com.mola.molachat.rpc.client.ImageGenerateService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.RandomStringUtils;

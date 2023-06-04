@@ -1,4 +1,4 @@
-package com.mola.molachat.rpc;
+package com.mola.molachat.rpc.proxycallback;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -15,7 +15,7 @@ import javax.annotation.Resource;
 /**
  * @author : molamola
  * @Project: molachat
- * @Description:
+ * @Description: 代理回调，执行在服务端
  * @date : 2023-04-09 13:34
  **/
 @Component

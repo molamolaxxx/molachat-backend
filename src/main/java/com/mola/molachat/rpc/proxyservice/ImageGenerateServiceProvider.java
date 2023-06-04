@@ -1,4 +1,4 @@
-package com.mola.molachat.rpc;
+package com.mola.molachat.rpc.proxyservice;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author : molamola
  * @Project: molachat
- * @Description:
+ * @Description: 执行在代理端
  * @date : 2023-03-17 22:41
  **/
 @Component

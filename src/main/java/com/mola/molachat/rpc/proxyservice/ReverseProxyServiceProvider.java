@@ -1,4 +1,4 @@
-package com.mola.molachat.rpc;
+package com.mola.molachat.rpc.proxyservice;
 
 import com.alibaba.fastjson.JSONObject;
 import com.mola.molachat.common.ServerResponse;
@@ -18,7 +18,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * @author : molamola
  * @Project: molachat
- * @Description:
+ * @Description: 执行在代理端
  * @date : 2023-03-09 02:17
  **/
 @Component
