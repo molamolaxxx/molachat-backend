@@ -9,16 +9,16 @@ $(document).ready(function () {
     var inEditMode = false
 
     // dom初始化位置
-    $viewModal.css("max-width",1000)
+    $viewModal.css("max-width", 1000)
     if (window.innerWidth > 1000) {
-        $viewModal.css("left",(window.innerWidth - $viewModal.innerWidth())/2)
+        $viewModal.css("left", (window.innerWidth - $viewModal.innerWidth()) / 2)
     }
 
-    addResizeEventListener(function() {
+    addResizeEventListener(function () {
         if (window.innerWidth > 1000) {
-            $viewModal.css("left",(window.innerWidth - $viewModal.innerWidth())/2)
+            $viewModal.css("left", (window.innerWidth - $viewModal.innerWidth()) / 2)
         } else {
-            $viewModal.css("left",0)
+            $viewModal.css("left", 0)
         }
     })
 
@@ -27,7 +27,7 @@ $(document).ready(function () {
 
     // 聊天时间显示dom
     var lastTime = -1;
-    timeDom = function(time) {
+    timeDom = function (time) {
         if (time - lastTime < 60000 && time - lastTime > 0) {
             lastTime = time
             return
@@ -61,7 +61,7 @@ $(document).ready(function () {
 
         if (isMain) {
             //头像img
-            
+
             imgDoc.src = getChatterImage();
             $(imgDoc).addClass("contact__photo");
             $(imgDoc).css('float', 'right');
@@ -70,9 +70,8 @@ $(document).ready(function () {
 
             $(mainDocChild).css('margin-right', '0.5rem');
             $(mainDocChild).addClass("chat__message notMine");
-        }
-        else {
-            
+        } else {
+
             imgDoc.src = getActiveChatter().imgUrl;
             $(imgDoc).addClass("contact__photo");
             $(imgDoc).css('float', 'left');
@@ -86,7 +85,7 @@ $(document).ready(function () {
 
         mainDoc.append(imgDoc);
         // mainDocChild.innerHTML = twemoji.parse(content,{"folder":"svg","ext":".svg","base":"asset/","size":15});
-        mainDocChild.innerText = content.length > 200 ? content.slice(0,200) + "\n...." : content
+        mainDocChild.innerText = content.length > 200 ? content.slice(0, 200) + "\n...." : content
         mainDoc.append(mainDocChild);
         // 明细view
         if (content.length > 80) {
@@ -101,16 +100,16 @@ $(document).ready(function () {
                 const codeObj = hljs.highlightAuto(content)
                 console.log(codeObj);
                 // 主流语言，显示用pre方便看
-                let isCommonCode = codeObj.language === 'java' 
-                || codeObj.language === 'python'
-                || codeObj.language === 'cpp' 
-                || codeObj.language === 'kotlin'
-                || codeObj.language === 'c'
-                || codeObj.language === 'csharp'
-                || codeObj.language === 'javascript'
-                || codeObj.language === 'xml'
-                || codeObj.language === 'php'
-                || codeObj.language === 'perl'
+                let isCommonCode = codeObj.language === 'java' ||
+                    codeObj.language === 'python' ||
+                    codeObj.language === 'cpp' ||
+                    codeObj.language === 'kotlin' ||
+                    codeObj.language === 'c' ||
+                    codeObj.language === 'csharp' ||
+                    codeObj.language === 'javascript' ||
+                    codeObj.language === 'xml' ||
+                    codeObj.language === 'php' ||
+                    codeObj.language === 'perl'
                 // 只有关键字的文本，不需要按照代码格式展示
                 isCommonCode = isCommonCode && (content.includes("{") || content.includes("}") || content.includes(":"))
                 if (isCommonCode) {
@@ -143,15 +142,22 @@ $(document).ready(function () {
     addMessage = function ($chatMsg, content, isMain) {
 
         //拼装dom
-        var mainDoc = messageDom({content:content,createTime:(new Date()).valueOf()}, isMain);
+        var mainDoc = messageDom({
+            content: content,
+            createTime: (new Date()).valueOf()
+        }, isMain);
 
         //添加dom
         $chatMsg.append(mainDoc);
 
         //滚动
-        setTimeout(()=> {
-            document.querySelector(".chat__messages").scrollBy({ top: 500000, left: 0, behavior: 'smooth' });
-        },100)
+        setTimeout(() => {
+            document.querySelector(".chat__messages").scrollBy({
+                top: 500000,
+                left: 0,
+                behavior: 'smooth'
+            });
+        }, 100)
     }
 
     //删除所有记录
@@ -170,11 +176,11 @@ $(document).ready(function () {
         }
     });
     // 判断输入是否结束
-    $chatInput.addEventListener('compositionstart', function(e) {
+    $chatInput.addEventListener('compositionstart', function (e) {
         console.log("false")
         isInputFinished = false;
     }, false)
-    $chatInput.addEventListener('compositionend', function(e) {
+    $chatInput.addEventListener('compositionend', function (e) {
         setTimeout(() => {
             isInputFinished = true
             console.log("true")
@@ -187,7 +193,7 @@ $(document).ready(function () {
         var content = $chatInput.value;
         if (content === "") {
             // swal("stop!","输入不能为空","warning");
-            showToast("输入不能为空",1000)
+            showToast("输入不能为空", 1000)
             return;
         }
 
@@ -223,37 +229,37 @@ $(document).ready(function () {
         out_duration: 200, // Transition out duration
         starting_top: '4%', // Starting top style attribute
         ending_top: '100%', // Ending top style attribute
-        ready: function(modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
-            
+        ready: function (modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
+
         },
-        complete: function() { 
-            
-        } 
+        complete: function () {
+
+        }
     });
 
-    $copyViewBtn.on('click', function(e) {
+    $copyViewBtn.on('click', function (e) {
         copyText(this.copyContent)
     })
 
-     // 明细模态框初始化
-     $viewModal.modal({
+    // 明细模态框初始化
+    $viewModal.modal({
         dismissible: true, // Modal can be dismissed by clicking outside of the modal
         opacity: .2, // Opacity of modal background
         in_duration: 300, // Transition in duration
         out_duration: 200, // Transition out duration
         starting_top: '4%', // Starting top style attribute
         ending_top: '100%', // Ending top style attribute
-        ready: function(modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
-            
+        ready: function (modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
+
         },
-        complete: function() { 
-            
-        } 
+        complete: function () {
+
+        }
     });
 
     var $editModal = $("#message-edit-modal")
     var $openEditBtn = $("#open-text-btn")
-    
+
     $editModal.modal({
         dismissible: true, // Modal can be dismissed by clicking outside of the modal
         opacity: .2, // Opacity of modal background
@@ -261,51 +267,51 @@ $(document).ready(function () {
         out_duration: 200, // Transition out duration
         starting_top: '4%', // Starting top style attribute
         ending_top: '100%', // Ending top style attribute
-        ready: function(modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
+        ready: function (modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
             inEditMode = true
         },
-        complete: function() { 
+        complete: function () {
             inEditMode = false
-        } 
+        }
     });
 
     // dom初始化位置
-    $editModal.css("max-width",800)
+    $editModal.css("max-width", 800)
     if (window.innerWidth > 800) {
-        $editModal.css("left",(window.innerWidth - $editModal.innerWidth())/2)
+        $editModal.css("left", (window.innerWidth - $editModal.innerWidth()) / 2)
     }
 
-    addResizeEventListener(function() {
+    addResizeEventListener(function () {
         if (window.innerWidth > 800) {
-            $editModal.css("left",(window.innerWidth - $editModal.innerWidth())/2)
+            $editModal.css("left", (window.innerWidth - $editModal.innerWidth()) / 2)
         } else {
-            $editModal.css("left",0)
+            $editModal.css("left", 0)
         }
     })
 
     var $chatEditor = $("#chatEditor")
-    $chatEditor.keydown(function(e) {
-        if(e.keyCode === 9) { // tab was pressed
+    $chatEditor.keydown(function (e) {
+        if (e.keyCode === 9) { // tab was pressed
             // get caret position/selection
             var start = this.selectionStart;
             var end = this.selectionEnd;
-    
+
             var $this = $(this);
             var value = $this.val();
-    
+
             // set textarea value to: text before caret + tab + text after caret
-            $this.val(value.substring(0, start)
-                        + "\t"
-                        + value.substring(end));
-    
+            $this.val(value.substring(0, start) +
+                "\t" +
+                value.substring(end));
+
             // put caret at right position again (add one for the tab)
             this.selectionStart = this.selectionEnd = start + 1;
-    
+
             // prevent the focus lose
             e.preventDefault();
         }
     });
-    $openEditBtn.on('click', function() {
+    $openEditBtn.on('click', function () {
         $editModal.modal('open')
         if ($chatEditor.val() === '' && $chatInput.value !== '') {
             $chatEditor.val($chatInput.value)
@@ -313,11 +319,11 @@ $(document).ready(function () {
     })
 
     var $editCompleteBtn = $("#editCompleteBtn")
-    $editCompleteBtn.on('click', function() {
+    $editCompleteBtn.on('click', function () {
         const content = $chatEditor.val()
         if (content === "") {
             // swal("stop!","输入不能为空","warning");
-            showToast("输入不能为空",1000)
+            showToast("输入不能为空", 1000)
             return;
         }
 

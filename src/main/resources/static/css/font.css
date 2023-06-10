@@ -1,0 +1,12 @@
+@font-face {
+    font-family: 'Consolas';
+    src: url('consolas-webfont.woff2') format('woff2'),
+        url('consolas-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+pre, code{
+    font-family: 'Consolas',monospace,serif;
+    font-size: 1em;
+}

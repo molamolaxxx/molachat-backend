@@ -168,6 +168,32 @@ $(document).ready(function () {
 
     })
 
+    /**
+     * 图片粘贴事件处理
+     */
+    $('input.chat__input').on('paste', function (event) {
+        if (!chatDom.className === "chat active") return
+        const items = event.originalEvent?.clipboardData?.items
+        if (!items || items.length === 0) {
+            return
+        }
+        var len = items.length,
+            blob = null;
+        for (var i = 0; i < len; i++) {
+            if (items[i].kind.indexOf("file") !== -1) {
+                //getAsFile() 此方法只是living standard firefox ie11 并不支持
+                blob = items[i].getAsFile();
+                console.info("paste file", blob)
+                doUploadFileAndSendMessage(blob, genRid())
+
+                // 阻止事件冒泡
+                event.preventDefault();
+            }
+        }
+
+    })
+
+
     $("#file_copy").on("click", uploadFileFunc);
     $("#tool-file").on("click", uploadFileFunc);
 });
