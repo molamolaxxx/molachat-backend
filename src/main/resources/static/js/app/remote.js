@@ -166,11 +166,30 @@ $(document).ready(function() {
             return
         }
         // 判断server是否可用
-        checkConnect(host, (res) => {
+        checkConnect(host, (res,host) => {
             if (res === 'error') {
-                swal("连接失败", "服务器连接超时，请切换其他服务器","info").then((change) => {
-                    openServerModal()
-                });
+                if (isApp) {
+                    swal("连接失败", "请切换其他服务器","info").then((change) => {
+                        openServerModal()
+                    });
+                } else {
+                    let content = document.createElement("div");
+                    content.innerHTML = "请切换其他服务器或点击<a target='_blank' href='https://" + host + "/chat/app/host'>连接地址</a>解除浏览器拦截";
+                    swal({
+                        title: "连接失败",
+                        content: content,
+                        html:true,
+                        icon: "info",
+                        buttons: {
+                            confirm: {
+                                text: "确认",
+                                value: "delete"
+                            }
+                        }
+                    }).then((change) => {
+                        openServerModal()
+                    });
+                }
                 return
             }
             const dict = {}
@@ -233,19 +252,37 @@ $(document).ready(function() {
             dataType: "json",
             timeout:3000,
             success: function(result) {
-                callback('success')
+                callback('success',host)
                 removeSpinner()
             },
             error: function(result) {
-                callback('error')
+                console.log(result);
+                callback('error',host)
                 removeSpinner()
             }
         });
     }
     checkHost = function() {
-        checkConnect(getHost(), function(res) {
-            if (res === 'error') {
-                swal("连接失败", "服务器连接超时，请切换其他服务器","info").then((change) => {
+        checkConnect(getHost(), function(res,host) {
+            if (isApp) {
+                swal("连接失败", "请切换其他服务器","info").then((change) => {
+                    openServerModal()
+                });
+            } else {
+                let content = document.createElement("div");
+                content.innerHTML = "请切换其他服务器或点击<a target='_blank' href='https://" + host + "/chat/app/host'>连接地址</a>解除浏览器拦截";
+                swal({
+                    title: "连接失败",
+                    content: content,
+                    html:true,
+                    icon: "info",
+                    buttons: {
+                        confirm: {
+                            text: "确认",
+                            value: "delete"
+                        }
+                    }
+                }).then((change) => {
                     openServerModal()
                 });
             }
