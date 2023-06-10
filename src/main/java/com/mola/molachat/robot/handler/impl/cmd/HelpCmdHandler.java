@@ -30,7 +30,7 @@ public class HelpCmdHandler extends BaseCmdRobotHandler {
             StringBuilder stringBuilder = new StringBuilder();
             for (int i = 0; i < cmdRobotHandlers.size(); i++) {
                 BaseCmdRobotHandler cmdRobotHandler = cmdRobotHandlers.get(i);
-                stringBuilder.append(String.format("【%s】 : %s", cmdRobotHandler.getCommand(), cmdRobotHandler.getDesc()));
+                stringBuilder.append(String.format("【%s】: %s", cmdRobotHandler.getCommand(), cmdRobotHandler.getDesc()));
                 stringBuilder.append("\n");
             }
             return stringBuilder.toString();

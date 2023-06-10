@@ -1,6 +1,7 @@
 package com.mola.molachat.entity;
 
 import lombok.Data;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * @Author: molamola
@@ -35,4 +36,19 @@ public class FileMessage extends Message{
      * 是否是群聊消息
      */
     private boolean isCommon = false;
+
+    public String fetchRealStoredFileName(boolean useSnapshot) {
+        String urlTmp = url;
+        if (useSnapshot) {
+            urlTmp = snapshotUrl;
+        }
+        if (StringUtils.isBlank(urlTmp)) {
+            return null;
+        }
+        String[] split = urlTmp.split("/");
+        if (split == null || split.length == 0) {
+            return null;
+        }
+        return split[split.length - 1];
+    }
 }
