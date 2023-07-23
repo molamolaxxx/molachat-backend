@@ -63,7 +63,8 @@ $(document).ready(function () {
                 $("#cancel" + xhr.currentUploadFileId).css("display", "none");
                 //恢复文件大小
                 $("#img" + xhr.currentUploadFileId).css("margin-left", "0rem");
-                swal("success", "发送成功！", "success");
+                // swal("success", "发送成功！", "success");
+                showToast("发送成功",1000)
                 var url = result.data;
             }
             window.uploadLock = false;
@@ -83,13 +84,7 @@ $(document).ready(function () {
         $chatMsg.append(dom);
 
         //滚动
-        setTimeout(() => {
-            document.querySelector(".chat__messages").scrollBy({
-                top: 500000,
-                left: 0,
-                behavior: 'smooth'
-            });
-        }, 100)
+        scrollToChatContainerBottom(500)
         //设置相关监听器 1.点击取消上传监听 2.鼠标移动放大监听
         $("#cancel" + xhr.currentUploadFileId).on("click", function () {
             swal({
@@ -173,7 +168,10 @@ $(document).ready(function () {
      */
     $('input.chat__input').on('paste', function (event) {
         if (!chatDom.className === "chat active") return
-        const items = event.originalEvent?.clipboardData?.items
+        var items = null
+        if (event.originalEvent && event.originalEvent.clipboardData) {
+            items = event.originalEvent.clipboardData.items
+        }
         if (!items || items.length === 0) {
             return
         }

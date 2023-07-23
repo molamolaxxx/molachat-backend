@@ -6,6 +6,7 @@ import com.mola.molachat.data.OtherDataInterface;
 import com.mola.molachat.robot.handler.impl.ChatGptRobotHandler;
 import com.mola.molachat.rpc.client.ReverseProxyCallbackService;
 import com.mola.molachat.service.RobotService;
+import com.mola.molachat.service.app.GptTurboInvokeService;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
@@ -27,8 +28,16 @@ public class ReverseProxyCallbackServiceProvider implements ReverseProxyCallback
     @Resource
     private OtherDataInterface otherDataInterface;
 
+    @Resource
+    private GptTurboInvokeService gptTurboInvokeService;
+
     @Override
     public void chatGptCallback(String result, String toChatterId, String appKey, boolean exception, String apiKey) {
+        if (StringUtils.startsWith(toChatterId, "system")) {
+            gptTurboInvokeService.callback(toChatterId, result, exception);
+            return;
+        }
+
         if (exception) {
             if (StringUtils.containsIgnoreCase(result, "You exceeded your current quota")
                     || StringUtils.containsIgnoreCase(result, "Incorrect API key provided")) {
@@ -53,6 +62,5 @@ public class ReverseProxyCallbackServiceProvider implements ReverseProxyCallback
             }
             robotService.pushMessage(appKey, toChatterId, text);
         }
-        return;
     }
 }

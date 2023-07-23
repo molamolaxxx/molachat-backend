@@ -21,7 +21,7 @@ $(document).ready(function () {
 
     function selectMessageDom(message, isMain) {
         var dom;
-        if (message.content){
+        if (message.content) {
             // 如果是群聊message
             if (message.common) {
                 dom = commonMessageDom(message, isMain, getChatterMap().get(message.chatterId));
@@ -30,14 +30,14 @@ $(document).ready(function () {
             else {
                 dom = messageDom(message, isMain);
             }
-        }else{
+        } else {
             // 如果是群聊message
             if (message.common) {
-                dom = commonFileDom(message,isMain,isMain,"ready","/chat/"+message.url,"/chat/"+message.snapshotUrl, getChatterMap().get(message.chatterId));
+                dom = commonFileDom(message, isMain, isMain, "ready", "/chat/" + message.url, "/chat/" + message.snapshotUrl, getChatterMap().get(message.chatterId));
             }
             // 单聊message
             else {
-                dom = fileDom(message,isMain,isMain,"ready","/chat/"+message.url,"/chat/"+message.snapshotUrl);
+                dom = fileDom(message, isMain, isMain, "ready", "/chat/" + message.url, "/chat/" + message.snapshotUrl);
             }
         }
         return dom;
@@ -58,7 +58,7 @@ $(document).ready(function () {
                 var sign = cutStrByByte(activeChatter.signature, 28);
                 $(".chat__status").text(sign);
                 //判断是否为掉线状态
-                if (activeChatter.status == 0){
+                if (activeChatter.status == 0) {
                     showToast("对方网络异常", 1500)
                 }
                 // 判断是否为离线状态
@@ -81,8 +81,8 @@ $(document).ready(function () {
         }
     }
 
-    $(".chat__back").on("click", function(){
-        if(window.uploadLock) {
+    $(".chat__back").on("click", function () {
+        if (window.uploadLock) {
             return
         }
         activeChatter = null;
@@ -108,29 +108,38 @@ $(document).ready(function () {
             }
             // 根据消息与ismain创建dom
             var dom = selectMessageDom(message, isMain);
-            
+
             //dom中添加消息
             $messageBox.append(dom);
         }
-        let laterDuring = isSideBarOutside() ? 100 : 1000
-        setTimeout(function(){
-            document.querySelector(".chat__messages").scrollBy({ top: 500000, left: 0, behavior: 'smooth' });
-        },laterDuring);
-        
-        
+        var imgDivArr = document.querySelectorAll("#imgready")
+        for (var i = 0; i < imgDivArr.length; i++) {
+            var img = imgDivArr[i];
+            if (img.complete) {
+                continue
+            }
+            $(img).addClass("imgFileTemp")
+            img.onload = function () {
+                console.log("onload");
+                $(this).removeClass("imgFileTemp")
+            };
+        }
+
+        scrollToChatContainerBottom(isSideBarOutside() ? 100 : 1000)
     }
+
     //收到消息，回调
     receiveMessage = function (message) {
         console.info(message)
         // 如果message是群聊message且群聊信息窗打开
-        if (message.common){
+        if (message.common) {
             if (activeChatter && activeChatter.id === "temp-chatter") {
                 // 判断是否是自己的消息
                 if (message.chatterId === getChatterId()) {
                     // 判断是否是文件
                     if (!message.content) {
                         // 更新文件的url
-                        for (let dom of $(".notMine")){
+                        for (let dom of $(".notMine")) {
                             dom = dom.querySelectorAll("a")
                             let a1 = dom[0]
                             let a2 = dom[1]
@@ -138,37 +147,40 @@ $(document).ready(function () {
                             if (!(a1 || a2)) {
                                 continue
                             }
-                            innerText = a2.innerText.replace(/\s+/g,"");
+                            innerText = a2.innerText.replace(/\s+/g, "");
                             if (a2.innerText === message.fileName && a2.href === "javascript:;") {
-                                a2.href = getPrefix() + "/chat/"+message.url
+                                a2.href = getPrefix() + "/chat/" + message.url
                                 // 更新图片文件的显示
                                 let fileImg = a1.querySelector("img")
                                 if (fileImg && isImg(a2.href)) {
                                     // 更新为图片的snapshot
-                                    fileImg.src = getPrefix() + "/chat/"+message.snapshotUrl
-                                    $(fileImg).css("width","100%");
-                                    $(fileImg).on('click', function() {
+                                    fileImg.src = getPrefix() + "/chat/" + message.snapshotUrl
+                                    $(fileImg).css("width", "100%");
+                                    $(fileImg).on('click', function () {
                                         syncToHolder(fileImg.src)
                                     })
+                                    fileImg.onload = function () {
+                                        console.log("上传的图片加载完成common");
+                                        scrollToChatContainerBottom(100)
+                                    }
                                 }
                                 a2.target = "_blank";
                             }
                         }
-                        
+
                     }
                     return
                 }
                 // 根据消息与ismain创建dom
                 var dom = selectMessageDom(message, false);
-                
+
                 $messageBox.append(dom);
-                setTimeout(()=> {
-                    document.querySelector(".chat__messages").scrollBy({ top: 500000, left: 0, behavior: 'smooth' });
-                },100)
-                
+
+                scrollToChatContainerBottom(100)
+
                 // 判断是不是当前页
                 if (!isCurrentPage) {
-                    document.getElementsByTagName("title")[0].innerText = "molachat(当前有未读消息)" ;
+                    document.getElementsByTagName("title")[0].innerText = "molachat(当前有未读消息)";
                 }
                 return
             }
@@ -179,7 +191,7 @@ $(document).ready(function () {
         // 如果是自己的文件消息
         if (message.chatterId === getChatterId() && !message.content) {
             // 更新文件的url
-            for (let dom of $(".notMine")){
+            for (let dom of $(".notMine")) {
                 dom = dom.querySelectorAll("a")
                 let a1 = dom[0]
                 let a2 = dom[1]
@@ -187,18 +199,22 @@ $(document).ready(function () {
                 if (!(a1 || a2)) {
                     continue
                 }
-                innerText = a2.innerText.replace(/\s+/g,"");
+                innerText = a2.innerText.replace(/\s+/g, "");
                 if (a2.innerText === message.fileName && a2.href === "javascript:;") {
-                    a2.href = getPrefix() + "/chat/"+message.url
+                    a2.href = getPrefix() + "/chat/" + message.url
                     // 更新图片文件的显示
                     let fileImg = a1.querySelector("img")
                     if (fileImg && isImg(a2.href)) {
                         // 更新为图片的snapshot
-                        fileImg.src = getPrefix() + "/chat/"+message.snapshotUrl
-                        $(fileImg).css("width","100%");
-                        $(fileImg).on('click', function() {
+                        fileImg.src = getPrefix() + "/chat/" + message.snapshotUrl
+                        $(fileImg).css("width", "100%");
+                        $(fileImg).on('click', function () {
                             syncToHolder(fileImg.src)
                         })
+                        fileImg.onload = function () {
+                            console.log("上传的图片加载完成");
+                            scrollToChatContainerBottom(100)
+                        }
                     }
                     a2.target = "_blank";
                 }
@@ -206,44 +222,42 @@ $(document).ready(function () {
         }
 
         //如果是当前session,立即加载到dom中
-        if (activeChatter != null && message.chatterId == activeChatter.id){
+        if (activeChatter != null && message.chatterId == activeChatter.id) {
             //dom中添加消息
             //如果为文件传输
             var dom;
-            if (message.content != null){
+            if (message.content != null) {
                 dom = messageDom(message, false);
-            }else{
-                dom = fileDom(message,false,false,"ready","/chat/"+message.url,"/chat/"+message.snapshotUrl);
+            } else {
+                dom = fileDom(message, false, false, "ready", "/chat/" + message.url, "/chat/" + message.snapshotUrl);
             }
 
             $messageBox.append(dom);
-            setTimeout(()=> {
-                document.querySelector(".chat__messages").scrollBy({ top: 500000, left: 0, behavior: 'smooth' });
-            },100)
+            scrollToChatContainerBottom(100)
             // 判断是不是当前页
             if (!isCurrentPage) {
-                document.getElementsByTagName("title")[0].innerText = "molachat(当前有未读消息)" ;
+                document.getElementsByTagName("title")[0].innerText = "molachat(当前有未读消息)";
             }
         }
         //如过非当前session，将对应chatter的未读消息提示点亮
-        else{
+        else {
             var senderId = message.chatterId;
             // 这个信息必须不是公共信息
-            if (!message.common && senderId != getChatterId()){
-                changeStatus(senderId,true);
+            if (!message.common && senderId != getChatterId()) {
+                changeStatus(senderId, true);
             }
             // 提醒要求
             // 1.判断该信息不能是自己发的
             // 2.不能没有正在通话的session
             // 3.消息主人id不能是正在通话者的id
             // 4.聊天窗可见
-            if(message.chatterId != getChatterId() && activeChatter != null && message.chatterId != activeChatter.id && $chat.css("display") === "block"){
-                if (!alertMap.get(message.chatterId) && !message.common){
+            if (message.chatterId != getChatterId() && activeChatter != null && message.chatterId != activeChatter.id && $chat.css("display") === "block") {
+                if (!alertMap.get(message.chatterId) && !message.common) {
                     // 群消息免提醒
                     showToast("外部有新的消息", 1000)
                 }
-                 // 设置成已经提醒
-                 setAlertMap(message.chatterId, true);
+                // 设置成已经提醒
+                setAlertMap(message.chatterId, true);
             }
         }
     }
@@ -252,30 +266,30 @@ $(document).ready(function () {
         return activeSession.sessionId;
     }
 
-    getActiveChatter = function(){
+    getActiveChatter = function () {
         return activeChatter;
     }
-    setActiveChatterName = function(name){
+    setActiveChatterName = function (name) {
         activeChatter.name = name;
         //更新dom
         $(".chat__name")[0].innerText = name;
     }
-    setActiveChatter = function(chatter) {
+    setActiveChatter = function (chatter) {
         activeChatter = chatter;
     }
 
-    setActiveChatterImgUrl = function(imgUrl){
+    setActiveChatterImgUrl = function (imgUrl) {
         activeChatter.imgUrl = imgUrl;
         $("img.cloned")[0].src = imgUrl;
     }
 
-    setActiveChatterSign = function(sign) {
+    setActiveChatterSign = function (sign) {
         activeChatter.signature = sign;
         sign = cutStrByByte(sign, 28);
         $(".chat__status")[0].innerText = sign;
     }
 
-    setAlertMap = function(id, status) {
+    setAlertMap = function (id, status) {
         alertMap.set(id, status)
     }
 });

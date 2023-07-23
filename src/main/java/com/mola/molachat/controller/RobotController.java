@@ -4,10 +4,12 @@ import com.mola.molachat.common.ResponseCode;
 import com.mola.molachat.common.ServerResponse;
 import com.mola.molachat.data.OtherDataInterface;
 import com.mola.molachat.entity.dto.ChatterDTO;
+import com.mola.molachat.entity.params.GptInvokeParam;
 import com.mola.molachat.exception.service.ChatterServiceException;
 import com.mola.molachat.form.ChatterForm;
 import com.mola.molachat.service.ChatterService;
 import com.mola.molachat.service.RobotService;
+import com.mola.molachat.service.app.GptTurboInvokeService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.validation.BindingResult;
@@ -17,6 +19,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author : molamola
@@ -38,8 +41,11 @@ public class RobotController {
     @Resource
     private OtherDataInterface otherDataInterface;
 
+    @Resource
+    private GptTurboInvokeService gptTurboInvokeService;
+
     @PutMapping
-    public ServerResponse update(@Valid ChatterForm form,
+    public ServerResponse<Void> update(@Valid ChatterForm form,
                                  BindingResult bindingResult,
                                  HttpServletResponse response) {
         if (bindingResult.hasErrors()){
@@ -64,7 +70,7 @@ public class RobotController {
     }
 
     @GetMapping("/push/{appKey}")
-    public ServerResponse pushMessage(@PathVariable("appKey") String appKey,
+    public ServerResponse<Void> pushMessage(@PathVariable("appKey") String appKey,
                                       @RequestParam("toChatterId") String toChatterId,
                                       @RequestParam("content") String content) {
         try {
@@ -78,14 +84,20 @@ public class RobotController {
     }
 
     @PostMapping("/gpt/insertSubApiKeys")
-    public ServerResponse insertSubApiKeys(@RequestBody List<String> subApiKeys) {
+    public ServerResponse<Set<String>> insertSubApiKeys(@RequestBody List<String> subApiKeys) {
         try {
-            otherDataInterface.operateGpt3ChildTokens((tokens) -> {
-                for (String subApiKey : subApiKeys) {
-                    tokens.add(subApiKey);
-                }
-            });
+            otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.addAll(subApiKeys));
             return ServerResponse.createBySuccess(otherDataInterface.getGpt3ChildTokens());
+        } catch (Exception e) {
+            log.error("insertSubApiKeys error", e);
+            return ServerResponse.createByErrorMessage(e.getMessage());
+        }
+    }
+
+    @PostMapping("/gpt/invoke")
+    public ServerResponse<String> invokeGpt(@RequestBody GptInvokeParam param) {
+        try {
+            return ServerResponse.createBySuccess(gptTurboInvokeService.invoke(param.getInput()));
         } catch (Exception e) {
             log.error("insertSubApiKeys error", e);
             return ServerResponse.createByErrorMessage(e.getMessage());
