@@ -190,16 +190,4 @@
 			</snapshots>
 		</repository>
 	</repositories>
-
-	<!-- 阿里云私服，配置在setting.xml中，用于拉取my-rpc -->
-<!--	<server>-->
-<!--		<id>rdc-releases</id>-->
-<!--		<username>64c66e287b916a0b5289f30d</username>-->
-<!--		<password>fdwF1kf[(jHK</password>-->
-<!--	</server>-->
-<!--	<server>-->
-<!--		<id>rdc-snapshots</id>-->
-<!--		<username>64c66e287b916a0b5289f30d</username>-->
-<!--		<password>fdwF1kf[(jHK</password>-->
-<!--	</server>-->
 </project>
