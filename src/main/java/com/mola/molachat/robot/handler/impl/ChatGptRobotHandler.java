@@ -4,8 +4,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.mola.molachat.common.ResponseCode;
-import com.mola.molachat.common.ServerResponse;
 import com.mola.molachat.config.AppConfig;
 import com.mola.molachat.data.OtherDataInterface;
 import com.mola.molachat.entity.Message;
@@ -16,9 +14,9 @@ import com.mola.molachat.robot.bus.GptRobotEventBus;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
-import com.mola.molachat.rpc.client.ReverseProxyService;
 import com.mola.molachat.service.ServerService;
 import com.mola.molachat.service.SessionService;
+import com.mola.molachat.service.app.CmdProxyInvokeAppService;
 import com.mola.molachat.service.http.HttpService;
 import com.mola.molachat.utils.RandomUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +56,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     private OtherDataInterface otherDataInterface;
 
     @Resource
-    private ReverseProxyService reverseProxyService;
+    private CmdProxyInvokeAppService cmdProxyInvokeAppService;
 
     @Resource
     private AppConfig appConfig;
@@ -105,11 +103,10 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 log.info(JSONObject.toJSONString(prompt));
                 body.put("messages", prompt);
                 String res = null;
-                if (appConfig.getUseProxyConsumer()) {
+                if (appConfig.getUseCmdProxy()) {
                     try {
-                        ServerResponse<String> serverResponse = reverseProxyService.processChatGptRequestAndSendBackInProxy(
+                        cmdProxyInvokeAppService.sendChatGptRequestCmd(
                                 body, usedApiKey, message.getChatterId(), robotChatter.getAppKey());
-                        Assert.isTrue(serverResponse.getStatus() == ResponseCode.SUCCESS.getCode(), "rpc反向代理失败，msg = " + serverResponse.getMsg());
                     } catch (Exception e) {
                         log.error("提交任务到代理服务器异常", e);
                         // 不可用告警

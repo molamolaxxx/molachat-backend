@@ -66,12 +66,7 @@ public class AppConfig {
     private Integer maxRemainChatterCount = 5;
 
     /**
-     * 是否启动作为代理的provider
+     * 使用代理命令
      */
-    private Boolean startProxyProvider = false;
-
-    /**
-     * 是否消费代理
-     */
-    private Boolean useProxyConsumer = false;
+    private Boolean useCmdProxy = true;
 }

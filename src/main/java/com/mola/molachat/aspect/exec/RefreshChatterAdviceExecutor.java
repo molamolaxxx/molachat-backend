@@ -59,7 +59,7 @@ public class RefreshChatterAdviceExecutor implements AnnotationAdviceExecutor {
             chatterList.sort((o1, o2) -> {
                 Integer s1 = o1.getStatus();
                 Integer s2 = o2.getStatus();
-                return s1 > s2 ? -1 : 1;
+                return s2 - s1;
             });
             // 信息脱敏
             for (ChatterDTO chatterDTO : chatterList) {

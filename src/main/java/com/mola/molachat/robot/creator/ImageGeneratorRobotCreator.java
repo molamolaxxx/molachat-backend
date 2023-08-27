@@ -28,8 +28,8 @@ public class ImageGeneratorRobotCreator implements RobotCreator{
     public RobotChatter create() {
         RobotChatter robot = new RobotChatter();
         robot.setId(matchedAppKey());
-        robot.setName("小图师");
-        robot.setSignature("请输入文字，我来生成图片");
+        robot.setName("Stable Diffusion");
+        robot.setSignature("请输入文字，稍后会生成图片");
         robot.setStatus(ChatterStatusEnum.ONLINE.getCode());
         robot.setTag(ChatterTagEnum.ROBOT.getCode());
         robot.setImgUrl("img/blue.jpg");

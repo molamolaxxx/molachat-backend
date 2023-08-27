@@ -1,12 +1,14 @@
 package com.mola.molachat.schedule;
 
+import com.google.common.collect.Maps;
+import com.mola.cmd.proxy.client.CmdProxyInvokeService;
+import com.mola.molachat.common.constant.CmdProxyConstant;
 import com.mola.molachat.config.AppConfig;
 import com.mola.molachat.entity.Message;
 import com.mola.molachat.entity.RobotChatter;
 import com.mola.molachat.entity.dto.ChatterDTO;
 import com.mola.molachat.enumeration.ChatterStatusEnum;
 import com.mola.molachat.enumeration.ChatterTagEnum;
-import com.mola.molachat.rpc.client.ReverseProxyService;
 import com.mola.molachat.service.ChatterService;
 import com.mola.molachat.service.RobotService;
 import com.mola.molachat.utils.BeanUtilsPlug;
@@ -97,13 +99,15 @@ public class ChatterScheduleTask {
                 continue;
             }
             // chatgpt反向代理，代理状态同步chatter状态
-            boolean requireSyncProxyStatusToChatter = Objects.equals(chatter.getEventBusBeanName(),"chatGptRobotEventBus")
-                    && appConfig.getUseProxyConsumer();
+            boolean requireSyncProxyStatusToChatter = Objects.equals(chatter.getEventBusBeanName(),
+                    "chatGptRobotEventBus") || Objects.equals(chatter.getEventBusBeanName(),
+                    "imageGenerateRobotEventBus")
+                    && appConfig.getUseCmdProxy();
             if (!requireSyncProxyStatusToChatter) {
                 continue;
             }
 
-            boolean serviceAvailable = serviceAvailable();
+            boolean serviceAvailable = serviceAvailable(chatter);
 
             if (!serviceAvailable && Objects.equals(chatter.getStatus(), ChatterStatusEnum.ONLINE.getCode())) {
                 chatterService.setChatterStatus(chatter.getId(), ChatterStatusEnum.OFFLINE.getCode());
@@ -126,12 +130,21 @@ public class ChatterScheduleTask {
         }
     }
 
-    private boolean serviceAvailable() {
+    private boolean serviceAvailable(ChatterDTO chatter) {
+        Map<String, ChannelWrapper> channelWrapperMap = Maps.newHashMap();
         // 取代理状态
-        Map<String, ChannelWrapper> channelWrapperMap = ReverseInvokeHelper
-                .instance()
-                .fetchAvailableProxyService(String.format("%s:%s:%s", ReverseProxyService.class.getName(),
-                        "default", "1.0.0"));
+        if (Objects.equals(chatter.getEventBusBeanName(), "chatGptRobotEventBus")) {
+            channelWrapperMap = ReverseInvokeHelper
+                    .instance()
+                    .fetchAvailableProxyService(String.format("%s:%s:%s", CmdProxyInvokeService.class.getName(),
+                            CmdProxyConstant.CHAT_GPT, "1.0.0"));
+        } else if (Objects.equals(chatter.getEventBusBeanName(), "imageGenerateRobotEventBus")) {
+            channelWrapperMap = ReverseInvokeHelper
+                    .instance()
+                    .fetchAvailableProxyService(String.format("%s:%s:%s", CmdProxyInvokeService.class.getName(),
+                            CmdProxyConstant.IMAGE_GENERATE, "1.0.0"));
+        }
+
         if (channelWrapperMap == null || channelWrapperMap.size() == 0) {
             return false;
         }

@@ -5,7 +5,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mola.molachat.entity.dto.ChatterDTO;
-import com.mola.molachat.rpc.client.ReverseProxyService;
 import com.mola.molachat.service.ChatterService;
 import io.jsonwebtoken.lang.Assert;
 import org.apache.commons.lang.StringUtils;
@@ -30,7 +29,7 @@ public class GptTurboInvokeService {
     private final Map<String, GptInvokeFuture> gptInvokeFutureMap = Maps.newConcurrentMap();
 
     @Resource
-    private ReverseProxyService reverseProxyService;
+    private CmdProxyInvokeAppService cmdProxyInvokeAppService;
 
     @Resource
     private ChatterService chatterService;
@@ -46,8 +45,10 @@ public class GptTurboInvokeService {
             body.put("model", "gpt-3.5-turbo");
             List<Map<String, String>> prompt = getInvokePrompt(input);
             body.put("messages", prompt);
-            reverseProxyService.processChatGptRequestAndSendBackInProxy(body,
-                    chatGptChatter.getApiKey(), virtualChatterId, chatGptChatter.getAppKey());
+
+            cmdProxyInvokeAppService.sendChatGptRequestCmd(body, chatGptChatter.getApiKey(),
+                    virtualChatterId, chatGptChatter.getAppKey());
+
             GptInvokeFuture future = GptInvokeFuture.of();
             gptInvokeFutureMap.put(virtualChatterId, future);
             future.cdl.await(60L, TimeUnit.SECONDS);

@@ -3,7 +3,6 @@ package com.mola.molachat.robot.handler.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.mola.molachat.common.ResponseCode;
 import com.mola.molachat.common.ServerResponse;
-import com.mola.molachat.config.AppConfig;
 import com.mola.molachat.config.SelfConfig;
 import com.mola.molachat.entity.RobotChatter;
 import com.mola.molachat.robot.action.FileMessageSendAction;
@@ -12,10 +11,11 @@ import com.mola.molachat.robot.bus.ImageGenerateRobotEventBus;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
-import com.mola.molachat.rpc.proxyservice.ImageGenerateServiceProvider;
-import com.mola.molachat.rpc.client.ImageGenerateService;
+import com.mola.molachat.service.app.ImageGenerateAppService;
+import com.mola.molachat.utils.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
@@ -39,14 +39,9 @@ public class ImageGenerateChatHandler implements IRobotEventHandler<MessageRecei
     @Resource
     private SelfConfig config;
 
-    @Resource
-    private AppConfig appConfig;
 
     @Resource
-    private ImageGenerateService imageGenerateService;
-
-    @Resource
-    private ImageGenerateServiceProvider imageGenerateServiceProvider;
+    private ImageGenerateAppService imageGenerateAppService;
 
     @Resource
     private ImageGenerateRobotEventBus imageGenerateRobotEventBus;
@@ -55,23 +50,34 @@ public class ImageGenerateChatHandler implements IRobotEventHandler<MessageRecei
     public MessageSendAction handler(MessageReceiveEvent messageReceiveEvent) {
         FileMessageSendAction messageSendAction = new FileMessageSendAction();
         try {
-            if (!appConfig.getUseProxyConsumer()) {
-                imageGenerateService = imageGenerateServiceProvider;
-            }
             String content = messageReceiveEvent.getMessage().getContent();
             RobotChatter robotChatter = messageReceiveEvent.getRobotChatter();
             Assert.notNull(robotChatter, "robotChatter is null");
-            ServerResponse serverResponse = imageGenerateService.submitTask(content, false, messageReceiveEvent.getSessionId());
+            ServerResponse serverResponse = imageGenerateAppService.submitTask(content, false, messageReceiveEvent.getSessionId());
             if (serverResponse.getStatus() == ResponseCode.SUCCESS.getCode()) {
                 String res = null;
-                imageGenerateRobotEventBus.handler(
-                        RobotHeuristicHandler.getHeuristicEvent(
-                                "图片正在光速生成中，请耐心等待喔~", robotChatter, messageReceiveEvent.getSessionId()));
-                while ((res = imageGenerateService.getRes(messageReceiveEvent.getSessionId()).getData()) == null) {
+
+                for (int i = 0; i < Integer.MAX_VALUE; i++) {
+                    if ((res = imageGenerateAppService.getRes(messageReceiveEvent.getSessionId()).getData()) != null) {
+                        break;
+                    }
+                    if (i == 0) {
+                        imageGenerateRobotEventBus.handler(
+                                RobotHeuristicHandler.getHeuristicEvent(
+                                        "图片正在光速生成中，请耐心等待喔~", robotChatter, messageReceiveEvent.getSessionId()));
+                    }
                     Thread.sleep(5000);
                 }
+
+                if (!StringUtils.isNotBlank(config.getUploadFilePath())) {
+                    throw new IllegalStateException("上传文件夹目录为空，不能创建");
+                }
+                // 创建多级文件夹目录
+                FileUtils.createDirSmart(config.getUploadFilePath());
+
                 String fileName = RandomStringUtils.randomAlphabetic(3) + "_" + messageReceiveEvent.getSessionId() + ".jpg";
                 String filePath = config.getUploadFilePath() + File.separator + fileName;
+
                 byte[] imageBytes = Base64.getDecoder().decode(res);
                 BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
                 ImageIO.write(bufferedImage, "jpg", new File(filePath));

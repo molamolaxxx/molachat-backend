@@ -151,8 +151,8 @@
 		</dependency>
 		<dependency>
 			<groupId>com.mola</groupId>
-			<artifactId>spring-boot-starter-rpc</artifactId>
-			<version>1.0.1</version>
+			<artifactId>cmd-proxy-client</artifactId>
+			<version>1.0.0</version>
 		</dependency>
 	</dependencies>
 

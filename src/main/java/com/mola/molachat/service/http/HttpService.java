@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -185,30 +184,6 @@ public enum HttpService {
         }, buildContext(timeout));
     }
 
-    public byte[] postReturnByte(String url, JSONObject body, int timeout, Header[] headers) throws Exception {
-        bootMonitorThread();
-        URI uri = new URIBuilder(url).build();
-        HttpPost httpPost = new HttpPost(uri);
-        if (null != body) {
-            httpPost.setEntity(new StringEntity(body.toJSONString(), ContentType.APPLICATION_JSON));
-        }
-        if (null != headers) {
-            httpPost.setHeaders(headers);
-        }
-        return httpClient.execute(httpPost, response -> {
-            int statusCode = response.getStatusLine().getStatusCode();
-            if (isSuccess(statusCode)) {
-                return EntityUtils.toByteArray(response.getEntity());
-            } else {
-                String errorMsg = String.format("requestPost remote error, url=%s, code=%d, errMsg=%s",
-                        uri.toString(), statusCode, EntityUtils.toString(response.getEntity()));
-                logger.error(errorMsg);
-                throw new RuntimeException(errorMsg);
-
-            }
-        }, buildContext(timeout));
-    }
-
     public String post(String url, JSONObject body, int timeout) throws Exception {
         return post(url, body, timeout, null);
     }
@@ -241,34 +216,6 @@ public enum HttpService {
 
     private boolean isSuccess(int statusCode) {
         return statusCode >= 200 && statusCode < 300;
-    }
-
-    public void debugEnable() {
-        debug = true;
-    }
-
-    public void printCurlRequest(String url, Map<String, String> params, long cost) {
-        if (!debug) {
-            return;
-        }
-        if (params == null) {
-            //logger.info("curl '" + url + "'\ncost : " + cost);
-            logger.info("cost:" + cost);
-        } else {
-            StringBuilder paramsStr = new StringBuilder();
-            Iterator<Map.Entry<String, String>> iterator = params.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<String, String> entry = iterator.next();
-                String key = entry.getKey();
-                String value = entry.getValue();
-                paramsStr.append(key + "=" + value);
-                if (iterator.hasNext()) {
-                    paramsStr.append("&");
-                }
-            }
-            //logger.info("curl '" + url + "' -d '" + paramsStr.toString() + "'\ncost : " + cost);
-            logger.info("cost:" + cost);
-        }
     }
 
     private class IdleConnectionMonitorThread extends Thread {

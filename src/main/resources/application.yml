@@ -43,11 +43,10 @@ app:
   # websocket的类型 1、spring 2、tomcat 3、netty（待开发）
   server-type: tomcat
   secret: molamolaxxx
-  robot-list: chatGpt,stableDiffusion
+  robot-list: chatGpt,stableDiffusion,toolRobot
   robot-api-key:
     chatGpt : sk-xxx
-  use-proxy-consumer: false
-  start-proxy-provider: false
+  use-cmd-proxy: true
 #  http-proxy: 192.168.31.233:8080
 
 
@@ -93,7 +92,8 @@ management:
     port: 9002
     address: 127.0.0.1
 rpc:
-  start-config-server: false
-  server-port: 9003
-  app-name: molachat
+#  start-config-server: false
+#  server-port: 9003
+#  app-name: molachat
+  enable: false
 
