@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  * @date : 2022-09-12 16:26
  **/
 @Component
-public class encode64CmdHandler extends BaseCmdRobotHandler {
+public class Encode64CmdHandler extends BaseCmdRobotHandler {
 
     @Override
     public String getCommand() {
