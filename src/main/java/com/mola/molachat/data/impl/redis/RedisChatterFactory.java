@@ -96,7 +96,7 @@ public class RedisChatterFactory extends ChatterFactory {
                 super.save((Chatter) secondCache);
             }
         }
-        return firstCache;
+        return super.select(id);
     }
 
     @Override

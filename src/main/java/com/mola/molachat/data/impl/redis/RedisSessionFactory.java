@@ -81,7 +81,7 @@ public class RedisSessionFactory extends SessionFactory{
                 super.create((Session) secondCache);
             }
         }
-        return firstCache;
+        return super.selectById(id);
     }
 
     @Override

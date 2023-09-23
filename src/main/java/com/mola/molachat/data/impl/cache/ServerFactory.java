@@ -35,7 +35,7 @@ public class ServerFactory implements ServerFactoryInterface {
     @Override
     @RefreshChatterList
     public ChatServer create(ChatServer server) throws ServerException{
-        if (serverMap.keySet().contains(server.getChatterId())){
+        if (serverMap.containsKey(server.getChatterId())){
             throw new ServerException(DataErrorCodeEnum.CREATE_SERVER_ERROR);
         }
         serverMap.put(server.getChatterId(), server);
@@ -46,7 +46,7 @@ public class ServerFactory implements ServerFactoryInterface {
     @Override
     @RefreshChatterList
     public ChatServer remove(ChatServer server) throws ServerException{
-        if (!serverMap.keySet().contains(server.getChatterId())){
+        if (!serverMap.containsKey(server.getChatterId())){
             throw new ServerException(DataErrorCodeEnum.REMOVE_SERVER_ERROR);
         }
         serverMap.remove(server.getChatterId());

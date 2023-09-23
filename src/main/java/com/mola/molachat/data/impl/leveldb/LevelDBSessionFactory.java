@@ -89,7 +89,7 @@ public class LevelDBSessionFactory extends SessionFactory{
                 super.create(session);
             }
         }
-        return firstCache;
+        return super.selectById(id);
     }
 
     @Override

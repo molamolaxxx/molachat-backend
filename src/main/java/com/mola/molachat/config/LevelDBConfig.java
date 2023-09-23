@@ -1,9 +1,7 @@
 package com.mola.molachat.config;
 
-import com.mola.molachat.condition.LevelDBCondition;
 import com.mola.molachat.data.LevelDBClient;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -13,7 +11,6 @@ import org.springframework.context.annotation.Configuration;
  * @date : 2023-03-02 17:57
  **/
 @Configuration
-@Conditional(LevelDBCondition.class)
 public class LevelDBConfig {
 
     @Bean(initMethod = "init")

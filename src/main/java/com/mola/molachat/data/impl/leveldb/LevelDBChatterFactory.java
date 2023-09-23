@@ -95,7 +95,7 @@ public class LevelDBChatterFactory extends ChatterFactory {
                 super.save(chatter);
             }
         }
-        return firstCache;
+        return super.select(id);
     }
 
     @Override
