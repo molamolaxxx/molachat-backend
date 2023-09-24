@@ -1,11 +1,14 @@
 package com.mola.molachat.robot.handler.impl.cmd.kv;
 
+import com.mola.molachat.data.ChatterFactoryInterface;
 import com.mola.molachat.data.KeyValueFactoryInterface;
+import com.mola.molachat.entity.Chatter;
 import com.mola.molachat.entity.KeyValue;
 import com.mola.molachat.robot.event.CommandInputEvent;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 import javax.annotation.Resource;
 import java.util.Objects;
@@ -21,6 +24,9 @@ public class KeyValueGetHandler extends BaseCmdRobotHandler {
 
     @Resource
     private KeyValueFactoryInterface keyValueFactory;
+
+    @Resource
+    private ChatterFactoryInterface chatterFactory;
 
     @Override
     public String getCommand() {
@@ -38,10 +44,17 @@ public class KeyValueGetHandler extends BaseCmdRobotHandler {
             if (StringUtils.isBlank(baseEvent.getCommandInput())) {
                 return "命令格式错误";
             }
+
             String key = baseEvent.getCommandInput();
             KeyValue keyValue = keyValueFactory.selectOne(key);
             if (Objects.isNull(keyValue)) {
                 return "未找到kv";
+            }
+            String chatterId = baseEvent.getMessageReceiveEvent().getMessage().getChatterId();
+            Chatter chatter = chatterFactory.select(chatterId);
+            Assert.notNull(chatter, "chatter is null");
+            if (!keyValue.isShare() && !Objects.equals(chatter.getName(), keyValue.getOwner())) {
+                return "无查看权限";
             }
             return keyValue.getValue();
         } catch (Exception e) {

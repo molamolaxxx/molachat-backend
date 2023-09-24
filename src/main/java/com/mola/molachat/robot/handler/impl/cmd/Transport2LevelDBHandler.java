@@ -3,7 +3,6 @@ package com.mola.molachat.robot.handler.impl.cmd;
 import com.alibaba.fastjson.JSONObject;
 import com.mola.molachat.data.ChatterFactoryInterface;
 import com.mola.molachat.data.LevelDBClient;
-import com.mola.molachat.data.OtherDataInterface;
 import com.mola.molachat.data.SessionFactoryInterface;
 import com.mola.molachat.entity.Chatter;
 import com.mola.molachat.entity.Session;
@@ -29,9 +28,6 @@ public class Transport2LevelDBHandler extends BaseCmdRobotHandler {
     private SessionFactoryInterface sessionFactory;
 
     @Resource
-    private OtherDataInterface otherDataInterface;
-
-    @Resource
     private LevelDBClient levelDBClient;
 
     @Override
@@ -50,9 +46,6 @@ public class Transport2LevelDBHandler extends BaseCmdRobotHandler {
             for (Session session : sessionFactory.list()) {
                 levelDBClient.put("session:" + session.getSessionId(), JSONObject.toJSONString(session));
             }
-
-            // otherdata
-            levelDBClient.put("gpt3ChildTokens", JSONObject.toJSONString(otherDataInterface.getGpt3ChildTokens()));
         } catch (Exception e) {
             return "执行失败, " + e.getMessage();
         }

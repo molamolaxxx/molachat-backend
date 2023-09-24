@@ -5,7 +5,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.mola.cmd.proxy.client.consumer.CmdSender;
 import com.mola.molachat.common.constant.CmdProxyConstant;
 import com.mola.molachat.config.AppConfig;
-import com.mola.molachat.data.OtherDataInterface;
 import com.mola.molachat.robot.handler.impl.ChatGptRobotHandler;
 import com.mola.molachat.service.RobotService;
 import kotlin.Unit;
@@ -30,10 +29,7 @@ public class CmdProxyCallbackAppService implements InitializingBean {
     private RobotService robotService;
 
     @Resource
-    private OtherDataInterface otherDataInterface;
-
-    @Resource
-    private GptTurboInvokeService gptTurboInvokeService;
+    private ChatGptService chatGptService;
 
     @Resource
     private AppConfig appConfig;
@@ -62,17 +58,18 @@ public class CmdProxyCallbackAppService implements InitializingBean {
             }
 
             if (StringUtils.startsWith(toChatterId, "system")) {
-                gptTurboInvokeService.callback(toChatterId, result, exception);
+                chatGptService.callback(toChatterId, result, exception);
                 return Unit.INSTANCE;
             }
 
             if (exception) {
                 if (StringUtils.containsIgnoreCase(result, "You exceeded your current quota")
                         || StringUtils.containsIgnoreCase(result, "Incorrect API key provided")) {
-                    final String usedAppKeyFinal = apiKey;
-                    otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.remove(usedAppKeyFinal));
+                    chatGptService.removeApiKey(apiKey);
+                    robotService.pushMessage(appKey, toChatterId, ChatGptRobotHandler.ALERT_TEXT);
+                } else {
+                    robotService.pushMessage(appKey, toChatterId, ChatGptRobotHandler.PROXY_ERROR);
                 }
-                robotService.pushMessage(appKey, toChatterId, ChatGptRobotHandler.PROXY_ERROR);
                 return Unit.INSTANCE;
             }
 

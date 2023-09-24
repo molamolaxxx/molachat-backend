@@ -2,14 +2,13 @@ package com.mola.molachat.controller;
 
 import com.mola.molachat.common.ResponseCode;
 import com.mola.molachat.common.ServerResponse;
-import com.mola.molachat.data.OtherDataInterface;
 import com.mola.molachat.entity.dto.ChatterDTO;
 import com.mola.molachat.entity.params.GptInvokeParam;
 import com.mola.molachat.exception.service.ChatterServiceException;
 import com.mola.molachat.form.ChatterForm;
 import com.mola.molachat.service.ChatterService;
 import com.mola.molachat.service.RobotService;
-import com.mola.molachat.service.app.GptTurboInvokeService;
+import com.mola.molachat.service.app.ChatGptService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.validation.BindingResult;
@@ -18,8 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author : molamola
@@ -39,10 +36,7 @@ public class RobotController {
     private RobotService robotService;
 
     @Resource
-    private OtherDataInterface otherDataInterface;
-
-    @Resource
-    private GptTurboInvokeService gptTurboInvokeService;
+    private ChatGptService chatGptService;
 
     @PutMapping
     public ServerResponse<Void> update(@Valid ChatterForm form,
@@ -83,21 +77,11 @@ public class RobotController {
         }
     }
 
-    @PostMapping("/gpt/insertSubApiKeys")
-    public ServerResponse<Set<String>> insertSubApiKeys(@RequestBody List<String> subApiKeys) {
-        try {
-            otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.addAll(subApiKeys));
-            return ServerResponse.createBySuccess(otherDataInterface.getGpt3ChildTokens());
-        } catch (Exception e) {
-            log.error("insertSubApiKeys error", e);
-            return ServerResponse.createByErrorMessage(e.getMessage());
-        }
-    }
 
     @PostMapping("/gpt/invoke")
     public ServerResponse<String> invokeGpt(@RequestBody GptInvokeParam param) {
         try {
-            return ServerResponse.createBySuccess(gptTurboInvokeService.invoke(param.getInput()));
+            return ServerResponse.createBySuccess(chatGptService.invoke(param.getInput()));
         } catch (Exception e) {
             log.error("insertSubApiKeys error", e);
             return ServerResponse.createByErrorMessage(e.getMessage());

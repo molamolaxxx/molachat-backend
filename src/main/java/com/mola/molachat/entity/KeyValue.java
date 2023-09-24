@@ -49,9 +49,10 @@ public class KeyValue {
         if (value.length() > 16) {
             showValue = StringUtils.substring(showValue, 0, 16) + "...";
         }
-        return "key=" + key +
-                ", value=" + showValue +
+        return "【" + key + "】" +
+                ": value=" + showValue +
                 ", owner=" + owner +
+                ", share=" + share +
                 ", desc=" + desc;
     }
 }

@@ -5,7 +5,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mola.molachat.config.AppConfig;
-import com.mola.molachat.data.OtherDataInterface;
 import com.mola.molachat.entity.Message;
 import com.mola.molachat.entity.RobotChatter;
 import com.mola.molachat.entity.dto.SessionDTO;
@@ -16,6 +15,7 @@ import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.service.ServerService;
 import com.mola.molachat.service.SessionService;
+import com.mola.molachat.service.app.ChatGptService;
 import com.mola.molachat.service.app.CmdProxyInvokeAppService;
 import com.mola.molachat.service.http.HttpService;
 import com.mola.molachat.utils.RandomUtils;
@@ -53,7 +53,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     private GptRobotEventBus gptRobotEventBus;
 
     @Resource
-    private OtherDataInterface otherDataInterface;
+    private ChatGptService chatGptService;
 
     @Resource
     private CmdProxyInvokeAppService cmdProxyInvokeAppService;
@@ -61,7 +61,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     @Resource
     private AppConfig appConfig;
 
-    public static final String ALERT_TEXT = "刚刚开小差了, 请重试";
+    public static final String ALERT_TEXT = "账户已失效";
 
     public static final String PROXY_ERROR = "代理异常, 请重试";
 
@@ -76,7 +76,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         Message message = messageReceiveEvent.getMessage();
         // 默认主账号
         String usedApiKey = robotChatter.getApiKey();
-        Set<String> gpt3ChildTokens = otherDataInterface.getGpt3ChildTokens();
+        Set<String> gpt3ChildTokens = chatGptService.fetchApiKeys();
         if (gpt3ChildTokens.size() != 0) {
             usedApiKey = RandomUtils.getRandomElement(gpt3ChildTokens);
         }
@@ -86,8 +86,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             if (i > CHANGE_API_KEY_TIME && !StringUtils.equals(usedApiKey, robotChatter.getApiKey())) {
                 log.error("sub api key error retry failed all time, switch main remove sub, sub api key = " + usedApiKey);
                 if (gpt3ChildTokens.contains(usedApiKey)) {
-                    final String usedApiKeyFinal = usedApiKey;
-                    otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.remove(usedApiKeyFinal));
+                    chatGptService.removeApiKey(usedApiKey);
                 }
                 usedApiKey = robotChatter.getApiKey();
             }
@@ -137,8 +136,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             } catch (Exception e) {
                 log.error("RemoteRobotChatHandler ChatGptRobotHandler error retry, time = " + i + " event:" + JSONObject.toJSONString(messageReceiveEvent), e);
                 if (StringUtils.containsIgnoreCase(e.getMessage(), "You exceeded your current quota")) {
-                    final String usedAppKeyFinal = usedApiKey;
-                    otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.remove(usedAppKeyFinal));
+                    chatGptService.removeApiKey(usedApiKey);
                     // 不可用告警
                     messageSendAction.setResponsesText(ALERT_TEXT);
                     return messageSendAction;

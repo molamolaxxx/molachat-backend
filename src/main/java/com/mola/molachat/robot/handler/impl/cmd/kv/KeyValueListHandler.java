@@ -1,14 +1,19 @@
 package com.mola.molachat.robot.handler.impl.cmd.kv;
 
+import com.mola.molachat.data.ChatterFactoryInterface;
 import com.mola.molachat.data.KeyValueFactoryInterface;
+import com.mola.molachat.entity.Chatter;
 import com.mola.molachat.entity.KeyValue;
 import com.mola.molachat.robot.event.CommandInputEvent;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author : molamola
@@ -21,6 +26,9 @@ public class KeyValueListHandler extends BaseCmdRobotHandler {
 
     @Resource
     private KeyValueFactoryInterface keyValueFactory;
+
+    @Resource
+    private ChatterFactoryInterface chatterFactory;
 
     @Override
     public String getCommand() {
@@ -39,8 +47,13 @@ public class KeyValueListHandler extends BaseCmdRobotHandler {
             if (CollectionUtils.isEmpty(list)) {
                 return "kv列表为空";
             }
-            return String.join("\n", list.stream().map(KeyValue::toString)
+            String chatterId = baseEvent.getMessageReceiveEvent().getMessage().getChatterId();
+            Chatter chatter = chatterFactory.select(chatterId);
+            Assert.notNull(chatter, "chatter is null");
+            String result = String.join("\n", list.stream()
+                    .filter(kv -> kv.isShare() || Objects.equals(chatter.getName(), kv.getOwner())).map(KeyValue::toString)
                     .toArray(CharSequence[]::new));
+            return StringUtils.isBlank(result) ? "无可查看的kv列表" : result;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -4,16 +4,19 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.mola.molachat.data.KeyValueFactoryInterface;
+import com.mola.molachat.entity.KeyValue;
 import com.mola.molachat.entity.dto.ChatterDTO;
 import com.mola.molachat.service.ChatterService;
+import com.mola.molachat.utils.RandomUtils;
 import io.jsonwebtoken.lang.Assert;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * @date : 2023-07-22 22:30
  **/
 @Service
-public class GptTurboInvokeService {
+public class ChatGptService {
 
     private final Map<String, GptInvokeFuture> gptInvokeFutureMap = Maps.newConcurrentMap();
 
@@ -34,6 +37,14 @@ public class GptTurboInvokeService {
     @Resource
     private ChatterService chatterService;
 
+    @Resource
+    private KeyValueFactoryInterface keyValueFactory;
+
+    /**
+     * 调用chatgpt
+     * @param input
+     * @return
+     */
     public String invoke(String input) {
         ChatterDTO chatGptChatter = chatterService.selectById("chatGpt");
         Assert.notNull(chatGptChatter, "chatGpt robot is null");
@@ -46,8 +57,15 @@ public class GptTurboInvokeService {
             List<Map<String, String>> prompt = getInvokePrompt(input);
             body.put("messages", prompt);
 
-            cmdProxyInvokeAppService.sendChatGptRequestCmd(body, chatGptChatter.getApiKey(),
-                    virtualChatterId, chatGptChatter.getAppKey());
+            // 获取apikey，先取配置
+            String apiKey = chatGptChatter.getApiKey();
+            Set<String> apiKeys = fetchApiKeys();
+            if (!CollectionUtils.isEmpty(apiKeys)) {
+                apiKey = RandomUtils.getRandomElement(apiKeys);
+            }
+
+            cmdProxyInvokeAppService.sendChatGptRequestCmd(body, apiKey, virtualChatterId,
+                    chatGptChatter.getAppKey());
 
             GptInvokeFuture future = GptInvokeFuture.of();
             gptInvokeFutureMap.put(virtualChatterId, future);
@@ -63,6 +81,31 @@ public class GptTurboInvokeService {
         } finally {
             gptInvokeFutureMap.remove(virtualChatterId);
         }
+    }
+
+    /**
+     * 获取chatgpt apikey
+     * @return
+     */
+    public Set<String> fetchApiKeys() {
+        KeyValue keyValue = keyValueFactory.selectOne("chatgptApiKeys");
+        if (Objects.isNull(keyValue)) {
+            return Sets.newHashSet();
+        }
+        String value = keyValue.getValue();
+        return Sets.newHashSet(StringUtils.split(value, ";"));
+    }
+
+    public void removeApiKey(String apiKey) {
+        KeyValue keyValue = keyValueFactory.selectOne("chatgptApiKeys");
+        if (Objects.isNull(keyValue)) {
+            return;
+        }
+        String value = keyValue.getValue();
+        Set<String> keys = Sets.newHashSet(StringUtils.split(value, ";"));
+        keys.remove(apiKey);
+        keyValue.setValue(String.join( ";", keys));
+        keyValueFactory.save(keyValue);
     }
 
     private String parseResult(String result) {
