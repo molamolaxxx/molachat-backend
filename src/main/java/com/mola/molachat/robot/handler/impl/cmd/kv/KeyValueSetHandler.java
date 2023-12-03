@@ -57,20 +57,20 @@ public class KeyValueSetHandler extends BaseCmdRobotHandler {
                     return "命令格式错误";
                 }
                 key = splitRes[1];
-                if (!permissionCheck(key, chatter.getName())) {
+                if (!permissionCheck(key, chatter.getId())) {
                     return "无权限操作";
                 }
                 value = String.join(" ", Arrays.copyOfRange(splitRes, 2, splitRes.length));
                 share = true;
             } else {
                 key = splitRes[0];
-                if (!permissionCheck(key, chatter.getName())) {
+                if (!permissionCheck(key, chatter.getId())) {
                     return "无权限操作";
                 }
                 value = String.join(" ", Arrays.copyOfRange(splitRes, 1, splitRes.length));
             }
             keyValueFactory.save(KeyValue.builder()
-                    .owner(chatter.getName())
+                    .owner(chatter.getId())
                     .desc("系统变量")
                     .share(share)
                     .key(key)

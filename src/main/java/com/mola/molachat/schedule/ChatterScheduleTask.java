@@ -12,6 +12,7 @@ import com.mola.molachat.enumeration.ChatterTagEnum;
 import com.mola.molachat.service.ChatterService;
 import com.mola.molachat.service.RobotService;
 import com.mola.molachat.utils.BeanUtilsPlug;
+import com.mola.molachat.utils.KvUtils;
 import com.mola.rpc.core.remoting.netty.pool.ChannelWrapper;
 import com.mola.rpc.core.system.ReverseInvokeHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +51,9 @@ public class ChatterScheduleTask {
     @Resource
     private AppConfig appConfig;
 
+    @Resource
+    private KvUtils kvUtils;
+
     /**
      * 检查chatter最后在线时间，删除长时间不在线的chatter
      */
@@ -57,7 +61,9 @@ public class ChatterScheduleTask {
     private void deleteChatters() {
         List<ChatterDTO> chatters = chatterService.list();
         // 如果chatter个数小于等于最大保留的chatter个数，则不用执行删除操作
-        if (appConfig.getMaxRemainChatterCount() >= chatters.size()) {
+        Integer maxRemainChatterCount = kvUtils.getIntegerOrDefault(
+                "maxRemainChatterCount", 5);
+        if (maxRemainChatterCount >= chatters.size()) {
             return;
         }
         // 获得逻辑删除的阈值

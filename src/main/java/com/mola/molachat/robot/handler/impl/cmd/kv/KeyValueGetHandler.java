@@ -53,7 +53,7 @@ public class KeyValueGetHandler extends BaseCmdRobotHandler {
             String chatterId = baseEvent.getMessageReceiveEvent().getMessage().getChatterId();
             Chatter chatter = chatterFactory.select(chatterId);
             Assert.notNull(chatter, "chatter is null");
-            if (!keyValue.isShare() && !Objects.equals(chatter.getName(), keyValue.getOwner())) {
+            if (!keyValue.isShare() && !Objects.equals(chatter.getId(), keyValue.getOwner())) {
                 return "无查看权限";
             }
             return keyValue.getValue();

@@ -18,6 +18,7 @@ import com.mola.molachat.service.SessionService;
 import com.mola.molachat.service.app.ChatGptService;
 import com.mola.molachat.service.app.CmdProxyInvokeAppService;
 import com.mola.molachat.service.http.HttpService;
+import com.mola.molachat.utils.KvUtils;
 import com.mola.molachat.utils.RandomUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -57,6 +58,9 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
 
     @Resource
     private CmdProxyInvokeAppService cmdProxyInvokeAppService;
+
+    @Resource
+    private KvUtils kvUtils;
 
     @Resource
     private AppConfig appConfig;
@@ -185,13 +189,19 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             messageInput.add(getLine("user", messageReceiveEvent.getMessage().getContent()));
             return messageInput;
         }
-        int start = messageList.size() > 15 ? messageList.size() - 15 : 0;
+
+        // 最大上下文条数
+        Integer maxPromptMsgCount = kvUtils.getIntegerOrDefault("maxPromptMsgCount", 5);
+        // 最大消息大小
+        Integer maxPromptMsgSize = kvUtils.getIntegerOrDefault("maxPromptMsgSize", 500);
+
+        int start = messageList.size() > maxPromptMsgCount ? messageList.size() - maxPromptMsgCount : 0;
         for (int i = start; i < messageList.size(); i++) {
             Message message = messageList.get(i);
             if (StringUtils.isNotBlank(message.getContent())) {
                 String content = message.getContent();
-                if (content.length() > 200 && i != messageList.size() - 1) {
-                    content = content.substring(0, 200);
+                if (content.length() > maxPromptMsgSize && i != messageList.size() - 1) {
+                    content = content.substring(0, maxPromptMsgSize);
                 }
                 if (ALERT_TEXT.equals(content) || PROXY_ERROR.equals(content)) {
                     continue;

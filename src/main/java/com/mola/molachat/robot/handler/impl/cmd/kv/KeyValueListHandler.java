@@ -51,7 +51,7 @@ public class KeyValueListHandler extends BaseCmdRobotHandler {
             Chatter chatter = chatterFactory.select(chatterId);
             Assert.notNull(chatter, "chatter is null");
             String result = String.join("\n", list.stream()
-                    .filter(kv -> kv.isShare() || Objects.equals(chatter.getName(), kv.getOwner())).map(KeyValue::toString)
+                    .filter(kv -> kv.isShare() || Objects.equals(chatter.getId(), kv.getOwner())).map(KeyValue::toString)
                     .toArray(CharSequence[]::new));
             return StringUtils.isBlank(result) ? "无可查看的kv列表" : result;
         } catch (Exception e) {
