@@ -8,6 +8,7 @@ import com.mola.molachat.config.AppConfig;
 import com.mola.molachat.robot.handler.impl.ChatGptRobotHandler;
 import com.mola.molachat.service.RobotService;
 import kotlin.Unit;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import java.util.Map;
  * @date : 2023-08-27 00:01
  **/
 @Service
+@Slf4j
 public class CmdProxyCallbackAppService implements InitializingBean {
 
     @Resource
@@ -70,6 +72,7 @@ public class CmdProxyCallbackAppService implements InitializingBean {
                 } else {
                     robotService.pushMessage(appKey, toChatterId, ChatGptRobotHandler.PROXY_ERROR);
                 }
+                log.error(JSONObject.toJSONString(resultMap));
                 return Unit.INSTANCE;
             }
 

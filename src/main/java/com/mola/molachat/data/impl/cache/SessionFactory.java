@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
@@ -54,6 +55,16 @@ public class SessionFactory implements SessionFactoryInterface {
 
     @Override
     public synchronized Session create(Set<Chatter> chatterSet) throws SessionException{
+        //1.创建session
+        Session session = createSessionInner(chatterSet);
+
+        //2.存储
+        this.create(session);
+
+        return session;
+    }
+
+    protected Session createSessionInner(Set<Chatter> chatterSet) {
         if (chatterSet.size() < 2){
             log.info("集合中小于两个chatter，无法创建session");
             throw new SessionException(DataErrorCodeEnum.CREATE_SESSION_ERROR
@@ -70,12 +81,22 @@ public class SessionFactory implements SessionFactoryInterface {
         Session session = new Session();
         session.setChatterSet(chatterSet);
         session.setSessionId(sessionId.toString());
-
-        //2.创建
-        this.create(session);
-
         return session;
     }
+
+
+    protected Session fillSessionInner(Session session) {
+        Assert.notNull(session, "session is null!");
+        if (StringUtils.isEmpty(session.getSessionId())) {
+            session.setSessionId(IdUtils.getSessionId());
+        }
+        session.setCreateTime(new Date());
+        if (session.getMessageList() == null) {
+            session.setMessageList(new ArrayList<>());
+        }
+        return session;
+    }
+
 
     @Override
     public Session create(Session session) {
@@ -122,6 +143,10 @@ public class SessionFactory implements SessionFactoryInterface {
     @Override
     public Message insertMessage(String sessionId, Message message) throws SessionException {
         Session session = sessionMap.get(sessionId);
+        return insertMessageInner(session, message);
+    }
+
+    protected Message insertMessageInner(Session session, Message message) {
         if (null == session) {
             throw new SessionException(DataErrorCodeEnum.SESSION_NOT_EXIST);
         }

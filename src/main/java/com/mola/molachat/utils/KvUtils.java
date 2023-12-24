@@ -2,6 +2,7 @@ package com.mola.molachat.utils;
 
 import com.mola.molachat.data.KeyValueFactoryInterface;
 import com.mola.molachat.entity.KeyValue;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -14,6 +15,7 @@ import java.util.Objects;
  * @date : 2023-11-19 21:54
  **/
 @Component
+@Slf4j
 public class KvUtils {
 
     @Resource
@@ -24,7 +26,8 @@ public class KvUtils {
         if (Objects.isNull(keyValue)) {
             return defaultValue;
         }
-        return Integer.parseInt(key);
+        log.info("key:{}, value:{}", key, Integer.parseInt(keyValue.getValue()));
+        return Integer.parseInt(keyValue.getValue());
     }
 
     public String getString(String key) {

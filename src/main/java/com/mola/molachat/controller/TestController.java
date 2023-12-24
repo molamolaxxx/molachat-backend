@@ -66,7 +66,7 @@ public class TestController {
                     if (null!= fm.getUrl() && fm.getUrl().contains("file/")) {
                         fm.setUrl(fm.getUrl().replace("file/","files/"));
                     }
-                    sessionFactoryInterface.save(session.getSessionId());
+//                    sessionFactoryInterface.save(session.getSessionId());
                 }
             }
         }

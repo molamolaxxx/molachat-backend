@@ -44,14 +44,18 @@ public class LevelDBChatterFactory extends ChatterFactory {
         // 从levelDB中读取list放入缓存
         Map<String, String> map = levelDBClient.list(levelDBKeyPrefix);
         map.forEach((k, v) -> {
-            JSONObject jsonObject = JSONObject.parseObject(v);
-            jsonObject.remove("videoState");
-            if (jsonObject.containsKey("appKey")) {
-                super.save(jsonObject.toJavaObject(RobotChatter.class));
-            } else {
-                super.save(jsonObject.toJavaObject(Chatter.class));
-            }
+            super.save(parseFromJsonStr(v));
         });
+    }
+
+    private Chatter parseFromJsonStr(String jsonStr) {
+        JSONObject jsonObject = JSONObject.parseObject(jsonStr);
+        jsonObject.remove("videoState");
+        if (jsonObject.containsKey("appKey")) {
+            return jsonObject.toJavaObject(RobotChatter.class);
+        } else {
+            return jsonObject.toJavaObject(Chatter.class);
+        }
     }
 
     @Override

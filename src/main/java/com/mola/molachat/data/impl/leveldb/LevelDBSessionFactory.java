@@ -44,7 +44,11 @@ public class LevelDBSessionFactory extends SessionFactory{
         // 从levelDB中读取list放入缓存
         Map<String, String> map = levelDBClient.list(levelDBKeyPrefix);
         map.forEach((k, v) -> {
-            Session session = super.create(JSONObject.parseObject(v, Session.class));
+            Session parseObject = JSONObject.parseObject(v, Session.class);
+            if (parseObject == null) {
+                return;
+            }
+            Session session = super.create(parseObject);
             JSONObject jsonObject = JSONObject.parseObject(v);
             JSONArray messageList = jsonObject.getJSONArray("messageList");
             if (CollectionUtils.isEmpty(messageList)) {
