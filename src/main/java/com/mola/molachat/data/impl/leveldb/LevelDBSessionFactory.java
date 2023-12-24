@@ -44,28 +44,33 @@ public class LevelDBSessionFactory extends SessionFactory{
         // 从levelDB中读取list放入缓存
         Map<String, String> map = levelDBClient.list(levelDBKeyPrefix);
         map.forEach((k, v) -> {
-            Session parseObject = JSONObject.parseObject(v, Session.class);
-            if (parseObject == null) {
-                return;
-            }
-            Session session = super.create(parseObject);
-            JSONObject jsonObject = JSONObject.parseObject(v);
-            JSONArray messageList = jsonObject.getJSONArray("messageList");
-            if (CollectionUtils.isEmpty(messageList)) {
-                return;
-            }
-            session.getMessageList().clear();
-            for (Object o : messageList) {
-                Message message = ((JSONObject) o).toJavaObject(Message.class);
-                if (null == message.getContent()) {
-                    FileMessage fileMessage = ((JSONObject) o).toJavaObject(FileMessage.class);
-                    if (fileMessage.getUrl() != null) {
-                        message = fileMessage;
-                    }
-                }
-                session.getMessageList().add(message);
-            }
+            super.create(parseFromJson(v));
         });
+    }
+
+    private Session parseFromJson(String json) {
+        Session parseObject = JSONObject.parseObject(json, Session.class);
+        if (parseObject == null) {
+            return null;
+        }
+        Session session = fillSessionInner(parseObject);
+        JSONObject jsonObject = JSONObject.parseObject(json);
+        JSONArray messageList = jsonObject.getJSONArray("messageList");
+        if (CollectionUtils.isEmpty(messageList)) {
+            return session;
+        }
+        session.getMessageList().clear();
+        for (Object o : messageList) {
+            Message message = ((JSONObject) o).toJavaObject(Message.class);
+            if (null == message.getContent()) {
+                FileMessage fileMessage = ((JSONObject) o).toJavaObject(FileMessage.class);
+                if (fileMessage.getUrl() != null) {
+                    message = fileMessage;
+                }
+            }
+            session.getMessageList().add(message);
+        }
+        return session;
     }
 
     @Override
@@ -88,7 +93,7 @@ public class LevelDBSessionFactory extends SessionFactory{
         Session firstCache = super.selectById(id);
         if (null == firstCache) {
             // 取二级缓存
-            Session session = JSONObject.parseObject(levelDBClient.get(levelDBKeyPrefix + id), Session.class);
+            Session session = parseFromJson(levelDBClient.get(levelDBKeyPrefix + id));
             if (null != session) {
                 super.create(session);
             }

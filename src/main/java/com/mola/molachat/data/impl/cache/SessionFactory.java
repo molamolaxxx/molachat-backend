@@ -100,13 +100,7 @@ public class SessionFactory implements SessionFactoryInterface {
 
     @Override
     public Session create(Session session) {
-        if (StringUtils.isEmpty(session.getSessionId())) {
-            session.setSessionId(IdUtils.getSessionId());
-        }
-        session.setCreateTime(new Date());
-        if (session.getMessageList() == null) {
-            session.setMessageList(new ArrayList<>());
-        }
+        fillSessionInner(session);
         sessionMap.put(session.getSessionId(), session);
         return session;
     }
