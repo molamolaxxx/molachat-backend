@@ -3,7 +3,7 @@ package com.mola.molachat.server.spring;
 import com.mola.molachat.common.MyApplicationContextAware;
 import com.mola.molachat.server.ChatServer;
 import com.mola.molachat.server.session.SpringSessionWrapper;
-import com.mola.molachat.service.ServerService;
+import com.mola.molachat.server.service.ServerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import org.springframework.web.socket.*;

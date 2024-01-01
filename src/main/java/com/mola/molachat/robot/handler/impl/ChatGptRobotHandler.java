@@ -4,22 +4,22 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.mola.molachat.config.AppConfig;
-import com.mola.molachat.entity.Message;
-import com.mola.molachat.entity.RobotChatter;
-import com.mola.molachat.entity.dto.SessionDTO;
+import com.mola.molachat.common.config.AppConfig;
+import com.mola.molachat.session.model.Message;
+import com.mola.molachat.chatter.model.RobotChatter;
+import com.mola.molachat.session.dto.SessionDTO;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.bus.GptRobotEventBus;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
-import com.mola.molachat.service.ServerService;
-import com.mola.molachat.service.SessionService;
-import com.mola.molachat.service.app.ChatGptService;
-import com.mola.molachat.service.app.CmdProxyInvokeAppService;
-import com.mola.molachat.service.http.HttpService;
-import com.mola.molachat.utils.KvUtils;
-import com.mola.molachat.utils.RandomUtils;
+import com.mola.molachat.server.service.ServerService;
+import com.mola.molachat.session.service.SessionService;
+import com.mola.molachat.robot.solution.ChatGptSolution;
+import com.mola.molachat.robot.solution.CmdProxyInvokeSolution;
+import com.mola.molachat.common.utils.HttpUtil;
+import com.mola.molachat.common.utils.KvUtils;
+import com.mola.molachat.common.utils.RandomUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
@@ -54,10 +54,10 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     private GptRobotEventBus gptRobotEventBus;
 
     @Resource
-    private ChatGptService chatGptService;
+    private ChatGptSolution chatGptSolution;
 
     @Resource
-    private CmdProxyInvokeAppService cmdProxyInvokeAppService;
+    private CmdProxyInvokeSolution cmdProxyInvokeSolution;
 
     @Resource
     private KvUtils kvUtils;
@@ -80,7 +80,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         Message message = messageReceiveEvent.getMessage();
         // 默认主账号
         String usedApiKey = robotChatter.getApiKey();
-        Set<String> gpt3ChildTokens = chatGptService.fetchApiKeys();
+        Set<String> gpt3ChildTokens = chatGptSolution.fetchApiKeys();
         if (gpt3ChildTokens.size() != 0) {
             usedApiKey = RandomUtils.getRandomElement(gpt3ChildTokens);
         }
@@ -90,7 +90,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             if (i > CHANGE_API_KEY_TIME && !StringUtils.equals(usedApiKey, robotChatter.getApiKey())) {
                 log.error("sub api key error retry failed all time, switch main remove sub, sub api key = " + usedApiKey);
                 if (gpt3ChildTokens.contains(usedApiKey)) {
-                    chatGptService.removeApiKey(usedApiKey);
+                    chatGptSolution.removeApiKey(usedApiKey);
                 }
                 usedApiKey = robotChatter.getApiKey();
             }
@@ -108,7 +108,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 String res = null;
                 if (appConfig.getUseCmdProxy()) {
                     try {
-                        cmdProxyInvokeAppService.sendChatGptRequestCmd(
+                        cmdProxyInvokeSolution.sendChatGptRequestCmd(
                                 body, usedApiKey, message.getChatterId(), robotChatter.getAppKey());
                     } catch (Exception e) {
                         log.error("提交任务到代理服务器异常", e);
@@ -119,7 +119,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                     messageSendAction.setSkip(Boolean.TRUE);
                     return messageSendAction;
                 } else {
-                    res = HttpService.INSTANCE.post("https://api.openai.com/v1/chat/completions", body, 300000, headers.toArray(new Header[]{}));
+                    res = HttpUtil.INSTANCE.post("https://api.openai.com/v1/chat/completions", body, 300000, headers.toArray(new Header[]{}));
                 }
 
                 JSONObject jsonObject = JSONObject.parseObject(res);
@@ -140,7 +140,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             } catch (Exception e) {
                 log.error("RemoteRobotChatHandler ChatGptRobotHandler error retry, time = " + i + " event:" + JSONObject.toJSONString(messageReceiveEvent), e);
                 if (StringUtils.containsIgnoreCase(e.getMessage(), "You exceeded your current quota")) {
-                    chatGptService.removeApiKey(usedApiKey);
+                    chatGptSolution.removeApiKey(usedApiKey);
                     // 不可用告警
                     messageSendAction.setResponsesText(ALERT_TEXT);
                     return messageSendAction;

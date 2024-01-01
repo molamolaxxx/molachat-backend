@@ -1,11 +1,11 @@
 package com.mola.molachat.robot.handler.impl.cmd.gptpreset;
 
 import com.alibaba.nacos.common.utils.Objects;
-import com.mola.molachat.data.KeyValueFactoryInterface;
-import com.mola.molachat.entity.KeyValue;
+import com.mola.molachat.robot.data.KeyValueFactoryInterface;
+import com.mola.molachat.robot.model.KeyValue;
 import com.mola.molachat.robot.event.CommandInputEvent;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
-import com.mola.molachat.service.app.ChatGptService;
+import com.mola.molachat.robot.solution.ChatGptSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
@@ -24,7 +24,7 @@ import java.util.Arrays;
 public class GptPresetExecHandler extends BaseCmdRobotHandler {
 
     @Resource
-    private ChatGptService chatGptService;
+    private ChatGptSolution chatGptSolution;
 
     @Resource
     private KeyValueFactoryInterface keyValueFactory;
@@ -52,15 +52,15 @@ public class GptPresetExecHandler extends BaseCmdRobotHandler {
                 return "未找到gpt预存模板";
             }
             if (splitRes.length == 1) {
-                return chatGptService.invoke(keyValue.getValue());
+                return chatGptSolution.invoke(keyValue.getValue());
             }
 
             String text = String.join(" ", Arrays.copyOfRange(splitRes, 1, splitRes.length));
             if (!StringUtils.contains(keyValue.getValue(), "%s")) {
-                return chatGptService.invoke(keyValue.getValue());
+                return chatGptSolution.invoke(keyValue.getValue());
             }
             String gptInput = String.format(keyValue.getValue(), text);
-            return chatGptService.invoke(gptInput);
+            return chatGptSolution.invoke(gptInput);
         } catch (Exception e) {
             log.error("gpt预存模板执行失败, input = " + baseEvent.getCommandInput(), e);
             return "gpt预存模板执行失败";

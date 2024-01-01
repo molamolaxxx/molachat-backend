@@ -1,19 +1,24 @@
 package com.mola.molachat.service;
 
 import com.mola.molachat.MolachatApplicationTests;
-import com.mola.molachat.entity.Group;
-import com.mola.molachat.entity.dto.ChatterDTO;
-import com.mola.molachat.form.GroupForm;
+import com.mola.molachat.chatter.service.ChatterService;
+import com.mola.molachat.group.model.Group;
+import com.mola.molachat.chatter.dto.ChatterDTO;
+import com.mola.molachat.group.model.GroupForm;
+import com.mola.molachat.group.service.GroupService;
+import com.mola.molachat.group.solution.GroupSolution;
 import org.junit.Test;
 
 import javax.annotation.Resource;
-
-import static org.junit.Assert.*;
 
 public class GroupServiceTest extends MolachatApplicationTests {
 
     @Resource
     private GroupService groupService;
+
+
+    @Resource
+    private GroupSolution groupSolution;
 
     @Resource
     private ChatterService chatterService;
@@ -43,6 +48,6 @@ public class GroupServiceTest extends MolachatApplicationTests {
         groupForm.setDesc("哈哈哈哈");
         groupForm.setName("测试群组");
         groupForm.setCreatorId("1592119591617QJ4xJ");
-        groupService.create(groupForm, true);
+        groupSolution.create(groupForm, true);
     }
 }

@@ -1,6 +1,6 @@
 package com.mola.molachat.robot.event;
 
-import com.mola.molachat.entity.Message;
+import com.mola.molachat.session.model.Message;
 import lombok.Data;
 
 /**

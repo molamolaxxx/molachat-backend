@@ -1,18 +1,18 @@
 package com.mola.molachat.robot.handler.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.mola.molachat.common.ResponseCode;
-import com.mola.molachat.common.ServerResponse;
-import com.mola.molachat.config.SelfConfig;
-import com.mola.molachat.entity.RobotChatter;
+import com.mola.molachat.common.model.ResponseCode;
+import com.mola.molachat.common.model.ServerResponse;
+import com.mola.molachat.common.config.SelfConfig;
+import com.mola.molachat.chatter.model.RobotChatter;
 import com.mola.molachat.robot.action.FileMessageSendAction;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.bus.ImageGenerateRobotEventBus;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
-import com.mola.molachat.service.app.ImageGenerateAppService;
-import com.mola.molachat.utils.FileUtils;
+import com.mola.molachat.robot.solution.ImageGenerateSolution;
+import com.mola.molachat.common.utils.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
@@ -41,7 +41,7 @@ public class ImageGenerateChatHandler implements IRobotEventHandler<MessageRecei
 
 
     @Resource
-    private ImageGenerateAppService imageGenerateAppService;
+    private ImageGenerateSolution imageGenerateSolution;
 
     @Resource
     private ImageGenerateRobotEventBus imageGenerateRobotEventBus;
@@ -53,12 +53,12 @@ public class ImageGenerateChatHandler implements IRobotEventHandler<MessageRecei
             String content = messageReceiveEvent.getMessage().getContent();
             RobotChatter robotChatter = messageReceiveEvent.getRobotChatter();
             Assert.notNull(robotChatter, "robotChatter is null");
-            ServerResponse serverResponse = imageGenerateAppService.submitTask(content, false, messageReceiveEvent.getSessionId());
+            ServerResponse serverResponse = imageGenerateSolution.submitTask(content, false, messageReceiveEvent.getSessionId());
             if (serverResponse.getStatus() == ResponseCode.SUCCESS.getCode()) {
                 String res = null;
 
                 for (int i = 0; i < Integer.MAX_VALUE; i++) {
-                    if ((res = imageGenerateAppService.getRes(messageReceiveEvent.getSessionId()).getData()) != null) {
+                    if ((res = imageGenerateSolution.getRes(messageReceiveEvent.getSessionId()).getData()) != null) {
                         break;
                     }
                     if (i == 0) {

@@ -1,7 +1,7 @@
 package com.mola.molachat.robot.bus;
 
-import com.mola.molachat.event.EventBus;
-import com.mola.molachat.event.action.BaseAction;
+import com.mola.molachat.common.event.EventBus;
+import com.mola.molachat.common.event.action.BaseAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.robot.handler.impl.ChatGptRobotHandler;

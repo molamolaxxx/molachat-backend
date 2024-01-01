@@ -1,10 +1,10 @@
 package com.mola.molachat.robot.creator;
 
-import com.mola.molachat.config.AppConfig;
-import com.mola.molachat.data.ChatterFactoryInterface;
-import com.mola.molachat.entity.RobotChatter;
-import com.mola.molachat.enumeration.ChatterStatusEnum;
-import com.mola.molachat.enumeration.ChatterTagEnum;
+import com.mola.molachat.common.config.AppConfig;
+import com.mola.molachat.chatter.data.ChatterFactoryInterface;
+import com.mola.molachat.chatter.model.RobotChatter;
+import com.mola.molachat.chatter.enums.ChatterStatusEnum;
+import com.mola.molachat.chatter.enums.ChatterTagEnum;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;

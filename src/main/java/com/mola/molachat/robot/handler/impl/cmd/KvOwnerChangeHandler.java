@@ -1,11 +1,11 @@
 package com.mola.molachat.robot.handler.impl.cmd;
 
-import com.mola.molachat.data.KeyValueFactoryInterface;
-import com.mola.molachat.entity.KeyValue;
-import com.mola.molachat.entity.dto.ChatterDTO;
+import com.mola.molachat.robot.data.KeyValueFactoryInterface;
+import com.mola.molachat.robot.model.KeyValue;
+import com.mola.molachat.chatter.dto.ChatterDTO;
 import com.mola.molachat.robot.event.CommandInputEvent;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
-import com.mola.molachat.service.ChatterService;
+import com.mola.molachat.chatter.service.ChatterService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

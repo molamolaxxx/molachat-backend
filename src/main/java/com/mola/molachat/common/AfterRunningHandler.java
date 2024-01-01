@@ -1,6 +1,6 @@
 package com.mola.molachat.common;
 
-import com.mola.molachat.config.SelfConfig;
+import com.mola.molachat.common.config.SelfConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;

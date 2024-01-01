@@ -2,7 +2,7 @@ package com.mola.molachat.robot.handler.impl.cmd;
 
 import com.mola.molachat.robot.event.CommandInputEvent;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
-import com.mola.molachat.utils.TranslateUtils;
+import com.mola.molachat.common.utils.TranslateUtils;
 import org.springframework.stereotype.Component;
 
 /**

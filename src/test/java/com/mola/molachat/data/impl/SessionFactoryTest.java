@@ -1,10 +1,10 @@
 package com.mola.molachat.data.impl;
 
-import com.mola.molachat.data.impl.cache.ChatterFactory;
-import com.mola.molachat.data.impl.cache.SessionFactory;
-import com.mola.molachat.entity.Chatter;
-import com.mola.molachat.entity.Message;
-import com.mola.molachat.entity.Session;
+import com.mola.molachat.chatter.data.impl.ChatterFactory;
+import com.mola.molachat.session.data.impl.SessionFactory;
+import com.mola.molachat.chatter.model.Chatter;
+import com.mola.molachat.session.model.Message;
+import com.mola.molachat.session.model.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;

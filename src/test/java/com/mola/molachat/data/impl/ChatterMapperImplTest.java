@@ -1,8 +1,8 @@
 package com.mola.molachat.data.impl;
 
-import com.mola.molachat.data.impl.cache.ChatterFactory;
-import com.mola.molachat.entity.Chatter;
-import com.mola.molachat.exception.ChatterException;
+import com.mola.molachat.chatter.data.impl.ChatterFactory;
+import com.mola.molachat.chatter.model.Chatter;
+import com.mola.molachat.common.exception.ChatterException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;

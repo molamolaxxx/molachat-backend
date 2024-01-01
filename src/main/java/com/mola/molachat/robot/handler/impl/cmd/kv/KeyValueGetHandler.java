@@ -1,9 +1,9 @@
 package com.mola.molachat.robot.handler.impl.cmd.kv;
 
-import com.mola.molachat.data.ChatterFactoryInterface;
-import com.mola.molachat.data.KeyValueFactoryInterface;
-import com.mola.molachat.entity.Chatter;
-import com.mola.molachat.entity.KeyValue;
+import com.mola.molachat.chatter.data.ChatterFactoryInterface;
+import com.mola.molachat.robot.data.KeyValueFactoryInterface;
+import com.mola.molachat.chatter.model.Chatter;
+import com.mola.molachat.robot.model.KeyValue;
 import com.mola.molachat.robot.event.CommandInputEvent;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
 import org.apache.commons.lang.StringUtils;

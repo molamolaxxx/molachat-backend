@@ -1,6 +1,6 @@
 package com.mola.molachat.robot.creator;
 
-import com.mola.molachat.entity.RobotChatter;
+import com.mola.molachat.chatter.model.RobotChatter;
 
 public interface RobotCreator {
 

@@ -1,7 +1,7 @@
 package com.mola.molachat.robot.event;
 
-import com.mola.molachat.entity.RobotChatter;
-import com.mola.molachat.event.event.BaseEvent;
+import com.mola.molachat.chatter.model.RobotChatter;
+import com.mola.molachat.common.event.event.BaseEvent;
 import lombok.Data;
 
 /**
