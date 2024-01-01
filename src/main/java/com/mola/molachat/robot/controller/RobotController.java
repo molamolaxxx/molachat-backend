@@ -1,13 +1,11 @@
 package com.mola.molachat.robot.controller;
 
-import com.mola.molachat.common.model.ResponseCode;
-import com.mola.molachat.common.model.ServerResponse;
 import com.mola.molachat.chatter.dto.ChatterDTO;
-import com.mola.molachat.robot.model.GptInvokeParam;
-import com.mola.molachat.common.exception.service.ChatterServiceException;
 import com.mola.molachat.chatter.model.ChatterForm;
 import com.mola.molachat.chatter.service.ChatterService;
-import com.mola.molachat.robot.solution.ChatGptSolution;
+import com.mola.molachat.common.exception.service.ChatterServiceException;
+import com.mola.molachat.common.model.ResponseCode;
+import com.mola.molachat.common.model.ServerResponse;
 import com.mola.molachat.robot.solution.RobotSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -34,9 +32,6 @@ public class RobotController {
 
     @Resource
     private RobotSolution robotSolution;
-
-    @Resource
-    private ChatGptSolution chatGptSolution;
 
     @PutMapping
     public ServerResponse<Void> update(@Valid ChatterForm form,
@@ -73,17 +68,6 @@ public class RobotController {
             return ServerResponse.createBySuccess();
         } catch (Exception e) {
             log.error("pushMessage error", e);
-            return ServerResponse.createByErrorMessage(e.getMessage());
-        }
-    }
-
-
-    @PostMapping("/gpt/invoke")
-    public ServerResponse<String> invokeGpt(@RequestBody GptInvokeParam param) {
-        try {
-            return ServerResponse.createBySuccess(chatGptSolution.invoke(param.getInput()));
-        } catch (Exception e) {
-            log.error("insertSubApiKeys error", e);
             return ServerResponse.createByErrorMessage(e.getMessage());
         }
     }

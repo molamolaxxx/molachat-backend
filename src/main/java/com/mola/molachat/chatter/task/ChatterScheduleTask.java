@@ -1,20 +1,12 @@
 package com.mola.molachat.chatter.task;
 
-import com.google.common.collect.Maps;
-import com.mola.cmd.proxy.client.CmdProxyInvokeService;
-import com.mola.molachat.robot.constant.CmdProxyConstant;
-import com.mola.molachat.common.config.AppConfig;
-import com.mola.molachat.session.model.Message;
-import com.mola.molachat.chatter.model.RobotChatter;
 import com.mola.molachat.chatter.dto.ChatterDTO;
 import com.mola.molachat.chatter.enums.ChatterStatusEnum;
 import com.mola.molachat.chatter.enums.ChatterTagEnum;
 import com.mola.molachat.chatter.service.ChatterService;
-import com.mola.molachat.robot.solution.RobotSolution;
-import com.mola.molachat.common.utils.BeanUtilsPlug;
+import com.mola.molachat.common.config.AppConfig;
 import com.mola.molachat.common.utils.KvUtils;
-import com.mola.rpc.core.remoting.netty.pool.ChannelWrapper;
-import com.mola.rpc.core.system.ReverseInvokeHelper;
+import com.mola.molachat.robot.solution.RobotSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -23,10 +15,6 @@ import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -92,74 +80,6 @@ public class ChatterScheduleTask {
             // 分数衰减，一天未登录=》每一次检查-1*未登录天数
             pointDecay(chatter);
         }
-    }
-
-    /**
-     * 机器人状态变更
-     */
-    @Scheduled(fixedRate = 5000)
-    private void handleRobotStatusChange() throws Exception {
-        List<ChatterDTO> chatters = chatterService.list();
-        for (ChatterDTO chatter : chatters) {
-            if (!chatter.isRobot()) {
-                continue;
-            }
-            // chatgpt反向代理，代理状态同步chatter状态
-            boolean requireSyncProxyStatusToChatter = Objects.equals(chatter.getEventBusBeanName(),
-                    "chatGptRobotEventBus") || Objects.equals(chatter.getEventBusBeanName(),
-                    "imageGenerateRobotEventBus")
-                    && appConfig.getUseCmdProxy();
-            if (!requireSyncProxyStatusToChatter) {
-                continue;
-            }
-
-            boolean serviceAvailable = serviceAvailable(chatter);
-
-            if (!serviceAvailable && Objects.equals(chatter.getStatus(), ChatterStatusEnum.ONLINE.getCode())) {
-                chatterService.setChatterStatus(chatter.getId(), ChatterStatusEnum.OFFLINE.getCode());
-                continue;
-            }
-            if (serviceAvailable && Objects.equals(chatter.getStatus(), ChatterStatusEnum.OFFLINE.getCode())) {
-                chatterService.setChatterStatus(chatter.getId(), ChatterStatusEnum.ONLINE.getCode());
-                // 取最新的一条消息，发送给机器人
-                BlockingQueue<Message> queue = chatterService.getQueueById(chatter.getId());
-                if (queue.size() != 0){
-                    Message message = queue.poll(100, TimeUnit.MILLISECONDS);
-                    if (message.getSessionId() != null) {
-                        RobotChatter robotChatter = (RobotChatter) BeanUtilsPlug
-                                .copyPropertiesReturnTarget(chatterService.selectById(chatter.getId()), new RobotChatter());
-                        robotSolution.onReceiveMessage(message, message.getSessionId(), robotChatter);
-                    }
-                    queue.clear();
-                }
-            }
-        }
-    }
-
-    private boolean serviceAvailable(ChatterDTO chatter) {
-        Map<String, ChannelWrapper> channelWrapperMap = Maps.newHashMap();
-        // 取代理状态
-        if (Objects.equals(chatter.getEventBusBeanName(), "chatGptRobotEventBus")) {
-            channelWrapperMap = ReverseInvokeHelper
-                    .instance()
-                    .fetchAvailableProxyService(String.format("%s:%s:%s", CmdProxyInvokeService.class.getName(),
-                            CmdProxyConstant.CHAT_GPT, "1.0.0"));
-        } else if (Objects.equals(chatter.getEventBusBeanName(), "imageGenerateRobotEventBus")) {
-            channelWrapperMap = ReverseInvokeHelper
-                    .instance()
-                    .fetchAvailableProxyService(String.format("%s:%s:%s", CmdProxyInvokeService.class.getName(),
-                            CmdProxyConstant.IMAGE_GENERATE, "1.0.0"));
-        }
-
-        if (channelWrapperMap == null || channelWrapperMap.size() == 0) {
-            return false;
-        }
-        for (ChannelWrapper cw : channelWrapperMap.values()) {
-            if (System.currentTimeMillis() - cw.getLastAliveTime() < 60 * 1000) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private Float getDeleteThreshold(List<ChatterDTO> chatters) {
