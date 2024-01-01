@@ -1,0 +1,82 @@
+{
+  "groups": [
+    {
+      "name": "app",
+      "type": "com.mola.molachat.config.AppConfig",
+      "sourceType": "com.mola.molachat.config.AppConfig"
+    }
+  ],
+  "properties": [
+    {
+      "name": "app.http-proxy",
+      "type": "java.lang.String",
+      "description": "http代理地址",
+      "sourceType": "com.mola.molachat.config.AppConfig"
+    },
+    {
+      "name": "app.id",
+      "type": "java.lang.String",
+      "description": "应用id",
+      "sourceType": "com.mola.molachat.config.AppConfig"
+    },
+    {
+      "name": "app.level-d-b-storage-prefix",
+      "type": "java.lang.String",
+      "description": "levelDB的本地存储位置",
+      "sourceType": "com.mola.molachat.config.AppConfig",
+      "defaultValue": "\/tmp\/levelDB"
+    },
+    {
+      "name": "app.max-remain-chatter-count",
+      "type": "java.lang.Integer",
+      "description": "最大保留chatter的数量",
+      "sourceType": "com.mola.molachat.config.AppConfig",
+      "defaultValue": 5
+    },
+    {
+      "name": "app.robot-api-key",
+      "type": "java.util.Map<java.lang.String,java.lang.String>",
+      "description": "机器人的外部apikey",
+      "sourceType": "com.mola.molachat.config.AppConfig"
+    },
+    {
+      "name": "app.robot-list",
+      "type": "java.lang.String",
+      "description": "机器人appKey",
+      "sourceType": "com.mola.molachat.config.AppConfig"
+    },
+    {
+      "name": "app.secret",
+      "type": "java.lang.String",
+      "description": "秘钥，用于整合",
+      "sourceType": "com.mola.molachat.config.AppConfig"
+    },
+    {
+      "name": "app.server-type",
+      "type": "java.lang.String",
+      "description": "webSocket的类型，分为spring、tomcat和netty",
+      "sourceType": "com.mola.molachat.config.AppConfig"
+    },
+    {
+      "name": "app.start-proxy-provider",
+      "type": "java.lang.Boolean",
+      "description": "是否启动作为代理的provider",
+      "sourceType": "com.mola.molachat.config.AppConfig",
+      "defaultValue": false
+    },
+    {
+      "name": "app.use-proxy-consumer",
+      "type": "java.lang.Boolean",
+      "description": "是否消费代理",
+      "sourceType": "com.mola.molachat.config.AppConfig",
+      "defaultValue": false
+    },
+    {
+      "name": "app.version",
+      "type": "java.lang.String",
+      "description": "应用版本",
+      "sourceType": "com.mola.molachat.config.AppConfig"
+    }
+  ],
+  "hints": []
+}

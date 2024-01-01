@@ -1,6 +1,6 @@
 package com.mola.molachat.robot.handler;
 
-import com.mola.molachat.event.action.BaseAction;
+import com.mola.molachat.common.event.action.BaseAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 
 /**

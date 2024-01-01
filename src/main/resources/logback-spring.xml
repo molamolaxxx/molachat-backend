@@ -90,7 +90,6 @@
         </rollingPolicy>
     </appender>
 
-    <!--使用配置,作用域为sell-->
     <root level="info">
         <appender-ref ref="consoleInfoLog"/>
         <appender-ref ref="consoleErrorLog"/>
@@ -99,6 +98,11 @@
     </root>
 
     <logger name="com.mola.molachat" level="DEBUG" additivity="false">
+        <appender-ref ref="packageAllInfo" />
+        <appender-ref ref="fileErrorLog"/>
+    </logger>
+
+    <logger name="com.mola.rpc" level="DEBUG" additivity="false">
         <appender-ref ref="packageAllInfo" />
         <appender-ref ref="fileErrorLog"/>
     </logger>

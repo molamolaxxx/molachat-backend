@@ -1,7 +1,7 @@
 package com.mola.molachat.robot.handler.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.mola.molachat.entity.Message;
+import com.mola.molachat.session.model.Message;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.CommandInputEvent;

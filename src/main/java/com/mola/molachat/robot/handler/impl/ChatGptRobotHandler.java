@@ -4,19 +4,22 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.mola.molachat.data.OtherDataInterface;
-import com.mola.molachat.entity.Message;
-import com.mola.molachat.entity.RobotChatter;
-import com.mola.molachat.entity.dto.SessionDTO;
+import com.mola.molachat.common.config.AppConfig;
+import com.mola.molachat.session.model.Message;
+import com.mola.molachat.chatter.model.RobotChatter;
+import com.mola.molachat.session.dto.SessionDTO;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.bus.GptRobotEventBus;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
-import com.mola.molachat.service.ServerService;
-import com.mola.molachat.service.SessionService;
-import com.mola.molachat.service.http.HttpService;
-import com.mola.molachat.utils.RandomUtils;
+import com.mola.molachat.server.service.ServerService;
+import com.mola.molachat.session.service.SessionService;
+import com.mola.molachat.robot.solution.ChatGptSolution;
+import com.mola.molachat.robot.solution.CmdProxyInvokeSolution;
+import com.mola.molachat.common.utils.HttpUtil;
+import com.mola.molachat.common.utils.KvUtils;
+import com.mola.molachat.common.utils.RandomUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
@@ -51,9 +54,20 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     private GptRobotEventBus gptRobotEventBus;
 
     @Resource
-    private OtherDataInterface otherDataInterface;
+    private ChatGptSolution chatGptSolution;
 
-    private static final String ALERT_TEXT = "刚刚开小差了, 请重试";
+    @Resource
+    private CmdProxyInvokeSolution cmdProxyInvokeSolution;
+
+    @Resource
+    private KvUtils kvUtils;
+
+    @Resource
+    private AppConfig appConfig;
+
+    public static final String ALERT_TEXT = "账户已失效";
+
+    public static final String PROXY_ERROR = "代理异常, 请重试";
 
     private static final int RETRY_TIME = 12;
 
@@ -63,35 +77,51 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     public MessageSendAction handler(MessageReceiveEvent messageReceiveEvent) {
         MessageSendAction messageSendAction = new MessageSendAction();
         RobotChatter robotChatter = messageReceiveEvent.getRobotChatter();
+        Message message = messageReceiveEvent.getMessage();
         // 默认主账号
-        String usedAppKey = robotChatter.getApiKey();
-        Set<String> gpt3ChildTokens = otherDataInterface.getGpt3ChildTokens();
+        String usedApiKey = robotChatter.getApiKey();
+        Set<String> gpt3ChildTokens = chatGptSolution.fetchApiKeys();
         if (gpt3ChildTokens.size() != 0) {
-            usedAppKey = RandomUtils.getRandomElement(gpt3ChildTokens);
+            usedApiKey = RandomUtils.getRandomElement(gpt3ChildTokens);
         }
         // 失败重试
         for (int i = 0; i < RETRY_TIME; i++) {
             // 子账号多次都失败，换成主账号，移除子账号
-            if (i > CHANGE_API_KEY_TIME && !StringUtils.equals(usedAppKey, robotChatter.getApiKey())) {
-                log.error("sub api key error retry failed all time, switch main remove sub, sub api key = " + usedAppKey);
-                if (gpt3ChildTokens.contains(usedAppKey)) {
-                    final String usedAppKeyFinal = usedAppKey;
-                    otherDataInterface.operateGpt3ChildTokens((tokens) -> tokens.remove(usedAppKeyFinal));
+            if (i > CHANGE_API_KEY_TIME && !StringUtils.equals(usedApiKey, robotChatter.getApiKey())) {
+                log.error("sub api key error retry failed all time, switch main remove sub, sub api key = " + usedApiKey);
+                if (gpt3ChildTokens.contains(usedApiKey)) {
+                    chatGptSolution.removeApiKey(usedApiKey);
                 }
-                usedAppKey = robotChatter.getApiKey();
+                usedApiKey = robotChatter.getApiKey();
             }
             try {
                 // headers
                 List<Header> headers = new ArrayList<>();
                 headers.add(new BasicHeader("Content-Type", "application/json"));
-                headers.add(new BasicHeader("Authorization", "Bearer " + usedAppKey));
+                headers.add(new BasicHeader("Authorization", "Bearer " + usedApiKey));
                 // prompt 拼接最近20条历史记录
                 JSONObject body = new JSONObject();
                 body.put("model", "gpt-3.5-turbo");
                 List<Map<String, String>> prompt = getPrompt(messageReceiveEvent);
                 log.info(JSONObject.toJSONString(prompt));
                 body.put("messages", prompt);
-                String res = HttpService.INSTANCE.post("https://api.openai.com/v1/chat/completions", body, 300000, headers.toArray(new Header[]{}));
+                String res = null;
+                if (appConfig.getUseCmdProxy()) {
+                    try {
+                        cmdProxyInvokeSolution.sendChatGptRequestCmd(
+                                body, usedApiKey, message.getChatterId(), robotChatter.getAppKey());
+                    } catch (Exception e) {
+                        log.error("提交任务到代理服务器异常", e);
+                        // 不可用告警
+                        messageSendAction.setResponsesText(PROXY_ERROR);
+                        return messageSendAction;
+                    }
+                    messageSendAction.setSkip(Boolean.TRUE);
+                    return messageSendAction;
+                } else {
+                    res = HttpUtil.INSTANCE.post("https://api.openai.com/v1/chat/completions", body, 300000, headers.toArray(new Header[]{}));
+                }
+
                 JSONObject jsonObject = JSONObject.parseObject(res);
                 Assert.isTrue(jsonObject.containsKey("choices"), "choices is empty");
                 JSONArray choices = jsonObject.getJSONArray("choices");
@@ -109,6 +139,12 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 }
             } catch (Exception e) {
                 log.error("RemoteRobotChatHandler ChatGptRobotHandler error retry, time = " + i + " event:" + JSONObject.toJSONString(messageReceiveEvent), e);
+                if (StringUtils.containsIgnoreCase(e.getMessage(), "You exceeded your current quota")) {
+                    chatGptSolution.removeApiKey(usedApiKey);
+                    // 不可用告警
+                    messageSendAction.setResponsesText(ALERT_TEXT);
+                    return messageSendAction;
+                }
                 // 网络失败
                 if ((StringUtils.containsIgnoreCase(e.getMessage(), "Network is unreachable")
                         || StringUtils.containsIgnoreCase(e.getMessage(), "Bad Gateway")
@@ -120,7 +156,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 }
                 continue;
             }
-            log.info("RemoteRobotChatHandler ChatGptRobotHandler success, apiKey=" +  usedAppKey + " action:" + JSONObject.toJSONString(messageSendAction));
+            log.info("RemoteRobotChatHandler ChatGptRobotHandler success, apiKey=" +  usedApiKey + " action:" + JSONObject.toJSONString(messageSendAction));
             return messageSendAction;
         }
         try {
@@ -153,15 +189,21 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             messageInput.add(getLine("user", messageReceiveEvent.getMessage().getContent()));
             return messageInput;
         }
-        int start = messageList.size() > 15 ? messageList.size() - 15 : 0;
+
+        // 最大上下文条数
+        Integer maxPromptMsgCount = kvUtils.getIntegerOrDefault("maxPromptMsgCount", 5);
+        // 最大消息大小
+        Integer maxPromptMsgSize = kvUtils.getIntegerOrDefault("maxPromptMsgSize", 500);
+
+        int start = messageList.size() > maxPromptMsgCount ? messageList.size() - maxPromptMsgCount : 0;
         for (int i = start; i < messageList.size(); i++) {
             Message message = messageList.get(i);
             if (StringUtils.isNotBlank(message.getContent())) {
                 String content = message.getContent();
-                if (content.length() > 200 && i != messageList.size() - 1) {
-                    content = content.substring(0, 200);
+                if (content.length() > maxPromptMsgSize && i != messageList.size() - 1) {
+                    content = content.substring(0, maxPromptMsgSize);
                 }
-                if (ALERT_TEXT.equals(content)) {
+                if (ALERT_TEXT.equals(content) || PROXY_ERROR.equals(content)) {
                     continue;
                 }
                 if (message.getChatterId().equals(messageReceiveEvent.getRobotChatter().getId())) {

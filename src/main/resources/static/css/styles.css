@@ -176,6 +176,11 @@ body {
     width: 100%;
 }
 
+.imgFileTemp {
+    min-width: 19.6rem;
+    min-height: 25rem;
+}
+
 .contact {
     position: relative;
     width: 100%;

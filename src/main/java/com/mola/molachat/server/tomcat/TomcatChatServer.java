@@ -1,7 +1,7 @@
 package com.mola.molachat.server.tomcat;
 
 import com.mola.molachat.common.MyApplicationContextAware;
-import com.mola.molachat.encoder.ServerEncoder;
+import com.mola.molachat.server.encoder.ServerEncoder;
 import com.mola.molachat.server.ChatServer;
 import com.mola.molachat.server.session.TomcatSessionWrapper;
 import lombok.Data;

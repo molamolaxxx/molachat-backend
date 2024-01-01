@@ -3,13 +3,15 @@ var DEFAULT_HOST = "molaspace.xyz"
 var DEFAULT_LOCAL_HOST = "127.0.0.1"
 var DEFAULT_PORT = "8550"
 
+
+var isApp = location.href.indexOf("http") === -1 ? true : false
+
 var ipAndPort = getIpAndPort()
+
 // ip
 var _ip = ipAndPort['ip']
 // 端口
 var _port = ipAndPort['port']
-
-var isApp = location.href.indexOf("http") === -1 ? true : false
 
 function getIpAndPort() {
     var ip = ""

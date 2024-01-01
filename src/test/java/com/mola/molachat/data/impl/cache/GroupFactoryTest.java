@@ -1,9 +1,9 @@
 package com.mola.molachat.data.impl.cache;
 
 import com.mola.molachat.MolachatApplicationTests;
-import com.mola.molachat.data.GroupFactoryInterface;
-import com.mola.molachat.entity.Group;
-import com.mola.molachat.service.impl.GroupServiceImpl;
+import com.mola.molachat.group.data.GroupFactoryInterface;
+import com.mola.molachat.group.model.Group;
+import com.mola.molachat.group.service.impl.GroupServiceImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;

@@ -151,13 +151,7 @@ $(document).ready(function () {
         $chatMsg.append(mainDoc);
 
         //滚动
-        setTimeout(() => {
-            document.querySelector(".chat__messages").scrollBy({
-                top: 500000,
-                left: 0,
-                behavior: 'smooth'
-            });
-        }, 100)
+        scrollToChatContainerBottom(100)
     }
 
     //删除所有记录
@@ -177,13 +171,11 @@ $(document).ready(function () {
     });
     // 判断输入是否结束
     $chatInput.addEventListener('compositionstart', function (e) {
-        console.log("false")
         isInputFinished = false;
     }, false)
     $chatInput.addEventListener('compositionend', function (e) {
         setTimeout(() => {
             isInputFinished = true
-            console.log("true")
         }, 100)
     }, false)
 

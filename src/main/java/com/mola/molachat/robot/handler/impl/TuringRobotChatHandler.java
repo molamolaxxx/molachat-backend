@@ -1,12 +1,12 @@
 package com.mola.molachat.robot.handler.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.mola.molachat.entity.RobotChatter;
+import com.mola.molachat.chatter.model.RobotChatter;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
-import com.mola.molachat.service.http.HttpService;
+import com.mola.molachat.common.utils.HttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 
@@ -29,7 +29,7 @@ public class TuringRobotChatHandler implements IRobotEventHandler<MessageReceive
             Assert.notNull(messageReceiveEvent.getMessage(), "message is null");
             Assert.notNull(robotChatter, "robotChatter is null");
             JSONObject body = assembleBody(messageReceiveEvent.getMessage().getContent(), robotChatter.getApiKey());
-            String res = HttpService.INSTANCE.post("http://openapi.turingapi.com/openapi/api/v2",
+            String res = HttpUtil.INSTANCE.post("http://openapi.turingapi.com/openapi/api/v2",
                     body, 1000);
             JSONObject jsonObject = JSONObject.parseObject(res);
             String text = jsonObject.getJSONArray("results")

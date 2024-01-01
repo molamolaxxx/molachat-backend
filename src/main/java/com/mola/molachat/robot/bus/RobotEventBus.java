@@ -1,11 +1,11 @@
 package com.mola.molachat.robot.bus;
 
-import com.mola.molachat.event.EventBus;
-import com.mola.molachat.event.action.BaseAction;
+import com.mola.molachat.common.event.EventBus;
+import com.mola.molachat.common.event.action.BaseAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.robot.handler.impl.ChatGptRobotHandler;
-import com.mola.molachat.robot.handler.impl.Gpt3RobotHandler;
+import com.mola.molachat.robot.handler.impl.ImageGenerateChatHandler;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
@@ -51,7 +51,8 @@ public class RobotEventBus implements EventBus<BaseRobotEvent, BaseAction>, Init
     public void afterPropertiesSet() throws Exception {
         List<IRobotEventHandler> robotEventHandlers = new ArrayList<>();
         for (IRobotEventHandler robotEventHandler : this.robotEventHandlers) {
-            if (robotEventHandler instanceof Gpt3RobotHandler || robotEventHandler instanceof ChatGptRobotHandler) {
+            if (robotEventHandler instanceof ChatGptRobotHandler
+                    || robotEventHandler instanceof ImageGenerateChatHandler) {
                 continue;
             }
             robotEventHandlers.add(robotEventHandler);

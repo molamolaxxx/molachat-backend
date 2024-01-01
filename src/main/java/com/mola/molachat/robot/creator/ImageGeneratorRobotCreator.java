@@ -1,10 +1,10 @@
 package com.mola.molachat.robot.creator;
 
-import com.mola.molachat.config.AppConfig;
-import com.mola.molachat.data.ChatterFactoryInterface;
-import com.mola.molachat.entity.RobotChatter;
-import com.mola.molachat.enumeration.ChatterStatusEnum;
-import com.mola.molachat.enumeration.ChatterTagEnum;
+import com.mola.molachat.common.config.AppConfig;
+import com.mola.molachat.chatter.data.ChatterFactoryInterface;
+import com.mola.molachat.chatter.model.RobotChatter;
+import com.mola.molachat.chatter.enums.ChatterStatusEnum;
+import com.mola.molachat.chatter.enums.ChatterTagEnum;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -28,8 +28,8 @@ public class ImageGeneratorRobotCreator implements RobotCreator{
     public RobotChatter create() {
         RobotChatter robot = new RobotChatter();
         robot.setId(matchedAppKey());
-        robot.setName("小图师");
-        robot.setSignature("请输入文字，我来生成图片");
+        robot.setName("Stable Diffusion");
+        robot.setSignature("请输入文字，稍后会生成图片");
         robot.setStatus(ChatterStatusEnum.ONLINE.getCode());
         robot.setTag(ChatterTagEnum.ROBOT.getCode());
         robot.setImgUrl("img/blue.jpg");

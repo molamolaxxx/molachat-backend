@@ -2,15 +2,15 @@ package com.mola.molachat.robot.handler.impl;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.mola.molachat.entity.Message;
-import com.mola.molachat.entity.RobotChatter;
+import com.mola.molachat.session.model.Message;
+import com.mola.molachat.chatter.model.RobotChatter;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.bus.RobotEventBus;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.event.MessageSendEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
-import com.mola.molachat.service.http.HttpService;
+import com.mola.molachat.common.utils.HttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
@@ -43,7 +43,7 @@ public class OwnthinkRobotChatHandler implements IRobotEventHandler<MessageRecei
             body.put("spoken", message.getContent());
             body.put("appid", robotChatter.getApiKey());
             body.put("userid", message.getChatterId());
-            String res = HttpService.INSTANCE.post("https://api.ownthink.com/bot", body ,10000);
+            String res = HttpUtil.INSTANCE.post("https://api.ownthink.com/bot", body ,10000);
             JSONObject jsonObject = JSONObject.parseObject(res);
             JSONObject info = jsonObject.getJSONObject("data")
                     .getJSONObject("info");
@@ -63,6 +63,7 @@ public class OwnthinkRobotChatHandler implements IRobotEventHandler<MessageRecei
                     Message msg = new Message();
                     msg.setContent(heuristicText);
                     msg.setChatterId(robotChatter.getId());
+                    msg.setSessionId(messageReceiveEvent.getSessionId());
                     MessageSendEvent messageSendEvent = new MessageSendEvent();
                     messageSendEvent.setMessage(msg);
                     messageSendEvent.setRobotChatter(messageReceiveEvent.getRobotChatter());

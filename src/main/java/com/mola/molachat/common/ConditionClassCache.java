@@ -1,8 +1,8 @@
 package com.mola.molachat.common;
 
-import com.mola.molachat.condition.CacheCondition;
-import com.mola.molachat.condition.LevelDBCondition;
-import com.mola.molachat.condition.RedisExistCondition;
+import com.mola.molachat.common.condition.CacheCondition;
+import com.mola.molachat.common.condition.LevelDBCondition;
+import com.mola.molachat.common.condition.RedisExistCondition;
 import org.springframework.context.annotation.Condition;
 
 import java.util.HashMap;

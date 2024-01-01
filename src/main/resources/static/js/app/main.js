@@ -1,5 +1,5 @@
 // 主页面ui逻辑
-$(document).ready(function() {
+$(document).ready(function () {
     var $svg = $(".sidebar"),
         $demo = $(".demo"),
         $path = $(".s-path"),
@@ -17,12 +17,12 @@ $(document).ready(function() {
         animating = false;
 
     var easings = {
-        smallElastic: function(t, b, c, d) {
+        smallElastic: function (t, b, c, d) {
             var ts = (t /= d) * t;
             var tc = ts * t;
             return b + c * (33 * tc * ts + -106 * ts * ts + 126 * tc + -67 * ts + 15 * t);
         },
-        inCubic: function(t, b, c, d) {
+        inCubic: function (t, b, c, d) {
             var tc = (t /= d) * t * t;
             return b + c * (tc);
         }
@@ -86,10 +86,10 @@ $(document).ready(function() {
 
     function handlers1() {
 
-        $(document).on("mousedown touchstart", ".s-path", function(e) {
+        $(document).on("mousedown touchstart", ".s-path", function (e) {
             var startX = e.pageX || e.originalEvent.touches[0].pageX;
 
-            $(document).on("mousemove touchmove", function(e) {
+            $(document).on("mousemove touchmove", function (e) {
                 var x = e.pageX || e.originalEvent.touches[0].pageX;
                 diffX = x - startX;
                 if (diffX < 0) diffX = 0;
@@ -99,21 +99,20 @@ $(document).ready(function() {
             });
         });
 
-        $(document).on("mouseup touchend", function() {
+        $(document).on("mouseup touchend", function () {
             $(document).off("mousemove touchmove");
             if (animating) return;
             if (!diffX) return;
             if (diffX < 40) {
                 animatePathD($path, newD(0), animTime, true);
             } else {
-                animatePathD($path, finalD, animTime, false, function() {
+                animatePathD($path, finalD, animTime, false, function () {
                     $sCont.addClass("active");
-                    setTimeout(function() {
+                    setTimeout(function () {
                         $("#keyboard_arrow_left").on("click", e => {
                             // closeSidebar(e); // 关闭侧栏
                             openTerminal(); // 打开控制台
-                        }
-                    );
+                        });
                     }, sContTrans);
                 });
             }
@@ -123,15 +122,14 @@ $(document).ready(function() {
 
     handlers1();
 
-    openSideBar = function() {
-        animatePathD($path, finalD, animTime, false, function() {
+    openSideBar = function () {
+        animatePathD($path, finalD, animTime, false, function () {
             $sCont.addClass("active");
-            setTimeout(function() {
+            setTimeout(function () {
                 $("#keyboard_arrow_left").on("click", e => {
                     // closeSidebar(e); // 关闭侧栏
                     openTerminal(); // 打开控制台
-                }
-            );
+                });
             }, sContTrans);
         });
     }
@@ -150,10 +148,10 @@ $(document).ready(function() {
             if (value) {
                 openTerminal()
                 try {
-                     showToast(eval(value), 1800)  
+                    showToast(eval(value), 1800)
                 } catch (error) {
-                    showToast("指令错误："+ error, 1800)  
-                } 
+                    showToast("指令错误：" + error, 1800)
+                }
             }
         })
     }
@@ -167,8 +165,8 @@ $(document).ready(function() {
         $chat.removeClass("active");
         $(".cloned").addClass("removed");
         finalX = -75;
-        setTimeout(function() {
-            animatePathD($path, midD, animTime / 3, false, function() {
+        setTimeout(function () {
+            animatePathD($path, midD, animTime / 3, false, function () {
                 $chat.hide();
                 $(".cloned").remove();
                 finalX = 0;
@@ -186,37 +184,51 @@ $(document).ready(function() {
             left = $img.offset().left - $demo.offset().left,
             $clone = $img.clone().addClass("cloned");
 
-        $clone.css({ top: top, left: left });
+        $clone.css({
+            top: top,
+            left: left
+        });
         $demo.append($clone);
         $clone.css("top");
-        $clone.css({ top: "1.8rem", left: "25rem" });
+        $clone.css({
+            top: "1.8rem",
+            left: "25rem"
+        });
     }
 
-    ripple = function(elem, e) {
+    ripple = function (elem, e) {
         var elTop = elem.offset().top,
             elLeft = elem.offset().left,
             x = e.pageX - elLeft,
             y = e.pageY - elTop;
         var $ripple = $("<div class='ripple-contact'></div>");
-        $ripple.css({ top: y, left: x });
+        $ripple.css({
+            top: y,
+            left: x
+        });
         elem.append($ripple);
     }
-    rippleWithPos = function(elem, pageX, pageY) {
+    rippleWithPos = function (elem, pageX, pageY) {
         var elTop = elem.offset().top,
             elLeft = elem.offset().left,
             x = pageX - elLeft,
             y = pageY - elTop;
         var $ripple = $("<div class='ripple-contact'></div>");
-        $ripple.css({ top: y, left: x });
+        $ripple.css({
+            top: y,
+            left: x
+        });
         elem.append($ripple);
     }
     //初始化提示框
-    $('.tooltipped').tooltip({ delay: 50 });
+    $('.tooltipped').tooltip({
+        delay: 50
+    });
 
-    $(document).on("click", ".contact", function(e) {
+    $(document).on("click", ".contact", function (e) {
         //判断是否在上传文件，上传则不能退出
         if (window.uploadLock) {
-            showToast("正在上传文件，请稍后切换会话",1000)
+            showToast("正在上传文件，请稍后切换会话", 1000)
             return;
         }
         var that = this,
@@ -245,31 +257,35 @@ $(document).ready(function() {
         var online = $(this).find(".contact__status").hasClass("online");
 
         // $intro.innerText = $(this).find(".contact_intro")[0].innerText;
-  
+
         $(".chat__online").removeClass("active");
         if (online) $(".chat__online").addClass("active");
-        setTimeout(function() {
+        setTimeout(function () {
             $sCont.removeClass("active");
             moveImage(that);
             finalX = -80;
-            setTimeout(function() {
+            setTimeout(function () {
                 $(".ripple").remove();
-                animatePathD($path, clickMidD, animTime / 3, false, function() {
+                animatePathD($path, clickMidD, animTime / 3, false, function () {
                     curX = -80;
                     finalX = 0;
-                    animatePathD($path, clickD, animTime * 2 / 3, true, function() {
+                    animatePathD($path, clickD, animTime * 2 / 3, true, function () {
                         $chat.show();
                         $chat.css("top");
                         $chat.addClass("active");
                         animating = false;
                         // 展现用户栏
                         showUserBar()
+
+                        var container = document.querySelector(".chat__messages")
+                        container.scrollTop = container.scrollHeight - container.clientHeight - 2000;
+                        scrollToChatContainerBottom(100)
                     });
                 }, "inCubic");
             }, sContTrans);
         }, sContTrans);
         //添加表情包、文件传输工具
-        
+
         $("#insert_emoticon").css("display", "");
         $("#video").css("display", "");
         $("#file_copy").css("display", "");
@@ -279,40 +295,42 @@ $(document).ready(function() {
         $("#history").css("display", "none");
         if (window.innerWidth <= 1000) {
             $menu.css("display", "none");
-            setTimeout(function() {
-                $demo.animate({ left: "52%" },200);
-            },800)
-            
+            setTimeout(function () {
+                $demo.animate({
+                    left: "52%"
+                }, 200);
+            }, 800)
+
         }
     });
 
-    $(document).on("click", ".chat__back", function() {
+    $(document).on("click", ".chat__back", function () {
         //判断是否在上传文件，上传则不能退出
         if (window.uploadLock) {
-            showToast("正在上传文件，请稍后返回",1000)
+            showToast("正在上传文件，请稍后返回", 1000)
             return;
         }
         if (animating) return;
         animating = true;
         $chat.removeClass("active");
         $(".cloned").addClass("removed");
-        setTimeout(function() {
+        setTimeout(function () {
             $(".cloned").remove();
             // 撤销隐藏用户栏的显示
             hideUserBar()
             $chat.hide();
             finalX = 100;
-            animatePathD($path, clickMidDRev, animTime / 3, false, function() {
+            animatePathD($path, clickMidDRev, animTime / 3, false, function () {
                 curX = 100;
                 finalX = 0;
-                animatePathD($path, finalD, animTime * 2 / 3, true, function() {
+                animatePathD($path, finalD, animTime * 2 / 3, true, function () {
                     $sCont.addClass("active");
                     $(document).off("click", closeSidebar);
                     animating = false;
-                    
+
                 });
             }, "inCubic");
-            
+
         }, sContTrans);
         //非缩小模式，删去对应工具
         $("#insert_emoticon").css("display", "none");
@@ -323,19 +341,23 @@ $(document).ready(function() {
         $("#settingsRemote").css("display", "");
         $("#history").css("display", "");
         if (window.innerWidth <= 1000) {
-            setTimeout(function() {
-                $menu.animate({ opacity: 1 }, function() {
+            setTimeout(function () {
+                $menu.animate({
+                    opacity: 1
+                }, function () {
                     $menu.css("display", "");
                 });
-                
+
             }, 100);
-            $demo.animate({ left: "50%" },200);
+            $demo.animate({
+                left: "50%"
+            }, 200);
         }
     });
 
     var $user_info = $(".user_info")
     var $account_box = $("#account_box")
-    userInfoUIAdjust = function() {
+    userInfoUIAdjust = function () {
         //定位用户框
         if (window.innerWidth <= 1000) {
             $user_info.css("opacity", "0");
@@ -359,11 +381,11 @@ $(document).ready(function() {
     }
 
     var $html = $("html")
-    let funcRemSizeChange = function() {
+    let funcRemSizeChange = function () {
         if (window.innerWidth <= 600) {
-            $html.css("font-size","68%")
+            $html.css("font-size", "68%")
         } else {
-            $html.css("font-size","74%")
+            $html.css("font-size", "74%")
         }
     }
 
@@ -371,8 +393,8 @@ $(document).ready(function() {
     funcRemSizeChange();
     var demoTop = $demo.offset().top;
     var $btn = $(".fixed-action-btn");
-    
-    $(window).on("resize", function() {
+
+    $(window).on("resize", function () {
         // if (Math.abs(demoTop - $demo.offset().top) < 100) {
         //     $btn.css({display : ""})
         //     $btn.animate({opacity : 1})
@@ -384,35 +406,50 @@ $(document).ready(function() {
     });
 
     var openFlag = false;
-    let func = function() {
+    let func = function () {
 
         if (openFlag) {
             if (!($(".collapsible-header.active")[0] == null)) {
                 $('.collapsible-header').click();
             }
-            setTimeout(function() {
-                $(".user_info").animate({ opacity: 0 }, function() {
+            setTimeout(function () {
+                $(".user_info").animate({
+                    opacity: 0
+                }, function () {
                     $(".user_info").css("display", "none");
                 });
             }, 100);
 
         } else {
             if ($(".collapsible-header.active")[0] == null) {
-                setTimeout(function() {
+                setTimeout(function () {
                     $('.collapsible-header').click();
                 }, 200);
             }
             $(".user_info").css("display", "");
-            $(".user_info").animate({ opacity: 1 });
+            $(".user_info").animate({
+                opacity: 1
+            });
         }
         openFlag = !openFlag;
     }
 
-    
+
     $("#account_box").on("click", func);
     $("#tool-account").on("click", func);
 
-    $(".gravatar").on("click", function() {
+    var timeoutId = null
+    $(".chat__messages").on("scroll", function () {
+        window.messageContainerScrolling = true
+        if (!timeoutId) {
+            timeoutId = setTimeout(function () {
+                window.messageContainerScrolling = false
+                timeoutId = null
+            }, 1000)
+        }
+    });
+
+    $(".gravatar").on("click", function () {
         console.log("click image");
         swal({
             content: {
@@ -445,34 +482,31 @@ $(document).ready(function() {
                 return;
             }
             switch (value) {
-                case "ok":
-                    {
-                        //获取输入链接，查看是否合法
-                        var url = $(".swal-content__input")[0].value;
-                        imageSrc(url);
-                        break;
-                    }
-                case "rand":
-                    {
-                        //随机
-                        console.log("random");
-                        var rand = Math.ceil(Math.random() * 1000000000) % 15 + 1;
-                        url = "img/header/" + rand + ".jpeg"
-                        imageSrc(url);
-                        break;
-                    }
+                case "ok": {
+                    //获取输入链接，查看是否合法
+                    var url = $(".swal-content__input")[0].value;
+                    imageSrc(url);
+                    break;
+                }
+                case "rand": {
+                    //随机
+                    console.log("random");
+                    var rand = Math.ceil(Math.random() * 1000000000) % 15 + 1;
+                    url = "img/header/" + rand + ".jpeg"
+                    imageSrc(url);
+                    break;
+                }
 
-                default:
-                    {
-                        imageSrc(url);
-                    }
+                default: {
+                    imageSrc(url);
+                }
             }
         });
 
         function imageSrc(url) {
             var ImgObj = new Image();
             ImgObj.src = url;
-            setTimeout(function() {
+            setTimeout(function () {
                 if (ImgObj.width > 0 && ImgObj.height > 0) {
 
                     //向服务器发送更新请求
@@ -480,14 +514,16 @@ $(document).ready(function() {
                         url: getPrefix() + "/chat/chatter",
                         dataType: "json",
                         type: "PUT",
-                        xhrFields: {withCredentials:true},
+                        xhrFields: {
+                            withCredentials: true
+                        },
                         crossDomain: true,
                         data: {
                             "id": getChatterId(),
                             "imgUrl": url,
                             "token": localStorage.getItem("token")
                         },
-                        success: function(result) {
+                        success: function (result) {
                             swal("good job!", "获取头像成功", "success")
                                 .then((value) => {
                                     //设置自身头像
@@ -495,7 +531,7 @@ $(document).ready(function() {
                                     localStorage.setItem("imgUrl", url);
                                 });
                         },
-                        error: function(result) {
+                        error: function (result) {
                             var exception = JSON.parse(result.responseText);
                             swal("Bad Day", "获取头像失败，原因是:" + exception.msg, "error");
                         }
@@ -506,10 +542,10 @@ $(document).ready(function() {
             }, 500);
 
         }
-        window.addEventListener('online', function() {
+        window.addEventListener('online', function () {
             swal('网络连接恢复！');
         })
-        window.addEventListener('offline', function() {
+        window.addEventListener('offline', function () {
             swal('网络连接中断！');
         })
 
