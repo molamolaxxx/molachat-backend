@@ -120,6 +120,9 @@ public class ChatServer {
         //4、将video状态改为未占用
         chatterService.changeVideoState(chatterId, VideoStateEnum.FREE.getCode());
 
+        //5、关闭session
+        session.close();
+
         log.info("成功移除server对象");
     }
 
