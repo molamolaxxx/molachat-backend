@@ -373,3 +373,40 @@ debounce = function(func, delay) {
       timeoutId = setTimeout(func, delay);
     };
   }
+
+ getStringLength = function(str) {
+    var length = 0;
+    for (var i = 0; i < str.length; i++) {
+      // 使用正则表达式判断字符是否是全角符号或汉字
+      var isFullWidth = /[\uFF00-\uFFEF\u4E00-\u9FA5]/.test(str[i]);
+      
+      // 根据字符类型增加相应的长度
+      if (isFullWidth) {
+        length += 2;
+      } else {
+        length += 1;
+      }
+    }
+    
+    return length;
+}
+
+shortenString = function(str, cnt) {
+    var length = 0;
+    var shortenStr = ""
+    for (var i = 0; i < str.length; i++) {
+      // 使用正则表达式判断字符是否是全角符号或汉字
+      var isFullWidth = /[\uFF00-\uFFEF\u4E00-\u9FA5]/.test(str[i]);
+      shortenStr += str[i]
+      // 根据字符类型增加相应的长度
+      if (isFullWidth) {
+        length += 2;
+      } else {
+        length += 1;
+      }
+      if (length > cnt) {
+        return shortenStr + "..."
+      }
+    }
+    return shortenStr
+}

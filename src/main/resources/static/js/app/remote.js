@@ -95,10 +95,6 @@ $(document).ready(function() {
 
     $(document).on("click", ".server_contact", function(e) {
         ripple($(this), e);
-        if (this.host === getHost()) {
-            showToast("已处于当前服务器",1000)
-            return
-        }
         swal("切换服务器","是否切换到["+this.host+"]?\n","info").then((change) => {
             if (change) {
                 changeServer(this.host)
@@ -147,10 +143,6 @@ $(document).ready(function() {
             },
         }).then((value) => {
             if (value) {
-                if (value === getHost()) {
-                    showToast("已处于当前服务器",1000)
-                    return
-                }
                 swal("切换服务器","是否切换到["+value+"]?\n","info").then((change) => {
                     if (change) {
                         changeServer(value)
@@ -161,10 +153,6 @@ $(document).ready(function() {
     })
 
     changeServer = function(host) {
-        if (host === getHost()) {
-            showToast("已处于当前服务器",1000)
-            return
-        }
         // 判断server是否可用
         checkConnect(host, (res,host) => {
             if (res === 'error') {
@@ -194,6 +182,7 @@ $(document).ready(function() {
             }
             const dict = {}
             const curHost = getHost()
+            
             let targetStorageDict = null
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i); // 获取当前遍历到的 key
@@ -209,6 +198,12 @@ $(document).ready(function() {
             }
             // 保存当前localstore
             localStorage.setItem("_host_" + curHost, JSON.stringify(dict))
+
+            // 如果是当前host， 只刷新用户
+            if (host === curHost) {
+                recoverChatter()
+                return;
+            }
             // 恢复目标host的变量
             if (targetStorageDict) {
                 for (let key in targetStorageDict) {

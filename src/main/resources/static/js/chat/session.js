@@ -273,6 +273,13 @@ $(document).ready(function () {
         activeChatter.name = name;
         //更新dom
         $(".chat__name")[0].innerText = name;
+        // 根据文本长度动态缩放文字
+        let nameLength = getStringLength(name)
+        if (nameLength > 20) {
+            $(".chat__person").css("font-size","1.55rem")
+        } else{
+            $(".chat__person").css("font-size","2rem")
+        }
     }
     setActiveChatter = function (chatter) {
         activeChatter = chatter;
