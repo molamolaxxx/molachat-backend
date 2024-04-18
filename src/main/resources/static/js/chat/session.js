@@ -272,7 +272,11 @@ $(document).ready(function () {
         let chatterMap = getChatterMap()
         if (chatterMap && chatterMap.get(message.chatterId)) {
             let chatterName = chatterMap.get(message.chatterId).name
-            sendNotification(`${chatterName} 说 ${message.content}`)
+            if (message.content) {
+                sendNotification(`${chatterName} 说 ${message.content}`)
+            } else{
+                sendNotification(`${chatterName} 向你发送了文件`)
+            }
         } else {
             sendNotification("您有新的消息")
         }
