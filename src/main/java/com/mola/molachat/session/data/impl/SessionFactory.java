@@ -114,11 +114,12 @@ public class SessionFactory implements SessionFactoryInterface {
 
     @Override
     public Session remove(Session session) throws SessionException{
-
-        if (!sessionMap.keySet().contains(session.getSessionId())){
+        session = selectById(session.getSessionId());
+        if (!sessionMap.containsKey(session.getSessionId())){
             throw new SessionException(DataErrorCodeEnum.REMOVE_SESSION_ERROR);
         }
         sessionMap.remove(session.getSessionId());
+        session.setRemoved(true);
 
         return session;
     }
@@ -138,6 +139,8 @@ public class SessionFactory implements SessionFactoryInterface {
     @Override
     public Message insertMessage(String sessionId, Message message) throws SessionException {
         Session session = sessionMap.get(sessionId);
+        // 激活session
+        session.setRemoved(false);
         return insertMessageInner(session, message);
     }
 
@@ -204,10 +207,6 @@ public class SessionFactory implements SessionFactoryInterface {
         }
 
         return sessionList;
-    }
-
-    @Override
-    public void save(String sessionId) {
     }
 
     /**

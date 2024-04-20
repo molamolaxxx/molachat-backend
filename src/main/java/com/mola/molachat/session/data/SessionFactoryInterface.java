@@ -85,9 +85,4 @@ public interface SessionFactoryInterface {
      * @return
      */
     List<VideoSession> listVideoSession();
-
-    /**
-     * 进行一次刷盘
-     */
-    void save(String sessionId);
 }

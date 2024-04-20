@@ -47,7 +47,14 @@ public class LevelDBSessionFactory extends SessionFactory{
         // 从levelDB中读取list放入缓存
         Map<String, String> map = levelDBClient.list(levelDBKeyPrefix);
         map.forEach((k, v) -> {
-            super.create(parseFromJson(v));
+            Session session = parseFromJson(v);
+            if (session == null) {
+                return;
+            }
+            if (session.isRemoved()) {
+                return;
+            }
+            super.create(session);
         });
     }
 
@@ -107,7 +114,7 @@ public class LevelDBSessionFactory extends SessionFactory{
     @Override
     public Session remove(Session session) {
         session = super.remove(session);
-        levelDBClient.delete(levelDBKeyPrefix + session.getSessionId());
+        levelDBClient.put(levelDBKeyPrefix + session.getSessionId(), JSONObject.toJSONString(session));
         return session;
     }
 
@@ -126,11 +133,6 @@ public class LevelDBSessionFactory extends SessionFactory{
     @Override
     public VideoSession createVideoSession(String requestChatterId, String acceptChatterId) {
         return super.createVideoSession(requestChatterId, acceptChatterId);
-    }
-
-    @Override
-    public void save(String sessionId) {
-        levelDBClient.put(levelDBKeyPrefix + sessionId, JSONObject.toJSONString(super.selectById(sessionId)));
     }
 
     @Override

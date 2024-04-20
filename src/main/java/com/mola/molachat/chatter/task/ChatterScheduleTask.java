@@ -83,12 +83,6 @@ public class ChatterScheduleTask {
                     && !isNewChatter(chatter)) {
                 chatterService.setChatterStatus(chatter.getId(), ChatterStatusEnum.LOGICAL_DELETE.getCode());
             }
-            // 3天不在线，且任然未达到阈值,直接删除
-            if (System.currentTimeMillis() - lastOnline > 3*24*60*60*1000){
-                if (chatter.getStatus() == ChatterStatusEnum.LOGICAL_DELETE.getCode()) {
-                    chatterService.remove(chatter);
-                }
-            }
             // 分数衰减，一天未登录=》每一次检查-1*未登录天数
             pointDecay(chatter);
         }
