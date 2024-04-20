@@ -85,6 +85,7 @@ public class SessionScheduleTask {
     private void clearSessions() {
         // 1、获取所有chatter的id，聚合成set
         Set<String> chatterIdSet = chatterFactory.list().stream()
+                .filter(chatter -> !chatter.isLogicalDelete())
                 .map(e -> e.getId())
                 .collect(Collectors.toSet());
 

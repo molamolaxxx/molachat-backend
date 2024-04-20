@@ -51,6 +51,9 @@ public class RedisSessionFactory extends SessionFactory{
         Set keys = redisUtil.keys(redisKeyPrefix);
         for (Object key : keys) {
             Session session = (Session) redisUtil.get((String) key);
+            if (session.isRemoved()) {
+                continue;
+            }
             super.create(session);
         }
     }
@@ -86,7 +89,7 @@ public class RedisSessionFactory extends SessionFactory{
     @Override
     public Session remove(Session session) {
         session = super.remove(session);
-        redisUtil.del(redisKeyPrefix + session.getSessionId());
+        redisUtil.set(redisKeyPrefix + session.getSessionId(), session);
         return session;
     }
 
@@ -106,11 +109,6 @@ public class RedisSessionFactory extends SessionFactory{
     @Override
     public VideoSession createVideoSession(String requestChatterId, String acceptChatterId) {
         return super.createVideoSession(requestChatterId, acceptChatterId);
-    }
-
-    @Override
-    public void save(String sessionId) {
-        redisUtil.set(redisKeyPrefix + sessionId ,super.selectById(sessionId));
     }
 
     @Override

@@ -465,6 +465,8 @@ svg {
     font-size: 2rem;
     font-family: "Open Sans", Helvetica, Arial, sans-serif;
     color: #36343D;
+    max-width: 20rem;
+    text-align: end;
 }
 
 .chat__online {

@@ -1,5 +1,7 @@
 package com.mola.molachat.server.session;
 
+import lombok.extern.slf4j.Slf4j;
+
 import javax.websocket.EncodeException;
 import javax.websocket.Session;
 import java.io.IOException;
@@ -10,6 +12,7 @@ import java.io.IOException;
  * @Description:
  * @date : 2021-04-02 13:10
  **/
+@Slf4j
 public class TomcatSessionWrapper implements SessionWrapper{
 
     private Session session;
@@ -21,5 +24,14 @@ public class TomcatSessionWrapper implements SessionWrapper{
     @Override
     public void sendToClient(Object message) throws IOException, EncodeException {
         session.getBasicRemote().sendObject(message);
+    }
+
+    @Override
+    public void close() {
+        try {
+            session.close();
+        } catch (IOException e) {
+            log.error("close TomcatSession exception!", e);
+        }
     }
 }

@@ -238,6 +238,8 @@ $(document).ready(function () {
             if (!isCurrentPage) {
                 document.getElementsByTagName("title")[0].innerText = "molachat(当前有未读消息)";
             }
+            // 消息通知
+            notifyNewMessage(message)
         }
         //如过非当前session，将对应chatter的未读消息提示点亮
         else {
@@ -259,6 +261,24 @@ $(document).ready(function () {
                 // 设置成已经提醒
                 setAlertMap(message.chatterId, true);
             }
+
+            // 消息通知
+            notifyNewMessage(message)
+        }
+    }
+
+    function notifyNewMessage(message) {
+        // 消息通知
+        let chatterMap = getChatterMap()
+        if (chatterMap && chatterMap.get(message.chatterId)) {
+            let chatterName = chatterMap.get(message.chatterId).name
+            if (message.content) {
+                sendNotification(`${chatterName} 说 ${message.content}`)
+            } else{
+                sendNotification(`${chatterName} 向你发送了文件`)
+            }
+        } else {
+            sendNotification("您有新的消息")
         }
     }
 
@@ -273,6 +293,13 @@ $(document).ready(function () {
         activeChatter.name = name;
         //更新dom
         $(".chat__name")[0].innerText = name;
+        // 根据文本长度动态缩放文字
+        let nameLength = getStringLength(name)
+        if (nameLength > 20) {
+            $(".chat__person").css("font-size", "1.55rem")
+        } else {
+            $(".chat__person").css("font-size", "2rem")
+        }
     }
     setActiveChatter = function (chatter) {
         activeChatter = chatter;

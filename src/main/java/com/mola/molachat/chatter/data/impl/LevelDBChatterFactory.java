@@ -43,12 +43,22 @@ public class LevelDBChatterFactory extends ChatterFactory {
         // 从levelDB中读取list放入缓存
         Map<String, String> map = levelDBClient.list(levelDBKeyPrefix);
         map.forEach((k, v) -> {
-            super.save(parseFromJsonStr(v));
+            Chatter chatter = parseFromJsonStr(v);
+            if (chatter == null) {
+                return;
+            }
+            if (chatter.isLogicalDelete()) {
+                return;
+            }
+            super.save(chatter);
         });
     }
 
     private Chatter parseFromJsonStr(String jsonStr) {
         JSONObject jsonObject = JSONObject.parseObject(jsonStr);
+        if (jsonObject == null) {
+            return null;
+        }
         jsonObject.remove("videoState");
         if (jsonObject.containsKey("appKey")) {
             return jsonObject.toJavaObject(RobotChatter.class);
@@ -93,7 +103,7 @@ public class LevelDBChatterFactory extends ChatterFactory {
         Chatter firstCache = super.select(id);
         if (null == firstCache) {
             // 取二级缓存
-            Chatter chatter = JSONObject.parseObject(levelDBClient.get(levelDBKeyPrefix + id), Chatter.class);
+            Chatter chatter = parseFromJsonStr(levelDBClient.get(levelDBKeyPrefix + id));
             if (null != chatter) {
                 super.save(chatter);
             }

@@ -259,10 +259,16 @@ $(document).ready(function () {
         return mainDoc;
 
     }
-
-    function gifFileRender() {
-
-    }
+    
+    $(document).on('DOMNodeRemoved', '#materialbox-overlay', function() {
+        // 被销毁时触发的回调函数
+        console.log("materialbox-overlay 被销毁了");
+        if (holder[0].style.display !== "none") {
+            // body缩放，为了适配图片缩放
+            // document.body.style.zoom=1.1
+            holder.css("display", "none")
+        }
+    });
 
     var func = function () {
         $("#materialbox-overlay").unbind("click")

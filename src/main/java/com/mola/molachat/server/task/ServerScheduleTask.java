@@ -16,6 +16,7 @@ import javax.websocket.EncodeException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @Author: molamola
@@ -83,7 +84,8 @@ public class ServerScheduleTask {
     private void checkChatterSingle() {
         log.info("开始检查chatter是否持有server");
         for (ChatterDTO chatter : chatterService.list()){
-            if (chatter.isRobot()) {
+            if (chatter.isRobot() ||
+                    Objects.equals(chatter.getStatus(), ChatterStatusEnum.LOGICAL_DELETE.getCode())) {
                 continue;
             }
             String chatterId = chatter.getId();

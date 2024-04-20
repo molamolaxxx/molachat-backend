@@ -165,6 +165,8 @@ $(document).ready(function() {
 
     // 收到视频请求
     function handleVideoOn(requestChatterId, requestChatterName) {
+        // 消息通知
+        sendNotification(requestChatterName + "发起了视频通话邀请")
         swal("提示","是否接受"+requestChatterName+"的视频通话邀请?","info").then(rs => {
             // 检测自己设备状态
             if (rs && !getEngines().videoEngine.deviceTest(stream => {

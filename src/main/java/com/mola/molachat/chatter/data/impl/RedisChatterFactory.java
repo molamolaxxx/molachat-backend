@@ -50,6 +50,9 @@ public class RedisChatterFactory extends ChatterFactory {
         Set keys = redisUtil.keys(redisKeyPrefix);
         for (Object key : keys) {
             Chatter chatter = (Chatter) redisUtil.get((String) key);
+            if (chatter.isLogicalDelete()) {
+                continue;
+            }
             super.save(chatter);
         }
     }

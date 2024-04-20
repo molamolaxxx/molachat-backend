@@ -1,5 +1,6 @@
 package com.mola.molachat.chatter.model;
 
+import com.mola.molachat.chatter.enums.ChatterStatusEnum;
 import com.mola.molachat.group.data.impl.GroupFactory;
 import com.mola.molachat.chatter.enums.ChatterTagEnum;
 import lombok.Data;
@@ -89,5 +90,9 @@ public class Chatter {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    public boolean isLogicalDelete() {
+        return ChatterStatusEnum.LOGICAL_DELETE.getCode().equals(status);
     }
 }

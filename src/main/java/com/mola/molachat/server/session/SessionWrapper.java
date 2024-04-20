@@ -13,4 +13,9 @@ public interface SessionWrapper {
      * @param message
      */
     void sendToClient(Object message) throws Exception;
+
+    /**
+     * 关闭session
+     */
+    void close();
 }

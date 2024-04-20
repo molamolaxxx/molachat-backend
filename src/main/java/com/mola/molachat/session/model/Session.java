@@ -37,6 +37,11 @@ public class Session {
      */
     private Date createTime;
 
+    /**
+     * 是否被移除
+     */
+    private boolean removed;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

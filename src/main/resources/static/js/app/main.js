@@ -234,6 +234,14 @@ $(document).ready(function () {
         var that = this,
             name = $(that).find(".contact__name").text()
         $(".chat__name").text(name);
+        // 根据文本长度动态缩放文字
+        let nameLength = getStringLength(name)
+        if (nameLength > 20) {
+            $(".chat__person").css("font-size","1.55rem")
+        } else{
+            $(".chat__person").css("font-size","2rem")
+        }
+
         ripple($(that), e);
         // 如果用户栏在外部，省略动画
         if (isSideBarOutside()) {
