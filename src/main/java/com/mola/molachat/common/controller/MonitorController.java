@@ -1,14 +1,16 @@
 package com.mola.molachat.common.controller;
 
-import com.mola.molachat.common.model.ServerResponse;
-import com.mola.molachat.session.data.SessionFactoryInterface;
-import com.mola.molachat.group.model.Group;
-import com.mola.molachat.session.model.VideoSession;
 import com.mola.molachat.chatter.dto.ChatterDTO;
-import com.mola.molachat.server.ChatServer;
 import com.mola.molachat.chatter.service.ChatterService;
+import com.mola.molachat.common.model.ServerResponse;
+import com.mola.molachat.common.utils.Base64Util;
+import com.mola.molachat.common.utils.JwtTokenUtil;
+import com.mola.molachat.group.model.Group;
 import com.mola.molachat.group.service.GroupService;
+import com.mola.molachat.server.ChatServer;
 import com.mola.molachat.server.service.ServerService;
+import com.mola.molachat.session.data.SessionFactoryInterface;
+import com.mola.molachat.session.model.VideoSession;
 import com.mola.molachat.session.service.SessionService;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,6 +42,9 @@ public class MonitorController {
 
     @Resource
     private SessionFactoryInterface sessionFactory;
+
+    @Resource
+    private JwtTokenUtil jwtUtil;
 
     /**
      * 查看在线的chatter
@@ -85,4 +90,18 @@ public class MonitorController {
         return ServerResponse.createBySuccess();
     }
 
+    @GetMapping("/getChatterToken/{chatterId}")
+    public ServerResponse<String> getChatterToken(@PathVariable String chatterId) {
+        ChatterDTO chatterDTO = chatterService.selectById(chatterId);
+        ChatServer server = serverService.selectByChatterId(chatterId);
+        if (null == chatterDTO){
+            return ServerResponse.createByErrorMessage("chatter不存在");
+        }
+        return ServerResponse.createBySuccess(
+                Base64Util.encodeBase64(
+                        String.format("%s;%s", chatterId, jwtUtil.generateToken(chatterId)
+                        )
+                )
+        );
+    }
 }

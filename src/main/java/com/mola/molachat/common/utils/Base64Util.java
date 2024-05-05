@@ -1,5 +1,8 @@
 package com.mola.molachat.common.utils;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 /**
  * @author : molamola
  * @Project: molachat
@@ -65,5 +68,10 @@ public class Base64Util {
         }
 
         return to.toString();
+    }
+
+    public static String encodeBase64(String text) {
+        byte[] encodedBytes = Base64.getEncoder().encode(text.getBytes(StandardCharsets.UTF_8));
+        return new String(encodedBytes, StandardCharsets.UTF_8);
     }
 }
