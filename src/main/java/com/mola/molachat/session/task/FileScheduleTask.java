@@ -2,6 +2,8 @@ package com.mola.molachat.session.task;
 
 import com.mola.molachat.common.config.SelfConfig;
 import com.mola.molachat.common.lock.FileUploadLock;
+import com.mola.molachat.robot.data.KeyValueFactoryInterface;
+import com.mola.molachat.robot.model.KeyValue;
 import com.mola.molachat.session.model.FileMessage;
 import com.mola.molachat.session.model.Message;
 import com.mola.molachat.session.dto.SessionDTO;
@@ -15,6 +17,7 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -36,6 +39,9 @@ public class FileScheduleTask {
 
     @Resource
     private SelfConfig config;
+
+    @Resource
+    private KeyValueFactoryInterface keyValueFactory;
 
     /**
      * 检查文件是否被消息持有
@@ -71,6 +77,8 @@ public class FileScheduleTask {
             lock.writeUnlock();
         }
 
+        KeyValue deleteFile = keyValueFactory.selectOne("deleteFile");
+
         try {
             lock.readLock();
             if(file.isDirectory()){
@@ -81,7 +89,11 @@ public class FileScheduleTask {
                     }
                     return !fileNameSet.contains(name);
                 })){
-                    f.delete();
+                    // 读取配置，判断是否需要删除文件
+                    if (Objects.nonNull(deleteFile) &&
+                            Objects.equals(deleteFile.getValue(), "Y")) {
+                        f.delete();
+                    }
                 }
             }else {
                 log.error("配置路径可能存在错误");
