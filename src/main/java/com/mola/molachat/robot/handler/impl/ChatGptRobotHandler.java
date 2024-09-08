@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.mola.molachat.chatter.dto.ChatterDTO;
+import com.mola.molachat.chatter.service.ChatterService;
 import com.mola.molachat.common.config.AppConfig;
 import com.mola.molachat.session.model.Message;
 import com.mola.molachat.chatter.model.RobotChatter;
@@ -49,6 +51,9 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
 
     @Resource
     private ServerService serverService;
+
+    @Resource
+    private ChatterService chatterService;
 
     @Resource
     private GptRobotEventBus gptRobotEventBus;
@@ -101,26 +106,14 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 headers.add(new BasicHeader("Authorization", "Bearer " + usedApiKey));
                 // prompt 拼接最近20条历史记录
                 JSONObject body = new JSONObject();
-                body.put("model", "gpt-3.5-turbo");
+                String modelName = kvUtils.getStringOrDefault("chatGptModelName", "Atom-13B-Chat");
+                body.put("model", modelName);
                 List<Map<String, String>> prompt = getPrompt(messageReceiveEvent);
                 log.info(JSONObject.toJSONString(prompt));
                 body.put("messages", prompt);
-                String res = null;
-                if (appConfig.getUseCmdProxy()) {
-                    try {
-                        cmdProxyInvokeSolution.sendChatGptRequestCmd(
-                                body, usedApiKey, message.getChatterId(), robotChatter.getAppKey());
-                    } catch (Exception e) {
-                        log.error("提交任务到代理服务器异常", e);
-                        // 不可用告警
-                        messageSendAction.setResponsesText(PROXY_ERROR);
-                        return messageSendAction;
-                    }
-                    messageSendAction.setSkip(Boolean.TRUE);
-                    return messageSendAction;
-                } else {
-                    res = HttpUtil.INSTANCE.post("https://api.openai.com/v1/chat/completions", body, 300000, headers.toArray(new Header[]{}));
-                }
+                body.put("stream", false);
+                String res = HttpUtil.INSTANCE.post("https://api.atomecho.cn/v1/chat/completions",
+                        body, 300000, headers.toArray(new Header[]{}));
 
                 JSONObject jsonObject = JSONObject.parseObject(res);
                 Assert.isTrue(jsonObject.containsKey("choices"), "choices is empty");
@@ -181,6 +174,10 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
      */
     private List<Map<String, String>> getPrompt(MessageReceiveEvent messageReceiveEvent) {
         List<Map<String, String>> messageInput = Lists.newArrayList();
+        ChatterDTO chatterDTO = chatterService.selectById(messageReceiveEvent.getMessage().getChatterId());
+
+        messageInput.add(getLine("system", "你是一个专业的女程序员，名字叫做turbo，" +
+                "语言柔和，充满少女气息，喜欢称呼自己为‘本喵’，与你对话的人名字叫做:" + chatterDTO.getName()));
         String sessionId = messageReceiveEvent.getSessionId();
         SessionDTO session = sessionService.findSession(sessionId);
         Assert.notNull(session, "session is null in getPrompt，" + sessionId);

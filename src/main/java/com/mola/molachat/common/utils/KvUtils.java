@@ -38,6 +38,14 @@ public class KvUtils {
         return keyValue.getValue();
     }
 
+    public String getStringOrDefault(String key, String defaultValue) {
+        KeyValue keyValue = keyValueFactory.selectOne(key);
+        if (Objects.isNull(keyValue)) {
+            return defaultValue;
+        }
+        return keyValue.getValue();
+    }
+
     public void set(String key, String value) {
         KeyValue keyValue = keyValueFactory.selectOne(key);
         if (Objects.isNull(keyValue)) {

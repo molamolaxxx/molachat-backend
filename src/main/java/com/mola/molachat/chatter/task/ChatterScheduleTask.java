@@ -134,10 +134,7 @@ public class ChatterScheduleTask {
         Map<String, ChannelWrapper> channelWrapperMap = Maps.newHashMap();
         // 取代理状态
         if (Objects.equals(chatter.getEventBusBeanName(), "chatGptRobotEventBus")) {
-            channelWrapperMap = ReverseInvokeHelper
-                    .instance()
-                    .fetchAvailableProxyService(String.format("%s:%s:%s", CmdProxyInvokeService.class.getName(),
-                            CmdProxyConstant.CHAT_GPT, "1.0.0"));
+            return true;
         } else if (Objects.equals(chatter.getEventBusBeanName(), "imageGenerateRobotEventBus")) {
             channelWrapperMap = ReverseInvokeHelper
                     .instance()
