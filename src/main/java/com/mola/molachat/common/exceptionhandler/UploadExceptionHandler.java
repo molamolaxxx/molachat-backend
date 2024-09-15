@@ -35,11 +35,12 @@ public class UploadExceptionHandler {
         log.error("上传文件过大");
         //通知server弹出异常
         String chatterId = (String) request.getSession().getAttribute("id");
+        String deviceId = (String) request.getSession().getAttribute("deviceId");
         if (null == chatterId){
             log.error("session不存在");
             return;
         }
-        ChatServer server = serverService.selectByChatterId(chatterId);
+        ChatServer server = serverService.selectByChatterId(chatterId, deviceId);
         server.getSession().sendToClient(WSResponse
                 .exception("exception", "文件过大，请上传小于"+config.getMaxFileSize()+"M的文件"));
     }

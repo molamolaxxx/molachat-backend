@@ -24,7 +24,14 @@ public interface ServerService {
      * @param chatterId
      * @return
      */
-    ChatServer selectByChatterId(String chatterId);
+    ChatServer selectByChatterId(String chatterId, String deviceId);
+
+    /**
+     * 根据chatterID查找服务器
+     * @param chatterId
+     * @return
+     */
+    List<ChatServer> selectByChatterId(String chatterId);
 
     /**
      * 移除服务器对象
@@ -45,8 +52,13 @@ public interface ServerService {
     void sendResponse(String targetChatterId, WSResponse response);
 
     /**
+     * 向客户端发送返回对象WSResponse
+     */
+    void sendResponse(String targetChatterId, String targetDeviceId, WSResponse response);
+
+    /**
      * 设置心跳
      */
-    void setHeartBeat(String chatterId);
+    void setHeartBeat(String chatterId, String deviceId);
 
 }

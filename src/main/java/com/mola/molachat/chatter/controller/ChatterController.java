@@ -155,6 +155,7 @@ public class ChatterController {
     @GetMapping("/heartBeat")
     private ServerResponse heartBeat(@RequestParam("chatterId") String chatterId,
                                      @RequestParam("token") String token,
+                                     @RequestParam(value = "deviceId", required = false) String deviceId,
                                      HttpServletRequest request,
                                      HttpServletResponse response){
 
@@ -177,13 +178,16 @@ public class ChatterController {
         }
 
         // 检查服务器是否存在
-        ChatServer server = serverService.selectByChatterId(chatterId);
+        ChatServer server = serverService.selectByChatterId(chatterId, deviceId);
         if (null == server){
             return ServerResponse.createByErrorMessage("no-server-exist");
         }
+
         //判断ip地址是否发生改变，改变则通知重连
         String currentIp = IpUtils.getIp(request);
-        if (!currentIp.equalsIgnoreCase(dto.getIp())){
+        if (server.getClientIp() == null) {
+            server.setClientIp(currentIp);
+        } else if (!currentIp.equalsIgnoreCase(server.getClientIp())){
             return ServerResponse.createByErrorMessage("reconnect");
         }
 
@@ -224,6 +228,7 @@ public class ChatterController {
     @PostMapping("/reconnect")
     private ServerResponse reconnect(@RequestParam("chatterId") String chatterId,
                                      @RequestParam("token") String token,
+                                     @RequestParam(value = "deviceId", required = false) String deviceId,
                                      HttpServletRequest request,
                                      HttpServletResponse response){
         // 前置判断，是否可以超过客户端最大连接数
@@ -237,7 +242,6 @@ public class ChatterController {
         }
         //1.判断chatter与server是否都存在
         ChatterDTO chatterDTO = chatterService.selectById(chatterId);
-        ChatServer server = serverService.selectByChatterId(chatterId);
         if (null == chatterDTO){
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             log.error("重连失败,chatter不存在, id = {}", chatterId);
@@ -254,6 +258,7 @@ public class ChatterController {
             return ServerResponse.createByErrorMessage("重连失败,token错误");
         }
         try {
+            ChatServer server = serverService.selectByChatterId(chatterId, deviceId);
             // 如果还存在server，则关闭它
             if (null != server) {
                 server.onClose();
@@ -263,7 +268,7 @@ public class ChatterController {
             log.error("重连失败,内部错误, id = {}", chatterId, e);
             return ServerResponse.createByErrorMessage("重连失败,内部错误");
         }
-        //4.保存session,返回成功与chatterId，通知前端重新建立socket
+        //4.保存session
         chatterDTO.setIp(IpUtils.getIp(request));
         //设置为在线
         if (chatterDTO.getStatus() != ChatterStatusEnum.ONLINE.getCode()){

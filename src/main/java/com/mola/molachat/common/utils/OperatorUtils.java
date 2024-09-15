@@ -1,5 +1,7 @@
 package com.mola.molachat.common.utils;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.util.*;
 
 /**
@@ -27,6 +29,7 @@ public class OperatorUtils {
     }
 
     public static Object operate(String raw) {
+        raw = StringUtils.deleteWhitespace(raw);
         Deque<Double> numStack = new ArrayDeque<>();
         Deque<Character> operatorStack = new ArrayDeque<>();
         StringBuffer sb = new StringBuffer();

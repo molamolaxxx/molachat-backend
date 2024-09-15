@@ -10,6 +10,7 @@ import com.mola.molachat.chatter.dto.ChatterDTO;
 import com.mola.molachat.session.enums.VideoStateEnum;
 import com.mola.molachat.chatter.service.ChatterService;
 import com.mola.molachat.server.service.ServerService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
  * @date : 2020-05-19 02:02
  **/
 @Component
+@Slf4j
 public class VideoResponseHandler implements IVideoHandler {
 
     @Autowired
@@ -49,18 +51,21 @@ public class VideoResponseHandler implements IVideoHandler {
 
     // 处理对方接受视频请求的响应
     public synchronized void handleAccept(String from, String to, JSONObject data) {
+        String fromDeviceId = data.getString("fromDeviceId");
+        String toDeviceId = data.getString("toDeviceId");
+
         // 查找是否有对应chatter
         ChatterDTO toChatter = chatterService.selectById(to);
         ChatterDTO fromChatter = chatterService.selectById(from);
         if (null == toChatter) {
             // 向目标客户端发送异常消息
-            serverService.sendResponse(from, VideoWSResponse
+            serverService.sendResponse(from,fromDeviceId, VideoWSResponse
                     .failed("不存在视频请求确认的对象", null));
             return;
         }
         if (toChatter.getVideoState().get() != VideoStateEnum.READY.getCode()) {
             // 对方线路不在等待中
-            serverService.sendResponse(from, VideoWSResponse
+            serverService.sendResponse(from,fromDeviceId, VideoWSResponse
                     .failed("对方线路已经被占用", null));
             return;
         }
@@ -69,37 +74,39 @@ public class VideoResponseHandler implements IVideoHandler {
         && chatterService.casVideoState(from, VideoStateEnum.READY.getCode(), VideoStateEnum.OCCUPY.getCode())){
             JSONObject json = new JSONObject();
             json.put("fromChatterId",from);
+            json.put("fromDeviceId", fromDeviceId);
             // 建立连接成功
-            serverService.sendResponse(to, VideoWSResponse
+            serverService.sendResponse(to,toDeviceId, VideoWSResponse
                     .requestVideoAccept("接受视频请求", json));
         } else {
             String msg = "协商失败，建立连接失败";
-            // 建立连接失败
-            serverService.sendResponse(to, VideoWSResponse
-                    .failed(msg, null));
-            serverService.sendResponse(from, VideoWSResponse
+            serverService.sendResponse(from,fromDeviceId, VideoWSResponse
                     .failed(msg, null));
             // 删除video-session
             sessionFactory.removeVideoSession(from);
             chatterService.changeVideoState(to, VideoStateEnum.FREE.getCode());
             chatterService.changeVideoState(from, VideoStateEnum.FREE.getCode());
+            throw new RuntimeException(msg);
         }
     }
 
     // 处理对方拒绝视频请求的响应
     public synchronized void handleRefuse(String from, String to, JSONObject data) {
+        String fromDeviceId = data.getString("fromDeviceId");
+        String toDeviceId = data.getString("toDeviceId");
+
         // 查找是否有对应chatter
         ChatterDTO toChatter = chatterService.selectById(to);
         ChatterDTO fromChatter = chatterService.selectById(from);
         if (null == toChatter) {
             // 向目标客户端发送异常消息
-            serverService.sendResponse(from, VideoWSResponse
+            serverService.sendResponse(from,fromDeviceId, VideoWSResponse
                     .failed("不存在视频请求拒绝的对象", null));
             return;
         }
         if (toChatter.getVideoState().get() != VideoStateEnum.READY.getCode()  ||
                 fromChatter.getVideoState().get() != VideoStateEnum.READY.getCode()) {
-            serverService.sendResponse(from, WSResponse.exception("不在准备中，无法拒绝", null));
+            serverService.sendResponse(from,fromDeviceId, WSResponse.exception("不在准备中，无法拒绝", null));
             return;
         }
         // 改变双方状态
@@ -108,7 +115,7 @@ public class VideoResponseHandler implements IVideoHandler {
         // 删除video-session
         sessionFactory.removeVideoSession(from);
         // 释放连接成功
-        serverService.sendResponse(to, VideoWSResponse
+        serverService.sendResponse(to,toDeviceId, VideoWSResponse
                 .requestVideoRefuse("拒绝视频请求", null));
     }
 

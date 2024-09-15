@@ -28,8 +28,10 @@ public class HeartBeatHandler implements WSRequestActionHandler{
 
     @Override
     public void handle(Action action) throws Exception {
-        String chatterId = (String) action.getData();
+        String chatterAndDeviceId = (String) action.getData();
         //log.info("action:客户端发送心跳, id:"+chatterId);
-        serverService.setHeartBeat(chatterId);
+        String[] chatterAndDeviceIds = chatterAndDeviceId.split(",");
+        serverService.setHeartBeat(chatterAndDeviceIds[0],
+                chatterAndDeviceIds.length > 1 ? chatterAndDeviceIds[1] : null);
     }
 }

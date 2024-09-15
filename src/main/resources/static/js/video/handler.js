@@ -46,11 +46,12 @@ $(document).ready(function() {
         let requestType = data.videoRequestType
         let requestChatterId = data.fromChatterId
         let requestChatterName = data.fromChatterName
+        let requestDeviceId = data.fromDeviceId
         // console.table(data)
         switch(requestType) {
             case requestCode.REQUEST_VIDEO_ON: {
                 console.log("视频请求")
-                handleVideoOn(requestChatterId, requestChatterName)
+                handleVideoOn(requestChatterId, requestChatterName, requestDeviceId)
                 break
             }
             case requestCode.REQUEST_VIDEO_OFF: {
@@ -83,6 +84,7 @@ $(document).ready(function() {
         swal("提示","对方取消了通话","info").then(()=>{
             // 更改remoteId
             setRemoteChatterId(null)
+            setRemoteDeviceId(null)
             // 关闭相机
             let engines = getEngines()
             engines.videoEngine.closeCamera(() => $modal.modal('close'))
@@ -97,12 +99,14 @@ $(document).ready(function() {
     receiveVideoResponse = function(data) {
         let responseType = data.videoResponseType
         let from = data.fromChatterId
+        let fromDeviceId = data.fromDeviceId
         let engines = getEngines()
         $cancel.css("display","none")
         switch(responseType) {
             case responseCode.RESPONSE_ACCEPT: {
                 // 更改remoteId
                 setRemoteChatterId(from)
+                setRemoteDeviceId(fromDeviceId)
                 // 打开模态框
                 engines.videoEngine.openCamera(stream => {
                     addSpinner("video-modal")
@@ -145,6 +149,7 @@ $(document).ready(function() {
                 console.log("对方拒绝请求")
                 // 更改remoteId
                 setRemoteChatterId(null)
+                setRemoteDeviceId(null)
                 // 关闭摄像机
                 engines.videoEngine.closeCamera(function(){})
                 break
@@ -153,6 +158,7 @@ $(document).ready(function() {
                 swal("提示",data.msg,"warning").then(()=>{
                     // 更改remoteId
                     setRemoteChatterId(null)
+                    setRemoteDeviceId(null)
                     // 关闭摄像头
                     engines.videoEngine.closeCamera(() => $modal.modal('close'))
                     // 关闭rtc
@@ -164,7 +170,7 @@ $(document).ready(function() {
     }
 
     // 收到视频请求
-    function handleVideoOn(requestChatterId, requestChatterName) {
+    function handleVideoOn(requestChatterId, requestChatterName, requestDeviceId) {
         // 消息通知
         sendNotification(requestChatterName + "发起了视频通话邀请")
         swal("提示","是否接受"+requestChatterName+"的视频通话邀请?","info").then(rs => {
@@ -216,13 +222,16 @@ $(document).ready(function() {
                     data: {
                         videoActionCode: responseCode.RESPONSE_ACCEPT,
                         toChatterId: requestChatterId,
-                        fromChatterId: getChatterId()
+                        fromChatterId: getChatterId(),
+                        fromDeviceId: getDeviceId(),
+                        toDeviceId: requestDeviceId
                     }
                 }
                 // 发送接受的action
                 getSocket().send(JSON.stringify(action))
                 // 更改remoteId
                 setRemoteChatterId(requestChatterId)
+                setRemoteDeviceId(requestDeviceId)
                 // 获取rtc通道
                 getEngines().rtcEngine.createPeerConnection()
                 
@@ -235,7 +244,9 @@ $(document).ready(function() {
                     data: {
                         videoActionCode: responseCode.RESPONSE_REFUSE,
                         toChatterId: requestChatterId,
-                        fromChatterId: getChatterId()
+                        fromChatterId: getChatterId(),
+                        fromDeviceId: getDeviceId(),
+                        toDeviceId: requestDeviceId
                     }
                 }
                 getSocket().send(JSON.stringify(action))
@@ -264,6 +275,7 @@ $(document).ready(function() {
     function handleVideoOff() {
         // 设置state的remoteId为null
         setRemoteChatterId(null)
+        setRemoteDeviceId(null)
         // 关闭相机
         let engines = getEngines()
         engines.videoEngine.closeCamera(() => $modal.modal('close'))

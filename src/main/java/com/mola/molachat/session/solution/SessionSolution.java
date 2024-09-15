@@ -25,6 +25,7 @@ import com.mola.molachat.common.utils.IdUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.HashSet;
@@ -81,10 +82,11 @@ public class SessionSolution {
             }
             //构建response,向不同客户端发送
             try {
-                ChatServer server = serverService.selectByChatterId(chatterId);
-                if (null != server) {
-                    // todo 改成生产者消费者模型，异步执行
-                    server.getSession().sendToClient(WSResponse.message("send content!", message));
+                List<ChatServer> servers = serverService.selectByChatterId(chatterId);
+                if (!CollectionUtils.isEmpty(servers)) {
+                    for (ChatServer server : servers) {
+                        server.getSession().sendToClient(WSResponse.message("send content!", message));
+                    }
                 } else {
                     // 将消息存入消息队列
                     chatterService.offerMessageIntoQueue(message,chatterId);

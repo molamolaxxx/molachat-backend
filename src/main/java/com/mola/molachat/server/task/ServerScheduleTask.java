@@ -1,20 +1,20 @@
 package com.mola.molachat.server.task;
 
-import com.mola.molachat.common.config.SelfConfig;
 import com.mola.molachat.chatter.dto.ChatterDTO;
 import com.mola.molachat.chatter.enums.ChatterStatusEnum;
-import com.mola.molachat.server.ChatServer;
 import com.mola.molachat.chatter.service.ChatterService;
+import com.mola.molachat.common.config.SelfConfig;
+import com.mola.molachat.server.ChatServer;
 import com.mola.molachat.server.service.ServerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.util.CollectionUtils;
 
 import javax.websocket.EncodeException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -45,10 +45,7 @@ public class ServerScheduleTask {
     private void checkServersStatus(){
         log.info("check:开始检查所有连接状态");
         // 克隆到新list中，避免并发修改异常
-        List<ChatServer> chatServerList = new ArrayList<>();
-        for (ChatServer chatServer : serverService.list()) {
-            chatServerList.add(chatServer);
-        }
+        List<ChatServer> chatServerList = serverService.list();
         for (ChatServer server : chatServerList){
             Long lastHeartBeat = server.getLastHeartBeat();
 
@@ -89,7 +86,7 @@ public class ServerScheduleTask {
                 continue;
             }
             String chatterId = chatter.getId();
-            if (null == serverService.selectByChatterId(chatterId)){
+            if (CollectionUtils.isEmpty(serverService.selectByChatterId(chatterId))) {
                 chatterService.setChatterStatus(chatter.getId(),
                         ChatterStatusEnum.OFFLINE.getCode());
             }

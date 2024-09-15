@@ -1,17 +1,16 @@
 package com.mola.molachat.server.data.impl;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.mola.molachat.common.annotation.RefreshChatterList;
 import com.mola.molachat.common.enums.DataErrorCodeEnum;
 import com.mola.molachat.common.exception.ServerException;
 import com.mola.molachat.server.ChatServer;
 import com.mola.molachat.server.data.ServerFactoryInterface;
-import com.mola.molachat.server.session.SessionWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -26,7 +25,7 @@ public class ServerFactory implements ServerFactoryInterface {
     /**
      * chatterId -> ChatServer
      */
-    private static Map<String, ChatServer> serverMap;
+    private static Map<String, Set<ChatServer>> serverMap;
 
     public ServerFactory(){
         serverMap = new ConcurrentHashMap<>();
@@ -34,12 +33,14 @@ public class ServerFactory implements ServerFactoryInterface {
 
     @Override
     @RefreshChatterList
-    public ChatServer create(ChatServer server) throws ServerException{
-        if (serverMap.containsKey(server.getChatterId())){
+    public ChatServer create(ChatServer server) throws ServerException {
+        serverMap.putIfAbsent(server.getChatterId(), Sets.newConcurrentHashSet());
+        Set<ChatServer> servers = serverMap.get(server.getChatterId());
+        if (servers.contains(server)){
+            log.error("服务器创建重复, chatter = {}, deviceId = {}", server.getChatterId(), server.getDeviceId());
             throw new ServerException(DataErrorCodeEnum.CREATE_SERVER_ERROR);
         }
-        serverMap.put(server.getChatterId(), server);
-
+        servers.add(server);
         return server;
     }
 
@@ -49,29 +50,33 @@ public class ServerFactory implements ServerFactoryInterface {
         if (!serverMap.containsKey(server.getChatterId())){
             throw new ServerException(DataErrorCodeEnum.REMOVE_SERVER_ERROR);
         }
-        serverMap.remove(server.getChatterId());
-
+        serverMap.get(server.getChatterId()).remove(server);
         return server;
     }
 
     @Override
-    public ChatServer selectOne(String chatterId){
-        return serverMap.get(chatterId);
+    public ChatServer selectOne(String chatterId, String deviceId){
+        if (!serverMap.containsKey(chatterId)) {
+            return null;
+        }
+        return serverMap.get(chatterId).stream()
+                .filter(server -> Objects.equals(server.getDeviceId(), deviceId))
+                .findAny().orElse(null);
     }
 
     @Override
-    public SessionWrapper selectWSSessionByChatterId(String chatterId) throws ServerException{
-
-        ChatServer server = this.selectOne(chatterId);
-
-        return server.getSession();
+    public List<ChatServer> selectByChatterId(String chatterId) {
+        if (!serverMap.containsKey(chatterId)) {
+            return Collections.emptyList();
+        }
+        return Lists.newArrayList(serverMap.get(chatterId));
     }
 
     @Override
     public List<ChatServer> list() {
         List<ChatServer> serverList = new ArrayList<>();
         for (String key : serverMap.keySet()){
-            serverList.add(serverMap.get(key));
+            serverList.addAll(serverMap.get(key));
         }
         return serverList;
     }

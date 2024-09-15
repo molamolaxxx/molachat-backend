@@ -13,6 +13,27 @@ var _ip = ipAndPort['ip']
 // 端口
 var _port = ipAndPort['port']
 
+function generateUUID() {
+    let d = new Date().getTime();
+    let uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        let r = (d + Math.random() * 16) % 16 | 0;
+        d = Math.floor(d / 16);
+        return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+    return uuid;
+}
+
+
+function getDeviceId() {
+    var deviceId = localStorage.getItem("deviceId")
+    if (deviceId) {
+        return deviceId
+    }
+    deviceId = generateUUID()
+    localStorage.setItem("deviceId", deviceId)
+    return deviceId
+}
+
 function getIpAndPort() {
     var ip = ""
     var port = ""
@@ -20,7 +41,7 @@ function getIpAndPort() {
     if (isApp) {
         // web-app， 此处可进行服务器选择
         ip = localStorage.getItem("_ip") ? localStorage.getItem("_ip") : DEFAULT_HOST
-        port = localStorage.getItem("_port") ? localStorage.getItem("_port") :DEFAULT_PORT
+        port = localStorage.getItem("_port") ? localStorage.getItem("_port") : DEFAULT_PORT
     } else {
         // web页面，不可进行选择
         let str = location.href.split("/")[2]
@@ -39,15 +60,18 @@ function getIpAndPort() {
             port = DEFAULT_PORT
         }
         ip = localStorage.getItem("_ip") ? localStorage.getItem("_ip") : ip
-        port = localStorage.getItem("_port") ? localStorage.getItem("_port") :port
+        port = localStorage.getItem("_port") ? localStorage.getItem("_port") : port
     }
-    return {ip, port}
+    return {
+        ip,
+        port
+    }
 }
 
 
 function setIp(a) {
     _ip = a
-    localStorage.setItem("_ip",_ip)
+    localStorage.setItem("_ip", _ip)
 }
 
 function getIp() {
@@ -56,7 +80,7 @@ function getIp() {
 
 function setPort(a) {
     _port = a;
-    localStorage.setItem("_port",_port)
+    localStorage.setItem("_port", _port)
 }
 
 function getPort() {
@@ -101,7 +125,9 @@ function testHostValid() {
         url: url,
         dataType: "json",
         type: "GET",
-        xhrFields: {withCredentials:true},
+        xhrFields: {
+            withCredentials: true
+        },
         crossDomain: true,
         success: function (result) {
             return true
@@ -112,34 +138,25 @@ function testHostValid() {
     })
 }
 
-generateUUID = function() {
-    let d = new Date().getTime();
-    let uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      let r = (d + Math.random()*16)%16 | 0;
-      d = Math.floor(d/16);
-      return (c=='x' ? r : (r&0x3|0x8)).toString(16);
-    });
-    return uuid;
-  }
 const lock = generateUUID()
-window.onbeforeunload = isApp ? undefined : function() {
-    var warning="确认退出?";          
+window.onbeforeunload = isApp ? undefined : function () {
+    var warning = "确认退出?";
     return warning;
 }
-window.onunload = function (){  
+window.onunload = function () {
     if (isApp) {
         return
     }
     if (getChatterId()) {
         localStorage.removeItem("pageLock")
     }
-}  
+}
 
-addPageLock = function() {
+addPageLock = function () {
     if (isApp) {
         return true
     }
-    const curLock = localStorage.getItem("pageLock") 
+    const curLock = localStorage.getItem("pageLock")
     const heartBeat = localStorage.getItem("lastHeartBeat")
     if (!heartBeat) {
         localStorage.setItem("pageLock", lock)

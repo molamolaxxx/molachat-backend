@@ -1,24 +1,24 @@
 // 视频和语音通话
 // 基于webrtc
-$(document).ready(function() {
+$(document).ready(function () {
 
     var engines = {
         // 视频引擎
-        videoEngine : VideoEngine(),
+        videoEngine: VideoEngine(),
         // rtc引擎
-        rtcEngine : RTCEngine(function(event){
+        rtcEngine: RTCEngine(function (event) {
             // onmessage回调
             console.log(event)
-        },function(remoteStream) {
+        }, function (remoteStream) {
             // onaddstream 收到对方的视频流数据
             var video = $("#videoOther")[0];
             video.srcObject = remoteStream;
-            video.onloadedmetadata = function(e) {
+            video.onloadedmetadata = function (e) {
                 video.play();
                 removeSpinner()
             };
-        },function() {
-            setTimeout(function() {
+        }, function () {
+            setTimeout(function () {
                 // onconnected
                 var stream = $("#videoSelf")[0].srcObject;
                 if (stream) {
@@ -26,8 +26,8 @@ $(document).ready(function() {
                 } else {
                     console.log("no local stream avaliable")
                 }
-            },500)
-            
+            }, 500)
+
         })
     }
 
@@ -77,7 +77,8 @@ $(document).ready(function() {
         // 是否打开前置摄像头
         openMirror: true,
         // 对方的id
-        remoteChatterId: null       
+        remoteChatterId: null,
+        remoteDeviceId: null
     }
     /*
      dom操作
@@ -90,57 +91,60 @@ $(document).ready(function() {
         out_duration: 200, // Transition out duration
         starting_top: '4%', // Starting top style attribute
         ending_top: '100%', // Ending top style attribute
-        ready: function(modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
-            
+        ready: function (modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
+
         },
-        complete: function() { 
+        complete: function () {
             // 判断是否是挂断电话
             if (state.remoteChatterId) {
                 // 挂起
-                $back.css("display","inline")
+                $back.css("display", "inline")
                 showToast("视频挂起到后台", 1000)
-            } 
-            else {
+            } else {
                 // 挂断
-                $back.css("display","none")
+                $back.css("display", "none")
                 showToast("视频已挂断", 1000)
             }
-        } 
+        }
     });
     // dom初始化位置
-    $modal.css("max-width",800)
+    $modal.css("max-width", 800)
     if (window.innerWidth > 800) {
-        $modal.css("left",(window.innerWidth - $modal.innerWidth())/2)
+        $modal.css("left", (window.innerWidth - $modal.innerWidth()) / 2)
     }
-    $off.css("left",($modal.innerWidth() - 56)/2)
-    
-    addResizeEventListener(function() {
-        
+    $off.css("left", ($modal.innerWidth() - 56) / 2)
+
+    addResizeEventListener(function () {
+
         if (window.innerWidth > 800) {
-            $modal.css("left",(window.innerWidth - 800)/2)
-            $off.css("left",($modal.innerWidth - 56)/2)
+            $modal.css("left", (window.innerWidth - 800) / 2)
+            $off.css("left", ($modal.innerWidth - 56) / 2)
         } else {
-            $modal.css("left",0)
-            $off.css("left",(window.innerWidth - 56)/2)
+            $modal.css("left", 0)
+            $off.css("left", (window.innerWidth - 56) / 2)
         }
     })
-    
+
 
     /*
      监听事件
      */
-    $mirror.on('click', function() {
+    $mirror.on('click', function () {
         if (state.openMirror) {
             // 关闭前置
-            $videoSelf.animate({opacity:0})
+            $videoSelf.animate({
+                opacity: 0
+            })
         } else {
             // 打开前置
-            $videoSelf.animate({opacity:1})
+            $videoSelf.animate({
+                opacity: 1
+            })
         }
         state.openMirror = !state.openMirror
     })
-    
-    videoStateChange = function(st) {
+
+    videoStateChange = function (st) {
         let req = {
             code: requestCode.VIDEO_REQUEST,
             msg: "video_state_change",
@@ -148,13 +152,14 @@ $(document).ready(function() {
                 videoActionCode: requestCode.VIDEO_STATE_CHANGE,
                 toChatterId: state.remoteChatterId,
                 fromChatterId: getChatterId(),
+                toDeviceId: getState().remoteDeviceId,
                 state: st
             }
         }
         getSocket().send(JSON.stringify(req))
     }
 
-    videoOff = function() {
+    videoOff = function () {
         let socket = getSocket()
         let req = {
             code: requestCode.VIDEO_REQUEST,
@@ -162,7 +167,9 @@ $(document).ready(function() {
             data: {
                 videoActionCode: requestCode.REQUEST_VIDEO_OFF,
                 toChatterId: state.remoteChatterId,
-                fromChatterId: getChatterId()
+                fromChatterId: getChatterId(),
+                fromDeviceId: getDeviceId(),
+                toDeviceId: state.remoteDeviceId
             }
         }
         state.remoteChatterId = null
@@ -171,24 +178,24 @@ $(document).ready(function() {
         engines.videoEngine.closeCamera(() => $modal.modal('close'))
         // 关闭rtc
         engines.rtcEngine.close()
-        
+
     }
     $off.on('click', videoOff)
 
     // 用于取消通话的id
     var toCancelId = null;
-    let func = function(){
+    let func = function () {
         // 获得当前聊天窗口的chatter
         let activeChatter = getActiveChatter()
         console.log(activeChatter)
         // 判断是否是群聊
-        if (activeChatter.id === "temp-chatter"){
-            swal("Not Support", "暂且不支持群聊视频通话" , "warning");
+        if (activeChatter.id === "temp-chatter") {
+            swal("Not Support", "暂且不支持群聊视频通话", "warning");
             return
         }
         // 判断对方是否在线
         if (activeChatter.status != 1 || $(".cloned")[0].classList.contains("contact__photo__gray")) {
-            swal("offline", "对方已经离线，无法发起视频通话" , "warning");
+            swal("offline", "对方已经离线，无法发起视频通话", "warning");
             return
         }
         // 正在和其他人通话
@@ -196,52 +203,53 @@ $(document).ready(function() {
             showToast("您正在通话中", 1000)
             return
         }
-        // 检测自己设备状态
-        if (!engines.videoEngine.deviceTest(val=>{},err=>{
-            swal("device error", "设备出现问题，请检查权限与设备连接" , "warning")
-        })) {
-            swal("device error", "设备出现问题，请检查权限与设备连接" , "warning");
-            return
-        }
-        
+
         toCancelId = activeChatter.id
-        
-        swal("提示","是否与"+activeChatter.name+"进行视频通话?","info")
-        .then(function (value) {
-            // 发起视频请求
-            if (value) {
-                sendVideoRequest()
-                $cancel.css("display","inline")
-            } else {
-                engines.videoEngine.closeCamera(()=>{})
-            }
-        });
+
+        swal("提示", "是否与" + activeChatter.name + "进行视频通话?", "info")
+            .then(function (value) {
+                // 发起视频请求
+                if (value) {
+
+                    // 检测自己设备状态
+                    if (!engines.videoEngine.deviceTest(val => {}, err => {
+                            swal("device error", "设备出现问题，请检查权限与设备连接", "warning")
+                        })) {
+                        swal("device error", "设备出现问题，请检查权限与设备连接", "warning");
+                        return
+                    }
+                    sendVideoRequest()
+                    $cancel.css("display", "inline")
+                } else {
+                    engines.videoEngine.closeCamera(() => {})
+                }
+            });
     }
-    $("#video").on('click',func);
-    $("#tool-video").on('click',func);
-    $back.on('click',function(){
+    $("#video").on('click', func);
+    $("#tool-video").on('click', func);
+    $back.on('click', function () {
         // 判断对方是否在线
         if (state.remoteChatterId) {
             $modal.modal('open')
         }
     });
-    $cancel.on('click', function() {
-        swal("提示","是否取消视频通话请求?","info")
-        .then(function (value) {
-            // 取消视频请求
-            if (value) {
-                sendCancelRequest()
-                $cancel.css("display","none")
-                engines.videoEngine.closeCamera(() => {})
-            }
-        });
+    $cancel.on('click', function () {
+        swal("提示", "是否取消视频通话请求?", "info")
+            .then(function (value) {
+                // 取消视频请求
+                if (value) {
+                    sendCancelRequest()
+                    $cancel.css("display", "none")
+                    engines.videoEngine.closeCamera(() => {})
+                }
+            });
     })
 
     /*
      api
      */
     // 发起视频请求
-    sendCancelRequest = function() {
+    sendCancelRequest = function () {
         let socket = getSocket()
         let req = {
             code: requestCode.VIDEO_REQUEST,
@@ -249,7 +257,8 @@ $(document).ready(function() {
             data: {
                 videoActionCode: requestCode.REQUEST_CANCEL,
                 toChatterId: toCancelId,
-                fromChatterId: getChatterId()
+                fromChatterId: getChatterId(),
+                fromDeviceId: getDeviceId()
             }
         }
         socket.send(JSON.stringify(req))
@@ -257,7 +266,7 @@ $(document).ready(function() {
     }
 
     // 发起视频请求
-    sendVideoRequest = function() {
+    sendVideoRequest = function () {
         let socket = getSocket()
         let req = {
             code: requestCode.VIDEO_REQUEST,
@@ -265,7 +274,8 @@ $(document).ready(function() {
             data: {
                 videoActionCode: requestCode.REQUEST_VIDEO_ON,
                 toChatterId: getActiveChatter().id,
-                fromChatterId: getChatterId()
+                fromChatterId: getChatterId(),
+                fromDeviceId: getDeviceId()
             }
         }
         socket.send(JSON.stringify(req))
@@ -274,25 +284,29 @@ $(document).ready(function() {
 
 
     // 获取状态
-    getState = function() {
+    getState = function () {
         return state
     }
 
     // 获取引擎
-    getEngines = function() {
+    getEngines = function () {
         return engines
     }
 
-    setRemoteChatterId = function(remote) {
+    setRemoteChatterId = function (remote) {
         state.remoteChatterId = remote
+    }
+
+    setRemoteDeviceId = function (remote) {
+        state.remoteDeviceId = remote
     }
 
     // 双击放大
     var isFull = false
-    $videoOther.on("dblclick",function(e) {
+    $videoOther.on("dblclick", function (e) {
         if (isFull) {
             $videoOther.removeClass("videoFullScreen")
-        }else{
+        } else {
             $videoOther.addClass("videoFullScreen")
         }
         isFull = !isFull
@@ -307,24 +321,24 @@ $(document).ready(function() {
     //     isFull = !isFull
     // })
 
-    $choose_camera.on("click", function(e) {
-        swal("提示","是否切换至视频通信?","info")
-        .then(function (value) {
-            if (value) {
-                shareVideo()
-            }
-            
-        });
+    $choose_camera.on("click", function (e) {
+        swal("提示", "是否切换至视频通信?", "info")
+            .then(function (value) {
+                if (value) {
+                    shareVideo()
+                }
+
+            });
     })
 
-    $choose_screen.on("click", function(e) {
-        swal("提示","是否切换至屏幕共享?","info")
-        .then(function (value) {
-            if (value) {
-                shareScreen()
-            }
-        });
+    $choose_screen.on("click", function (e) {
+        swal("提示", "是否切换至屏幕共享?", "info")
+            .then(function (value) {
+                if (value) {
+                    shareScreen()
+                }
+            });
     })
 
-    
+
 })

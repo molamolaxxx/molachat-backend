@@ -93,7 +93,6 @@ public class MonitorController {
     @GetMapping("/getChatterToken/{chatterId}")
     public ServerResponse<String> getChatterToken(@PathVariable String chatterId) {
         ChatterDTO chatterDTO = chatterService.selectById(chatterId);
-        ChatServer server = serverService.selectByChatterId(chatterId);
         if (null == chatterDTO){
             return ServerResponse.createByErrorMessage("chatter不存在");
         }

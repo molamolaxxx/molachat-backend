@@ -46,7 +46,7 @@ public class VideoRequestHandler implements IVideoHandler {
                 break;
             }
             case VideoRequestCode.REQUEST_VIDEO_OFF:{
-                // 取消视频请求
+                // 视频终止
                 handleVideoOff(from, to, data);
                 break;
             }
@@ -75,11 +75,14 @@ public class VideoRequestHandler implements IVideoHandler {
      * @param data
      */
     private synchronized void handleRequestCancel(String from, String to, JSONObject data) {
+        // 发送方ID
+        String fromDeviceId = data.getString("fromDeviceId");
+
         // 取消请求
         // 查找对应chatter
         ChatterDTO toChatter = chatterService.selectById(to);
         // 检查状态能否进行取消
-        checkVideoChannelState(toChatter, from);
+        checkVideoChannelState(toChatter, from, fromDeviceId);
         ChatterDTO fromChatter = chatterService.selectById(from);
         // 改变双方状态为释放
         chatterService.changeVideoState(to, VideoStateEnum.FREE.getCode());
@@ -92,15 +95,21 @@ public class VideoRequestHandler implements IVideoHandler {
     }
 
     private void handleSignallingChange(String from, String to, JSONObject data) {
+        // 发送方ID
+        String toDeviceId = data.getString("toDeviceId");
+
         // 信令交换
-        serverService.sendResponse(to, VideoWSResponse.requestSignalChange("信令交换", data));
+        serverService.sendResponse(to, toDeviceId, VideoWSResponse.requestSignalChange("信令交换", data));
     }
 
     public synchronized void handleVideoOn(String from, String to, JSONObject data){
+        // 发送方ID
+        String fromDeviceId = data.getString("fromDeviceId");
+
         // 查找是否有对应chatter
         ChatterDTO toChatter = chatterService.selectById(to);
         // 检查状态能否进行通信
-        checkVideoChannelState(toChatter, from);
+        checkVideoChannelState(toChatter, from, fromDeviceId);
         if (toChatter.getVideoState().get() != VideoStateEnum.FREE.getCode()) {
             VideoSession videoSession = sessionFactory.selectVideoSession(from);
             if (videoSession != null) {
@@ -112,7 +121,7 @@ public class VideoRequestHandler implements IVideoHandler {
                 }
             }
             // 线路已经被占用，返回错误
-            serverService.sendResponse(from, VideoWSResponse
+            serverService.sendResponse(from, fromDeviceId, VideoWSResponse
                     .failed("对方正在通话中", null));
             return;
         }
@@ -120,7 +129,7 @@ public class VideoRequestHandler implements IVideoHandler {
         // 强条件，自身必须不在通话中，由前端进行过滤
         if (fromChatter.getVideoState().get() != VideoStateEnum.FREE.getCode()) {
             // 个人线路已经被占用，返回错误
-            serverService.sendResponse(from, VideoWSResponse
+            serverService.sendResponse(from, fromDeviceId, VideoWSResponse
                     .failed("您已经在通话中", null));
             return;
         }
@@ -135,6 +144,7 @@ public class VideoRequestHandler implements IVideoHandler {
                 JSONObject json = new JSONObject();
                 json.put("fromChatterId", from);
                 json.put("fromChatterName", chatterService.selectById(from).getName());
+                json.put("fromDeviceId", fromDeviceId);
                 // 占用成功, 向对方发送视频请求
                 serverService.sendResponse(to, VideoWSResponse
                         .requestVideoOn("视频请求", json));
@@ -145,13 +155,16 @@ public class VideoRequestHandler implements IVideoHandler {
 
         } else {
             // 线路已经被占用，返回错误
-            serverService.sendResponse(from, VideoWSResponse
+            serverService.sendResponse(from,fromDeviceId, VideoWSResponse
                     .failed("对方线路已经被占用", null));
-            return;
         }
     }
 
     public synchronized void handleVideoOff(String from, String to, JSONObject data) {
+        // 发送方ID
+        String fromDeviceId = data.getString("fromDeviceId");
+        String toDeviceId = data.getString("toDeviceId");
+
         // 不存在会话，无法挂断
         if (null == sessionFactory.selectVideoSession(from) || null == sessionFactory.selectVideoSession(to)) {
             serverService.sendResponse(from, WSResponse.exception("不存在视频会话", null));
@@ -159,7 +172,8 @@ public class VideoRequestHandler implements IVideoHandler {
         }
         // 查找对应chatter
         ChatterDTO toChatter = chatterService.selectById(to);
-        checkVideoChannelState(toChatter, from);
+
+        checkVideoChannelState(toChatter, from, fromDeviceId);
         ChatterDTO fromChatter = chatterService.selectById(from);
         if (toChatter.getVideoState().get() != VideoStateEnum.OCCUPY.getCode()  ||
                 fromChatter.getVideoState().get() != VideoStateEnum.OCCUPY.getCode()) {
@@ -172,7 +186,7 @@ public class VideoRequestHandler implements IVideoHandler {
         // 删除video-session
         sessionFactory.removeVideoSession(from);
         // 释放连接成功
-        serverService.sendResponse(to, VideoWSResponse
+        serverService.sendResponse(to,toDeviceId, VideoWSResponse
                 .requestVideoOff("挂断视频", null));
 
     }
@@ -182,22 +196,23 @@ public class VideoRequestHandler implements IVideoHandler {
      * @param toChatter 目标用户
      * @param from 发起用户
      */
-    private void checkVideoChannelState(ChatterDTO toChatter, String from) {
+    private void checkVideoChannelState(ChatterDTO toChatter, String from, String fromDeviceId) {
         if (null == toChatter) {
             // 向目标客户端发送异常消息
-            serverService.sendResponse(from, VideoWSResponse
+            serverService.sendResponse(from,fromDeviceId, VideoWSResponse
                     .failed("不存在视频请求的对象", null));
             return;
         }
         // 判断chatter是否在线
         if (toChatter.getStatus() != ChatterStatusEnum.ONLINE.getCode()) {
-            serverService.sendResponse(from, VideoWSResponse.failed("对方不在线", null));
-            return;
+            serverService.sendResponse(from,fromDeviceId, VideoWSResponse.failed("对方不在线", null));
         }
     }
 
     private void handleVideoStateChange(String from, String to, JSONObject data) {
+        // 发送方ID
+        String toDeviceId = data.getString("toDeviceId");
         // 信令交换
-        serverService.sendResponse(to, VideoWSResponse.requestVideoStateChange("视频状态改变", data));
+        serverService.sendResponse(to, toDeviceId, VideoWSResponse.requestVideoStateChange("视频状态改变", data));
     }
 }

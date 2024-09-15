@@ -5,7 +5,6 @@ $(document).ready(function () {
         var localStream = null
         // 打开状态
         var open = false
-        var closingCamera = false
         // 当前视频类型 1、video摄像头 2、screen屏幕分享
         var curType = "video"
         // 打开摄像头
@@ -31,12 +30,10 @@ $(document).ready(function () {
 
         // 关闭摄像头
         var closeCamera = function (callback) {
-            closingCamera = true
             if (localStream != null) {
                 closeStream(localStream)
                 localStream = null;
                 open = false
-                closingCamera = false
                 // 回调函数
                 callback()
 
@@ -91,11 +88,6 @@ $(document).ready(function () {
             }
 
             function gotStream(stream) {
-                if (closingCamera) {
-                    closeStream(stream)
-                    closingCamera = false
-                    return
-                }
                 console.log(stream)
                 localStream = stream
                 open = true
@@ -342,6 +334,7 @@ $(document).ready(function () {
                 pc.localChannel.close();
                 pc.close();
                 pc = null;
+                console.log("pc = null")
                 oppositeChannel = null;
             }
         }
@@ -354,7 +347,8 @@ $(document).ready(function () {
                 candidate: data.candidate,
                 type: data.type,
                 fromChatterId: getChatterId(),
-                toChatterId: getState().remoteChatterId
+                toChatterId: getState().remoteChatterId,
+                toDeviceId: getState().remoteDeviceId
             }
             let action = {
                 code: code,

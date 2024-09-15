@@ -1,6 +1,7 @@
 package com.mola.molachat.server;
 
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.base.Objects;
 import com.mola.molachat.server.websocket.Action;
 import com.mola.molachat.server.websocket.WSResponse;
 import com.mola.molachat.session.model.Message;
@@ -57,8 +58,12 @@ public class ChatServer {
     //一个server对应一个chatter
     private String chatterId;
 
+    private String deviceId;
+
     //心跳包,存放最后一次心跳的时间,默认十秒一次
     private Long lastHeartBeat;
+
+    private String clientIp;
 
     /**
      * 相同chatterId连接了多少个客户端
@@ -71,16 +76,17 @@ public class ChatServer {
      * @param chatterId
      * @throws IOException
      */
-    public void onOpen(SessionWrapper session, String chatterId) throws Exception {
+    public void onOpen(SessionWrapper session, String chatterId, String deviceId) throws Exception {
         this.session = session;
         log.info("chatterId:"+chatterId+"开始连接");
         this.chatterId = chatterId;
         this.lastHeartBeat = System.currentTimeMillis();
+        this.deviceId = deviceId;
 
         //1.添加服务器
         try {
             //如果存在服务器：重连状态只是更换session,不存在则创建
-            if (null == serverService.selectByChatterId(chatterId)){
+            if (null == serverService.selectByChatterId(chatterId, deviceId)){
                 serverService.create(this);
             }
         } catch (ServerServiceException e) {
@@ -158,11 +164,27 @@ public class ChatServer {
     }
 
     public void onError(Throwable error) throws EncodeException, IOException{
-        log.error("chatterId:"+chatterId+"发生错误");
-        // 此时端点已经失效
-//        this.session.getBasicRemote()
-//                .sendObject(WSResponse.exception("server-error", "服务器出现错误"));
-        error.printStackTrace();
+        log.error("chatterId:"+chatterId+"发生错误", error);
     }
 
+    public void setClientIp(String clientIp) {
+        this.clientIp = clientIp;
+    }
+
+    public String getClientIp() {
+        return clientIp;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ChatServer that = (ChatServer) o;
+        return Objects.equal(chatterId, that.chatterId) && Objects.equal(deviceId, that.deviceId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(chatterId, deviceId);
+    }
 }

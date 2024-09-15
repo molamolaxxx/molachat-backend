@@ -1,7 +1,6 @@
 package com.mola.molachat.server.data;
 
 import com.mola.molachat.server.ChatServer;
-import com.mola.molachat.server.session.SessionWrapper;
 
 import java.util.List;
 
@@ -31,14 +30,15 @@ public interface ServerFactoryInterface {
      * @param chatterId
      * @return
      */
-    ChatServer selectOne(String chatterId);
+    ChatServer selectOne(String chatterId, String deviceId);
+
 
     /**
-     * 获取对应chatterId的websocket session
+     * 根据chatterId查询server
      * @param chatterId
      * @return
      */
-    SessionWrapper selectWSSessionByChatterId(String chatterId);
+    List<ChatServer> selectByChatterId(String chatterId);
 
     /**
      * 列出server

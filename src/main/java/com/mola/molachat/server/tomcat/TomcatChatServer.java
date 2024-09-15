@@ -18,7 +18,7 @@ import java.io.IOException;
  * @Description:
  * @date : 2021-04-02 12:36
  **/
-@ServerEndpoint(value = "/server/{chatterId}", encoders = {ServerEncoder.class})
+@ServerEndpoint(value = "/server/{chatterAndDeviceId}", encoders = {ServerEncoder.class})
 // 基于tomcat的原型模式
 //@Component // 注入到容器只是为了让spring拿到class对象，真正实例化还是交给tomcat了，每个连接打开都会产生一个新的对象
 // 具体实例化的逻辑都在ServerEndpointExporter中
@@ -39,13 +39,15 @@ public class TomcatChatServer{
     /**
      * 登录之后，开始连接
      * @param session
-     * @param chatterId
+     * @param chatterAndDeviceId
      * @throws IOException
      */
     @OnOpen
-    public void onOpen(Session session , @PathParam("chatterId") String chatterId) throws Exception {
+    public void onOpen(Session session , @PathParam("chatterAndDeviceId") String chatterAndDeviceId) throws Exception {
         initDependencyInjection();
-        chatServer.onOpen(new TomcatSessionWrapper(session), chatterId);
+        String[] chatterAndDeviceIds = chatterAndDeviceId.split(",");
+        String deviceId = chatterAndDeviceIds.length > 1 ? chatterAndDeviceIds[1] : null;
+        chatServer.onOpen(new TomcatSessionWrapper(session), chatterAndDeviceIds[0], deviceId);
     }
 
     /**

@@ -122,7 +122,8 @@ $(document).ready(function () {
             timeout: 10000,
             data: {
                 "chatterId": preId,
-                "token": token
+                "token": token,
+                "deviceId": getDeviceId()
             },
             success: function (result) {
                 if (window.changeUserLock) {
@@ -374,7 +375,7 @@ $(document).ready(function () {
         if (socket) {
             socket.close()
         }
-        socket = new WebSocket(getSocketPrefix() + "/chat/server/" + chatterId);
+        socket = new WebSocket(getSocketPrefix() + "/chat/server/" + chatterId + "," + getDeviceId());
         socket.onopen = function (ev) {
             console.info("socket已经打开");
             console.info(ev);
@@ -450,7 +451,8 @@ $(document).ready(function () {
             timeout: 10000,
             data: {
                 "chatterId": chatterId,
-                "token": token
+                "token": token,
+                "deviceId": getDeviceId()
             },
             success: function (result) {
                 if (chatterId == result.data.id) {
@@ -511,7 +513,7 @@ $(document).ready(function () {
         var action = new Object();
         action.code = HEART_BEAT;
         action.msg = "heart-beat";
-        action.data = chatterId;
+        action.data = chatterId + "," + getDeviceId();
         //未连接时，不发送心跳
         if (null != socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify(action));
@@ -529,7 +531,8 @@ $(document).ready(function () {
             timeout: 10000,
             data: {
                 "chatterId": chatterId,
-                "token": token
+                "token": token,
+                "deviceId": getDeviceId()
             },
             success: function (result) {
                 if (result.msg == "reconnect") {
