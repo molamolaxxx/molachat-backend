@@ -17,10 +17,12 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import javax.websocket.EncodeException;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -117,14 +119,17 @@ public class ChatServer {
         //1.移除服务器对象
         serverService.remove(this);
 
-        //2.将chatter对象设置成离线
-        chatterService.setChatterStatus(chatterId, ChatterStatusEnum.OFFLINE.getCode());
+        List<ChatServer> servers = serverService.selectByChatterId(chatterId);
+        if (CollectionUtils.isEmpty(servers)) {
+            //2.将chatter对象设置成离线
+            chatterService.setChatterStatus(chatterId, ChatterStatusEnum.OFFLINE.getCode());
 
-        //3.删除关联的video-session
-        sessionSolution.deleteVideoSession(chatterId);
+            //3.删除关联的video-session
+            sessionSolution.deleteVideoSession(chatterId);
 
-        //4、将video状态改为未占用
-        chatterService.changeVideoState(chatterId, VideoStateEnum.FREE.getCode());
+            //4、将video状态改为未占用
+            chatterService.changeVideoState(chatterId, VideoStateEnum.FREE.getCode());
+        }
 
         //5、关闭session
         session.close();
