@@ -74,6 +74,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
 
     public static final String PROXY_ERROR = "代理异常, 请重试";
 
+    public static final String CLEAR_CMD = "#clear#";
+
     private static final int RETRY_TIME = 12;
 
     private static final int CHANGE_API_KEY_TIME = 8;
@@ -100,6 +102,10 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 usedApiKey = robotChatter.getApiKey();
             }
             try {
+                if (CLEAR_CMD.equals(messageReceiveEvent.getMessage().getContent())) {
+                    messageSendAction.setSkip(true);
+                    return messageSendAction;
+                }
                 // headers
                 List<Header> headers = new ArrayList<>();
                 headers.add(new BasicHeader("Content-Type", "application/json"));
@@ -193,6 +199,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         Integer maxPromptMsgSize = kvUtils.getIntegerOrDefault("maxPromptMsgSize", 500);
 
         int start = messageList.size() > maxPromptMsgCount ? messageList.size() - maxPromptMsgCount : 0;
+
+        List<Map<String, String>> contentLines = Lists.newArrayList();
         for (int i = start; i < messageList.size(); i++) {
             Message message = messageList.get(i);
             if (StringUtils.isNotBlank(message.getContent())) {
@@ -203,13 +211,18 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 if (ALERT_TEXT.equals(content) || PROXY_ERROR.equals(content)) {
                     continue;
                 }
+                if (CLEAR_CMD.equals(content)) {
+                    contentLines.clear();
+                    continue;
+                }
                 if (message.getChatterId().equals(messageReceiveEvent.getRobotChatter().getId())) {
-                    messageInput.add(getLine("assistant", content));
+                    contentLines.add(getLine("assistant", content));
                 } else {
-                    messageInput.add(getLine("user", content));
+                    contentLines.add(getLine("user", content));
                 }
             }
         }
+        messageInput.addAll(contentLines);
         return messageInput;
     }
 

@@ -5,20 +5,22 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.mola.molachat.robot.data.KeyValueFactoryInterface;
-import com.mola.molachat.robot.model.KeyValue;
 import com.mola.molachat.chatter.dto.ChatterDTO;
 import com.mola.molachat.chatter.service.ChatterService;
-import com.mola.molachat.common.utils.RandomUtils;
+import com.mola.molachat.common.utils.HttpUtil;
+import com.mola.molachat.common.utils.KvUtils;
+import com.mola.molachat.robot.data.KeyValueFactoryInterface;
+import com.mola.molachat.robot.model.KeyValue;
 import io.jsonwebtoken.lang.Assert;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.Header;
+import org.apache.http.message.BasicHeader;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author : molamola
@@ -27,6 +29,7 @@ import java.util.concurrent.TimeUnit;
  * @date : 2023-07-22 22:30
  **/
 @Service
+@Slf4j
 public class ChatGptSolution {
 
     private final Map<String, GptInvokeFuture> gptInvokeFutureMap = Maps.newConcurrentMap();
@@ -40,12 +43,19 @@ public class ChatGptSolution {
     @Resource
     private KeyValueFactoryInterface keyValueFactory;
 
+    @Resource
+    private KvUtils kvUtils;
+
     /**
      * 调用chatgpt
      * @param input
      * @return
      */
     public String invoke(String input) {
+        return invoke(input, null);
+    }
+
+    public String invoke(String input, String systemPrompt) {
         ChatterDTO chatGptChatter = chatterService.selectById("chatGpt");
         Assert.notNull(chatGptChatter, "chatGpt robot is null");
         Assert.isTrue(chatGptChatter.isRobot(), "chatGpt robot is not robot");
@@ -53,27 +63,20 @@ public class ChatGptSolution {
         String result = null;
         try {
             JSONObject body = new JSONObject();
-            body.put("model", "gpt-3.5-turbo");
-            List<Map<String, String>> prompt = getInvokePrompt(input);
+            String modelName = kvUtils.getStringOrDefault("chatGptModelName", "Atom-13B-Chat");
+            body.put("model", modelName);
+            List<Map<String, String>> prompt = getInvokePrompt(input, systemPrompt);
+            log.info(JSONObject.toJSONString(prompt));
             body.put("messages", prompt);
+            body.put("stream", false);
 
-            // 获取apikey，先取配置
-            String apiKey = chatGptChatter.getApiKey();
-            Set<String> apiKeys = fetchApiKeys();
-            if (!CollectionUtils.isEmpty(apiKeys)) {
-                apiKey = RandomUtils.getRandomElement(apiKeys);
-            }
-
-            cmdProxyInvokeSolution.sendChatGptRequestCmd(body, apiKey, virtualChatterId,
-                    chatGptChatter.getAppKey());
-
-            GptInvokeFuture future = GptInvokeFuture.of();
-            gptInvokeFutureMap.put(virtualChatterId, future);
-            future.cdl.await(60L, TimeUnit.SECONDS);
-            if (future.exception) {
-                throw new RuntimeException(future.result);
-            }
-            return parseResult(future.result);
+            // headers
+            List<Header> headers = new ArrayList<>();
+            headers.add(new BasicHeader("Content-Type", "application/json"));
+            headers.add(new BasicHeader("Authorization", "Bearer " + chatGptChatter.getApiKey()));
+            String res = HttpUtil.INSTANCE.post("https://api.atomecho.cn/v1/chat/completions",
+                    body, 300000, headers.toArray(new Header[]{}));
+            return parseResult(res);
         } catch (InterruptedException e) {
             throw new RuntimeException("请求超时");
         } catch (Exception e) {
@@ -137,11 +140,16 @@ public class ChatGptSolution {
         future.cdl.countDown();
     }
 
-    private List<Map<String, String>> getInvokePrompt(String input) {
+    private List<Map<String, String>> getInvokePrompt(String input, String systemPrompt) {
+        Map<String, String> sysLine = Maps.newHashMap();
+        sysLine.put("role", "system");
+        sysLine.put("content", systemPrompt);
+
         Map<String, String> line = Maps.newHashMap();
         line.put("role", "user");
         line.put("content", input);
-        return Lists.newArrayList(line);
+        return StringUtils.isNotBlank(systemPrompt) ?
+                Lists.newArrayList(sysLine, line) : Lists.newArrayList(line);
     }
 
     private static class GptInvokeFuture {

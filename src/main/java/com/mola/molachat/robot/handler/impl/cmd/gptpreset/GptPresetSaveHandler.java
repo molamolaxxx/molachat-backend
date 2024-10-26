@@ -1,6 +1,5 @@
 package com.mola.molachat.robot.handler.impl.cmd.gptpreset;
 
-import com.alibaba.nacos.common.utils.Objects;
 import com.mola.molachat.robot.data.KeyValueFactoryInterface;
 import com.mola.molachat.robot.event.CommandInputEvent;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
@@ -20,9 +19,7 @@ import javax.annotation.Resource;
  **/
 @Component
 @Slf4j
-public class GptPresetExecHandler extends BaseCmdRobotHandler {
-
-
+public class GptPresetSaveHandler extends BaseCmdRobotHandler {
 
     @Resource
     private ChatGptSolution chatGptSolution;
@@ -32,12 +29,12 @@ public class GptPresetExecHandler extends BaseCmdRobotHandler {
 
     @Override
     public String getCommand() {
-        return "gpt";
+        return "prompt";
     }
 
     @Override
     public String getDesc() {
-        return "gpt预存模板执行，命令：gpt xxljob地址是什么";
+        return "gpt预存模板存储，命令：prompt xxljob地址是https://xxxx";
     }
 
     @Override
@@ -47,17 +44,20 @@ public class GptPresetExecHandler extends BaseCmdRobotHandler {
             if (null == splitRes || splitRes.length == 0) {
                 return "命令格式错误";
             }
-            KeyValue keyValue = keyValueFactory.selectOne("prompt:" +
-                    baseEvent.getMessageReceiveEvent().getMessage().getSessionId());
-            if (Objects.isNull(keyValue)) {
-                return "未找到gpt预存模板";
-            }
-
             String text = String.join(" ", splitRes);
-            return chatGptSolution.invoke(text, keyValue.getValue());
+
+            keyValueFactory.save(KeyValue.builder()
+                    .owner(baseEvent.getMessageReceiveEvent().getMessage().getChatterId())
+                    .desc("系统变量")
+                    .share(false)
+                    .key("prompt:" +
+                            baseEvent.getMessageReceiveEvent().getMessage().getSessionId())
+                    .value(text).build());
+
+            return "gpt预存模板保存成功";
         } catch (Exception e) {
-            log.error("gpt预存模板执行失败, input = " + baseEvent.getCommandInput(), e);
-            return "gpt预存模板执行失败";
+            log.error("gpt预存模板保存失败, input = " + baseEvent.getCommandInput(), e);
+            return "gpt预存模板保存失败";
         }
     }
 
