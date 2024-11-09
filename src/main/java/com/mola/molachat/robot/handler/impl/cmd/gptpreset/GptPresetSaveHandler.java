@@ -10,6 +10,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.Objects;
 
 /**
  * @author : molamola
@@ -40,9 +41,15 @@ public class GptPresetSaveHandler extends BaseCmdRobotHandler {
     @Override
     protected String executeCommand(CommandInputEvent baseEvent) {
         try {
+            String key = "prompt:" +
+                    baseEvent.getMessageReceiveEvent().getMessage().getSessionId();
             String[] splitRes = StringUtils.split(baseEvent.getCommandInput(), " ");
             if (null == splitRes || splitRes.length == 0) {
-                return "命令格式错误";
+                KeyValue keyValue = keyValueFactory.selectOne(key);
+                if (Objects.isNull(keyValue)) {
+                    return "未找到prompt";
+                }
+                return keyValue.getValue();
             }
             String text = String.join(" ", splitRes);
 
@@ -50,8 +57,7 @@ public class GptPresetSaveHandler extends BaseCmdRobotHandler {
                     .owner(baseEvent.getMessageReceiveEvent().getMessage().getChatterId())
                     .desc("系统变量")
                     .share(false)
-                    .key("prompt:" +
-                            baseEvent.getMessageReceiveEvent().getMessage().getSessionId())
+                    .key(key)
                     .value(text).build());
 
             return "gpt预存模板保存成功";
