@@ -168,12 +168,7 @@ public class RobotSolution implements InitializingBean {
             // 先取自定义的eventbus，没有就用默认的
             RobotEventBus eventBus = robotEventBus;
             if (StringUtils.isNotBlank(robot.getEventBusBeanName())) {
-                RobotEventBus customEventBus = applicationContext.getBean(robot.getEventBusBeanName(), RobotEventBus.class);
-                if (null != customEventBus)  {
-                    eventBus =  customEventBus;
-                } else {
-                    log.error("未找到自定义eventbus:{}, 使用默认eventbus", robot.getEventBusBeanName());
-                }
+                eventBus = applicationContext.getBean(robot.getEventBusBeanName(), RobotEventBus.class);
             }
             BaseAction action = eventBus.handler(messageReceiveEvent);
             Message messageByAction = getMessageByAction(action, sessionId);

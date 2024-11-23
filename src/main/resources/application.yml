@@ -5,7 +5,7 @@ server:
   ssl:
     key-store: classpath:molaspace.xyz.pfx
     key-store-type: PKCS12
-    key-store-password: 9pzjmixp
+    key-store-password: k8dx6aoc
 
 #个人配置
 self-conf:

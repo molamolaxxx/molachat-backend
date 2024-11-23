@@ -31,4 +31,8 @@ public interface IRobotEventHandler<E extends BaseRobotEvent, A extends BaseActi
     default Integer order() {
         return Integer.MIN_VALUE;
     }
+
+    default boolean isDefaultHandler() {
+        return false;
+    }
 }

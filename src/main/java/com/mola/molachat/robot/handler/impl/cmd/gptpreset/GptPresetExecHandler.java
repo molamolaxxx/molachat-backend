@@ -66,4 +66,9 @@ public class GptPresetExecHandler extends BaseCmdRobotHandler {
     public Integer order() {
         return 0;
     }
+
+    @Override
+    public boolean isDefaultHandler() {
+        return true;
+    }
 }

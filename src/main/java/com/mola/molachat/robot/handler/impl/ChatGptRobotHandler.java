@@ -112,13 +112,13 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 headers.add(new BasicHeader("Authorization", "Bearer " + usedApiKey));
                 // prompt 拼接最近20条历史记录
                 JSONObject body = new JSONObject();
-                String modelName = kvUtils.getStringOrDefault("chatGptModelName", "Atom-13B-Chat");
+                String modelName = kvUtils.getStringOrDefault("chatGptModelName", "Llama-3.2-90B-Vision-Instruct");
                 body.put("model", modelName);
                 List<Map<String, String>> prompt = getPrompt(messageReceiveEvent);
                 log.info(JSONObject.toJSONString(prompt));
                 body.put("messages", prompt);
                 body.put("stream", false);
-                String res = HttpUtil.INSTANCE.post("https://api.atomecho.cn/v1/chat/completions",
+                String res = HttpUtil.INSTANCE.post("https://api.sambanova.ai/v1/chat/completions",
                         body, 300000, headers.toArray(new Header[]{}));
 
                 JSONObject jsonObject = JSONObject.parseObject(res);
@@ -182,8 +182,10 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         List<Map<String, String>> messageInput = Lists.newArrayList();
         ChatterDTO chatterDTO = chatterService.selectById(messageReceiveEvent.getMessage().getChatterId());
 
-        messageInput.add(getLine("system", "你是一个专业的女程序员，名字叫做turbo，" +
-                "语言柔和，充满少女气息，喜欢称呼自己为‘本喵’，与你对话的人名字叫做:" + chatterDTO.getName()));
+        RobotChatter robotChatter = messageReceiveEvent.getRobotChatter();
+        messageInput.add(getLine("system", "你是一个专业的女程序员，名字叫做" + robotChatter.getName() +
+                "，语言柔和，充满少女气息，你的个性签名是:" + robotChatter.getSignature() +
+                "，与你对话的人名字叫做:" + chatterDTO.getName()));
         String sessionId = messageReceiveEvent.getSessionId();
         SessionDTO session = sessionService.findSession(sessionId);
         Assert.notNull(session, "session is null in getPrompt，" + sessionId);

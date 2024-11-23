@@ -3,9 +3,12 @@ package com.mola.molachat.robot.bus;
 import com.mola.molachat.common.event.EventBus;
 import com.mola.molachat.common.event.action.BaseAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
+import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
+import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
 import com.mola.molachat.robot.handler.impl.ChatGptRobotHandler;
 import com.mola.molachat.robot.handler.impl.ImageGenerateChatHandler;
+import com.mola.molachat.session.model.Message;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
@@ -29,11 +32,15 @@ public class RobotEventBus implements EventBus<BaseRobotEvent, BaseAction>, Init
     @Override
     public BaseAction handler(BaseRobotEvent baseEvent) {
         BaseAction finalAction = BaseAction.empty();
+        IRobotEventHandler defaultEventHandler = null;
         for (IRobotEventHandler robotEventHandler : getRobotEventHandlers()) {
             if (null == robotEventHandler.acceptEvent()) {
                 continue;
             }
             if (robotEventHandler.acceptEvent().equals(baseEvent.getClass())) {
+                if (robotEventHandler.isDefaultHandler()) {
+                    defaultEventHandler = robotEventHandler;
+                }
                 BaseAction action = robotEventHandler.handler(baseEvent);
                 if (action.getSkip()) {
                     continue;
@@ -43,6 +50,16 @@ public class RobotEventBus implements EventBus<BaseRobotEvent, BaseAction>, Init
                     break;
                 }
             }
+        }
+        if (finalAction.getFinalExec()) {
+            return finalAction;
+        }
+        if (baseEvent instanceof MessageReceiveEvent && defaultEventHandler instanceof BaseCmdRobotHandler) {
+            MessageReceiveEvent event = (MessageReceiveEvent) baseEvent;
+            BaseCmdRobotHandler cmdRobotHandler = (BaseCmdRobotHandler) defaultEventHandler;
+            Message message = event.getMessage();
+            message.setContent(cmdRobotHandler.getCommand() + " " + message.getContent());
+            finalAction = cmdRobotHandler.handler(event);
         }
         return finalAction;
     }
