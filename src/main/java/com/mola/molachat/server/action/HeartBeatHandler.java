@@ -4,6 +4,7 @@ import com.mola.molachat.common.annotation.Handler;
 import com.mola.molachat.server.websocket.Action;
 import com.mola.molachat.server.websocket.ActionCode;
 import com.mola.molachat.server.service.ServerService;
+import com.mola.molachat.server.websocket.WSResponse;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Resource;
@@ -33,5 +34,7 @@ public class HeartBeatHandler implements WSRequestActionHandler{
         String[] chatterAndDeviceIds = chatterAndDeviceId.split(",");
         serverService.setHeartBeat(chatterAndDeviceIds[0],
                 chatterAndDeviceIds.length > 1 ? chatterAndDeviceIds[1] : null);
+
+        action.getSessionWrapper().sendToClient(WSResponse.heartBeat("ok", "pong"));
     }
 }

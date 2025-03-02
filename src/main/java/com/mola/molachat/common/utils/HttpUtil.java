@@ -5,6 +5,7 @@ import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -23,6 +24,9 @@ import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -30,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import static org.apache.http.client.config.RequestConfig.custom;
 
@@ -182,6 +187,38 @@ public enum HttpUtil {
 
             }
         }, buildContext(timeout));
+    }
+
+    public void postWithStreamRes(String url, JSONObject body,
+                                  int timeout, Header[] headers, Consumer<String> responseConsumer) throws Exception {
+        bootMonitorThread();
+        URI uri = new URIBuilder(url).build();
+        HttpPost httpPost = new HttpPost(uri);
+        if (null != body) {
+            httpPost.setEntity(new StringEntity(body.toJSONString(), ContentType.APPLICATION_JSON));
+        }
+        if (null != headers) {
+            httpPost.setHeaders(headers);
+        }
+        // 执行请求
+        try (CloseableHttpResponse response = (CloseableHttpResponse) httpClient.execute(httpPost);
+             InputStream content = response.getEntity().getContent();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(content))) {
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // 处理每行数据（格式为 "data: {...}"）
+                if (line.startsWith("data: ")) {
+                    String data = line.substring(6).trim();
+                    if ("[DONE]".equals(data)) {
+                        break;
+                    }
+                    if (responseConsumer != null) {
+                        responseConsumer.accept(data);
+                    }
+                }
+            }
+        }
     }
 
     public String post(String url, JSONObject body, int timeout) throws Exception {

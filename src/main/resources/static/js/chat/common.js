@@ -318,7 +318,7 @@ notRepeatToast = function (message, time) {
     }, time)
 }
 
-isMarkdown = function (text) {
+isMarkdownMatch = function (text) {
     var regex = {
         h1: /^#\s/,
         h2: /^#{2}\s/,
@@ -343,8 +343,30 @@ isMarkdown = function (text) {
     return isMd;
 }
 
+function isMarkdown(text) {
+    if (text.indexOf("| --- |") !== -1) {
+        return true;
+    }
+    // 常见 Markdown 特征正则表达式
+    const mdPatterns = [
+        /^#{1,6}\s/, // 标题
+        /\*{2}.*\*{2}/, // 加粗
+        /_{2}.*_{2}/, // 下划线强调
+        /!?\[.*?\]\(.*?\)/, // 链接/图片
+        /^[-*+]\s/, // 无序列表
+        /^\d+\.\s/, // 有序列表
+        /^```.*?$/m, // 代码块
+        /^>\s/, // 引用块
+        /^-{3,}$|^\*{3,}$/m, // 分隔线
+        /`[^`]+`/ // 行内代码
+    ];
+
+    // 只要匹配到任意特征就认为是 Markdown
+    return mdPatterns.some(pattern => pattern.test(text));
+}
+
 var timeoutId
-scrollToChatContainerBottom = function (laterDuring) {
+scrollToChatContainerBottom = function (laterDuring, callback) {
     //滚动
     if (timeoutId) {
         return
@@ -358,55 +380,76 @@ scrollToChatContainerBottom = function (laterDuring) {
             behavior: 'smooth'
         });
         timeoutId = null
+        if (callback) {
+            callback()
+        }
+    }, laterDuring)
+}
+
+var messageViewTimeoutId
+scrollToMessageViewBottom = function (laterDuring) {
+    //滚动
+    if (messageViewTimeoutId) {
+        return
+    }
+
+    var container = document.querySelector("#viewContentScroll")
+    messageViewTimeoutId = setTimeout(() => {
+        container.scrollBy({
+            top: 500000,
+            left: 0,
+            behavior: 'smooth'
+        });
+        messageViewTimeoutId = null
     }, laterDuring)
 }
 
 /**
  * 防抖:在一连串连续触发的事件中，只执行最后一次事件处理函数
  */
-debounce = function(func, delay) {
+debounce = function (func, delay) {
     let timeoutId;
-    
-    return function() {
-      clearTimeout(timeoutId);
-      
-      timeoutId = setTimeout(func, delay);
-    };
-  }
 
- getStringLength = function(str) {
+    return function () {
+        clearTimeout(timeoutId);
+
+        timeoutId = setTimeout(func, delay);
+    };
+}
+
+getStringLength = function (str) {
     var length = 0;
     for (var i = 0; i < str.length; i++) {
-      // 使用正则表达式判断字符是否是全角符号或汉字
-      var isFullWidth = /[\uFF00-\uFFEF\u4E00-\u9FA5]/.test(str[i]);
-      
-      // 根据字符类型增加相应的长度
-      if (isFullWidth) {
-        length += 2;
-      } else {
-        length += 1;
-      }
+        // 使用正则表达式判断字符是否是全角符号或汉字
+        var isFullWidth = /[\uFF00-\uFFEF\u4E00-\u9FA5]/.test(str[i]);
+
+        // 根据字符类型增加相应的长度
+        if (isFullWidth) {
+            length += 2;
+        } else {
+            length += 1;
+        }
     }
-    
+
     return length;
 }
 
-shortenString = function(str, cnt) {
+shortenString = function (str, cnt) {
     var length = 0;
     var shortenStr = ""
     for (var i = 0; i < str.length; i++) {
-      // 使用正则表达式判断字符是否是全角符号或汉字
-      var isFullWidth = /[\uFF00-\uFFEF\u4E00-\u9FA5]/.test(str[i]);
-      shortenStr += str[i]
-      // 根据字符类型增加相应的长度
-      if (isFullWidth) {
-        length += 2;
-      } else {
-        length += 1;
-      }
-      if (length > cnt) {
-        return shortenStr + "..."
-      }
+        // 使用正则表达式判断字符是否是全角符号或汉字
+        var isFullWidth = /[\uFF00-\uFFEF\u4E00-\u9FA5]/.test(str[i]);
+        shortenStr += str[i]
+        // 根据字符类型增加相应的长度
+        if (isFullWidth) {
+            length += 2;
+        } else {
+            length += 1;
+        }
+        if (length > cnt) {
+            return shortenStr + "..."
+        }
     }
     return shortenStr
 }

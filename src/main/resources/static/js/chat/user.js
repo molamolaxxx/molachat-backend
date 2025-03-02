@@ -4,7 +4,8 @@ $(document).ready(function () {
     const LIST_MESSAGE = 809;
     const CREATE_SESSION = 122;
     const EXCEPTION = 368;
-    const RECIEVE_MESSAGE = 65;
+    const RECEIVE_MESSAGE = 65;
+    const RECEIVE_STREAM_MESSAGE = 66;
     const HEART_BEAT = 276;
     const VIDEO_REQUEST = 378;
     const VIDEO_RESPONSE = 379;
@@ -396,9 +397,12 @@ $(document).ready(function () {
             } else if (result.code == CREATE_SESSION) {
                 //新建session
                 createSession(result.data);
-            } else if (result.code == RECIEVE_MESSAGE) {
+            } else if (result.code == RECEIVE_MESSAGE) {
                 //收到消息
                 receiveMessage(result.data);
+            } else if (result.code == RECEIVE_STREAM_MESSAGE) {
+                //收到消息
+                receiveStreamMessage(result.data);
             } else if (result.code == VIDEO_REQUEST) {
                 // 视频消息请求
                 receiveVideoRequest(result.data)
@@ -406,7 +410,7 @@ $(document).ready(function () {
                 // 视频消息返回
                 receiveVideoResponse(result.data)
             }
-            console.info(result);
+            // console.info(result);
         };
 
         socket.onerror = function (ev) {
@@ -493,6 +497,7 @@ $(document).ready(function () {
     //心跳检测异常次数
     var heartBeatErrorCnt = 0
 
+    var sendMainHeartBeatIdx = 0
     sendHeartBeat = function () {
         if (window.changeUserLock) {
             console.log("更换用户锁住，心跳停止");
@@ -517,8 +522,13 @@ $(document).ready(function () {
         //未连接时，不发送心跳
         if (null != socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify(action));
+            sendMainHeartBeatIdx++
         }
 
+        if (sendMainHeartBeatIdx !== 10) {
+            return
+        }
+        sendMainHeartBeatIdx = 0
         //测试连接url
         $.ajax({
             url: getPrefix() + "/chat/chatter/heartBeat",
@@ -576,7 +586,7 @@ $(document).ready(function () {
     }
 
     //发送心跳包
-    var timer = setInterval(sendHeartBeat, 10000);
+    var timer = setInterval(sendHeartBeat, 1000);
 
     getSocket = function () {
         return socket;

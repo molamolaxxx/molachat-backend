@@ -8,6 +8,14 @@ $(document).ready(function () {
         $chatMsg = $(".chat__messages")[0];
     var inEditMode = false
 
+    // 配置marked采用高亮
+    marked.setOptions({
+        highlight: function (code, lang) {
+            return hljs.highlightAuto(code).value;
+        },
+        langPrefix: 'hljs '
+    });
+
     // dom初始化位置
     $viewModal.css("max-width", 1000)
     if (window.innerWidth > 1000) {
@@ -55,6 +63,8 @@ $(document).ready(function () {
         var mainDoc = document.createElement("div");
         $(mainDoc).addClass("chat__msgRow");
 
+        mainDoc.messageId = message.id
+
         var mainDocChild = document.createElement("div")
 
         var imgDoc = document.createElement("img");
@@ -83,12 +93,24 @@ $(document).ready(function () {
         }
         $(mainDocChild).css('position', 'relative');
 
+        // 服务端定义样式
+        if (message.showStyleProps) {
+            Object.keys(message.showStyleProps).forEach(key => {
+                $(mainDocChild).css(key, message.showStyleProps[key]);
+            });
+        }
+
         mainDoc.append(imgDoc);
         // mainDocChild.innerHTML = twemoji.parse(content,{"folder":"svg","ext":".svg","base":"asset/","size":15});
-        mainDocChild.innerText = content.length > 200 ? content.slice(0, 200) + "\n...." : content
+        if (!message.streamId) {
+            mainDocChild.innerText = content.length > 200 ? content.slice(0, 200) + "\n...." : content
+        } else {
+            mainDocChild.innerText = content;
+        }
         mainDoc.append(mainDocChild);
+        mainDoc.mainDocChild = mainDocChild;
         // 明细view
-        if (content.length > 80) {
+        if (content.length > 80 || message.streamId) {
             var copyIcon = document.createElement("span");
             $(copyIcon).addClass("copy_icon");
             $(copyIcon).css('position', 'absolute');
@@ -96,46 +118,58 @@ $(document).ready(function () {
             $(copyIcon).css('bottom', '0');
             $(copyIcon).css('padding', '4px');
             $(copyIcon).css('cursor', 'pointer');
-            const onClickCallback = (e) => {
-                const codeObj = hljs.highlightAuto(content)
-                console.log(codeObj);
-                // 主流语言，显示用pre方便看
-                let isCommonCode = codeObj.language === 'java' ||
-                    codeObj.language === 'python' ||
-                    codeObj.language === 'cpp' ||
-                    codeObj.language === 'kotlin' ||
-                    codeObj.language === 'c' ||
-                    codeObj.language === 'csharp' ||
-                    codeObj.language === 'javascript' ||
-                    codeObj.language === 'xml' ||
-                    codeObj.language === 'php' ||
-                    codeObj.language === 'perl'
-                // 只有关键字的文本，不需要按照代码格式展示
-                isCommonCode = isCommonCode && (content.includes("{") || content.includes("}") || content.includes(":"))
-                if (isCommonCode) {
-                    $viewContent.addClass("view-content")
-                } else {
-                    $viewContent.removeClass("view-content")
+            if (!message.streamId) {
+                const onClickCallback = (e) => {
+                    // 流消息会自动刷新模态框，不用重置
+                    $viewContent[0].triggerMessageId = mainDoc.messageId
+                    $viewContent[0].innerHTML = buildHighlightContent(content)
+                    $viewModal.modal('open')
                 }
-                $copyViewBtn[0].copyContent = content
-                const divBlock = document.createElement("div");
-                if (isMarkdown(content)) {
-                    console.log("is markdown");
-                    divBlock.innerHTML = marked.parse(content);
-                } else {
-                    divBlock.innerHTML = content
-                }
-                hljs.highlightElement(divBlock)
-                $viewContent[0].innerHTML = divBlock.innerHTML
-                $viewModal.modal('open')
+                $(copyIcon).on('click', onClickCallback)
+                $(mainDocChild).on('click', onClickCallback)
             }
-            $(copyIcon).on('click', onClickCallback)
-            $(mainDocChild).on('click', onClickCallback)
+
             $(mainDocChild).css("cursor", "pointer")
             copyIcon.innerHTML = '<i class="material-icons" style="font-size: 15px;color: #868e8a;">launch</i>'
-            mainDocChild.append(copyIcon)
+            if (!message.streamId) {
+                mainDocChild.append(copyIcon)
+            }
         }
         return mainDoc;
+    }
+
+    buildHighlightContent = function (content) {
+        const codeObj = hljs.highlightAuto(content)
+        // 主流语言，显示用pre方便看
+        let isCommonCode = codeObj.language === 'java' ||
+            codeObj.language === 'python' ||
+            codeObj.language === 'cpp' ||
+            codeObj.language === 'kotlin' ||
+            codeObj.language === 'c' ||
+            codeObj.language === 'csharp' ||
+            codeObj.language === 'javascript' ||
+            codeObj.language === 'xml' ||
+            codeObj.language === 'php' ||
+            codeObj.language === 'perl'
+        // 只有关键字的文本，不需要按照代码格式展示
+        isCommonCode = isCommonCode && (content.includes("{") || content.includes("}") || content.includes(":"))
+        if (isCommonCode) {
+            $viewContent.addClass("view-content")
+        } else {
+            $viewContent.removeClass("view-content")
+        }
+
+        $copyViewBtn[0].copyContent = content
+        const divBlock = document.createElement("div");
+        if (isMarkdown(content)) {
+            console.log("isMarkdown");
+            return marked.parse(content)
+        } else {
+            console.log("isNotMarkdown");
+            divBlock.innerHTML = content
+            hljs.highlightElement(divBlock)
+            return divBlock.innerHTML
+        }
     }
 
     //增加一条我方记录

@@ -27,6 +27,10 @@ public class WSResponse<T> implements Serializable {
         return new WSResponse<>(WSResponseCode.MESSAGE, msg, data);
     }
 
+    public static <T> WSResponse<T> steamMessage(String msg, T data){
+        return new WSResponse<>(WSResponseCode.STREAM_MESSAGE, msg, data);
+    }
+
     public static <T> WSResponse<T> exception(String msg, T data){
         return new WSResponse<>(WSResponseCode.EXCEPTION, msg, data);
     }
@@ -41,6 +45,10 @@ public class WSResponse<T> implements Serializable {
 
     public static <T> WSResponse<T> videoRequest(String msg, T data){
         return new WSResponse<>(ActionCode.VIDEO_REQUEST, msg, data);
+    }
+
+    public static <T> WSResponse<T> heartBeat(String msg, T data){
+        return new WSResponse<>(WSResponseCode.HEART_BEAT, msg, data);
     }
 
     private WSResponse(Integer code, String msg, T data){

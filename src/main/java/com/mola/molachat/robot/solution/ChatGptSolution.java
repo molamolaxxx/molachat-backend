@@ -111,7 +111,7 @@ public class ChatGptSolution {
         keyValueFactory.save(keyValue);
     }
 
-    private String parseResult(String result) {
+    public static String parseResult(String result) {
         JSONObject jsonObject = JSONObject.parseObject(result);
         Assert.isTrue(jsonObject.containsKey("choices"), "choices is empty");
         JSONArray choices = jsonObject.getJSONArray("choices");
@@ -130,6 +130,29 @@ public class ChatGptSolution {
         return StringUtils.EMPTY;
     }
 
+    public static String parseStreamContent(String result, String contentKeyName) {
+        JSONObject jsonObject = JSONObject.parseObject(result);
+        Assert.isTrue(jsonObject.containsKey("choices"), "choices is empty");
+        JSONArray choices = jsonObject.getJSONArray("choices");
+        for (Object choice : choices) {
+            JSONObject inner = (JSONObject) choice;
+            JSONObject delta = inner.getJSONObject("delta");
+            return delta.getString(contentKeyName);
+        }
+        return StringUtils.EMPTY;
+    }
+
+    public static boolean isStreamResultStop(String result) {
+        JSONObject jsonObject = JSONObject.parseObject(result);
+        Assert.isTrue(jsonObject.containsKey("choices"), "choices is empty");
+        JSONArray choices = jsonObject.getJSONArray("choices");
+        for (Object choice : choices) {
+            JSONObject inner = (JSONObject) choice;
+            return Objects.equals(inner.getString("finish_reason"), "stop");
+        }
+        return false;
+    }
+
     public void callback(String virtualChatterId, String result, boolean exception) {
         if (!gptInvokeFutureMap.containsKey(virtualChatterId)) {
             return;
@@ -140,7 +163,7 @@ public class ChatGptSolution {
         future.cdl.countDown();
     }
 
-    private List<Map<String, String>> getInvokePrompt(String input, String systemPrompt) {
+    private static List<Map<String, String>> getInvokePrompt(String input, String systemPrompt) {
         Map<String, String> sysLine = Maps.newHashMap();
         sysLine.put("role", "system");
         sysLine.put("content", systemPrompt);

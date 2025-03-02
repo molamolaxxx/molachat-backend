@@ -14,6 +14,11 @@ public class WSResponseCode {
     public static final int MESSAGE = 65;
 
     /**
+     * 发送流式消息
+     */
+    public static final int STREAM_MESSAGE = 66;
+
+    /**
      * 传递异常
      */
     public static final int EXCEPTION = 368;
@@ -32,4 +37,9 @@ public class WSResponseCode {
      * 视频响应
      */
     public static final int VIDEO_RESPONSE = 379;
+
+    /**
+     * ws心跳返回
+     */
+    public static final int HEART_BEAT = 277;
 }

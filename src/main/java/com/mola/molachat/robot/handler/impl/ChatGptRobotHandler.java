@@ -1,27 +1,27 @@
 package com.mola.molachat.robot.handler.impl;
 
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mola.molachat.chatter.dto.ChatterDTO;
+import com.mola.molachat.chatter.model.RobotChatter;
 import com.mola.molachat.chatter.service.ChatterService;
 import com.mola.molachat.common.config.AppConfig;
-import com.mola.molachat.session.model.Message;
-import com.mola.molachat.chatter.model.RobotChatter;
-import com.mola.molachat.session.dto.SessionDTO;
+import com.mola.molachat.common.utils.HttpUtil;
+import com.mola.molachat.common.utils.KvUtils;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.bus.GptRobotEventBus;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
-import com.mola.molachat.server.service.ServerService;
-import com.mola.molachat.session.service.SessionService;
 import com.mola.molachat.robot.solution.ChatGptSolution;
 import com.mola.molachat.robot.solution.CmdProxyInvokeSolution;
-import com.mola.molachat.common.utils.HttpUtil;
-import com.mola.molachat.common.utils.KvUtils;
-import com.mola.molachat.common.utils.RandomUtils;
+import com.mola.molachat.server.service.ServerService;
+import com.mola.molachat.session.dto.SessionDTO;
+import com.mola.molachat.session.model.Message;
+import com.mola.molachat.session.model.StreamMessage;
+import com.mola.molachat.session.service.SessionService;
+import com.mola.molachat.session.solution.SessionSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
@@ -31,10 +31,8 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author : molamola
@@ -48,6 +46,9 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
 
     @Resource
     private SessionService sessionService;
+
+    @Resource
+    private SessionSolution sessionSolution;
 
     @Resource
     private ServerService serverService;
@@ -70,6 +71,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     @Resource
     private AppConfig appConfig;
 
+    public static final String MODEL_URL = "https://api.sambanova.ai/v1/chat/completions";
+
     public static final String ALERT_TEXT = "账户已失效";
 
     public static final String PROXY_ERROR = "代理异常, 请重试";
@@ -80,6 +83,10 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
 
     private static final int CHANGE_API_KEY_TIME = 8;
 
+    private static final String THINK_START = "[开始思考]";
+
+    private static final String THINK_END = "[思考结束]";
+
     @Override
     public MessageSendAction handler(MessageReceiveEvent messageReceiveEvent) {
         MessageSendAction messageSendAction = new MessageSendAction();
@@ -87,77 +94,50 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         Message message = messageReceiveEvent.getMessage();
         // 默认主账号
         String usedApiKey = robotChatter.getApiKey();
-        Set<String> gpt3ChildTokens = chatGptSolution.fetchApiKeys();
-        if (gpt3ChildTokens.size() != 0) {
-            usedApiKey = RandomUtils.getRandomElement(gpt3ChildTokens);
-        }
-        // 失败重试
-        for (int i = 0; i < RETRY_TIME; i++) {
-            // 子账号多次都失败，换成主账号，移除子账号
-            if (i > CHANGE_API_KEY_TIME && !StringUtils.equals(usedApiKey, robotChatter.getApiKey())) {
-                log.error("sub api key error retry failed all time, switch main remove sub, sub api key = " + usedApiKey);
-                if (gpt3ChildTokens.contains(usedApiKey)) {
-                    chatGptSolution.removeApiKey(usedApiKey);
-                }
-                usedApiKey = robotChatter.getApiKey();
+        try {
+            if (CLEAR_CMD.equals(messageReceiveEvent.getMessage().getContent())) {
+                messageSendAction.setSkip(true);
+                return messageSendAction;
             }
-            try {
-                if (CLEAR_CMD.equals(messageReceiveEvent.getMessage().getContent())) {
-                    messageSendAction.setSkip(true);
-                    return messageSendAction;
-                }
-                // headers
-                List<Header> headers = new ArrayList<>();
-                headers.add(new BasicHeader("Content-Type", "application/json"));
-                headers.add(new BasicHeader("Authorization", "Bearer " + usedApiKey));
-                // prompt 拼接最近20条历史记录
-                JSONObject body = new JSONObject();
-                String modelName = kvUtils.getStringOrDefault("chatGptModelName", "Llama-3.2-90B-Vision-Instruct");
-                body.put("model", modelName);
-                List<Map<String, String>> prompt = getPrompt(messageReceiveEvent);
-                log.info(JSONObject.toJSONString(prompt));
-                body.put("messages", prompt);
-                body.put("stream", false);
-                String res = HttpUtil.INSTANCE.post("https://api.sambanova.ai/v1/chat/completions",
-                        body, 300000, headers.toArray(new Header[]{}));
+            // headers
+            List<Header> headers = new ArrayList<>();
+            headers.add(new BasicHeader("Content-Type", "application/json"));
+            headers.add(new BasicHeader("Authorization", "Bearer " + usedApiKey));
+            // prompt 拼接最近20条历史记录
+            JSONObject body = new JSONObject();
+            String modelName = kvUtils.getStringOrDefault("chatGptModelName_" + robotChatter.getId(), "Llama-3.2-90B-Vision-Instruct");
+            body.put("model", modelName);
+            List<Map<String, String>> prompt = getPrompt(messageReceiveEvent);
+            log.info(JSONObject.toJSONString(prompt));
+            body.put("messages", prompt);
+            // 是否使用流输出
+            String useSteam = kvUtils.getStringOrDefault("useSteam", "Y");
 
-                JSONObject jsonObject = JSONObject.parseObject(res);
-                Assert.isTrue(jsonObject.containsKey("choices"), "choices is empty");
-                JSONArray choices = jsonObject.getJSONArray("choices");
-                for (Object choice : choices) {
-                    JSONObject inner = (JSONObject) choice;
-                    JSONObject object = inner.getJSONObject("message");
-                    String text = object.getString("content");
-                    if (StringUtils.isBlank(text)) {
-                        continue;
-                    }
-                    if (text.startsWith("\n")) {
-                        text = text.substring(1);
-                    }
-                    messageSendAction.setResponsesText(text);
-                }
-            } catch (Exception e) {
-                log.error("RemoteRobotChatHandler ChatGptRobotHandler error retry, time = " + i + " event:" + JSONObject.toJSONString(messageReceiveEvent), e);
-                if (StringUtils.containsIgnoreCase(e.getMessage(), "You exceeded your current quota")) {
-                    chatGptSolution.removeApiKey(usedApiKey);
-                    // 不可用告警
-                    messageSendAction.setResponsesText(ALERT_TEXT);
-                    return messageSendAction;
-                }
-                // 网络失败
-                if ((StringUtils.containsIgnoreCase(e.getMessage(), "Network is unreachable")
-                        || StringUtils.containsIgnoreCase(e.getMessage(), "Bad Gateway")
-                        || StringUtils.containsIgnoreCase(e.getMessage(), "Connection refused"))
-                        && i >= CHANGE_API_KEY_TIME / 2) {
-                    // 不可用告警
-                    messageSendAction.setResponsesText(ALERT_TEXT);
-                    return messageSendAction;
-                }
-                continue;
+            // 模型地址
+            String modelUrl = kvUtils.getStringOrDefault("modelUrl_" + robotChatter.getId(), MODEL_URL);
+            if (Objects.equals(useSteam, "Y")) {
+                return processWithStream(body, headers, modelUrl, messageSendAction, messageReceiveEvent);
+            } else {
+                return processWithoutStream(body, headers, modelUrl, messageSendAction);
             }
-            log.info("RemoteRobotChatHandler ChatGptRobotHandler success, apiKey=" +  usedApiKey + " action:" + JSONObject.toJSONString(messageSendAction));
-            return messageSendAction;
+        } catch (Exception e) {
+            log.error("RemoteRobotChatHandler ChatGptRobotHandler error event:" + JSONObject.toJSONString(messageReceiveEvent), e);
+            if (StringUtils.containsIgnoreCase(e.getMessage(), "You exceeded your current quota")) {
+                chatGptSolution.removeApiKey(usedApiKey);
+                // 不可用告警
+                messageSendAction.setResponsesText(ALERT_TEXT);
+                return messageSendAction;
+            }
+            // 网络失败
+            if ((StringUtils.containsIgnoreCase(e.getMessage(), "Network is unreachable")
+                    || StringUtils.containsIgnoreCase(e.getMessage(), "Bad Gateway")
+                    || StringUtils.containsIgnoreCase(e.getMessage(), "Connection refused"))) {
+                // 不可用告警
+                messageSendAction.setResponsesText(ALERT_TEXT);
+                return messageSendAction;
+            }
         }
+
         try {
             log.error("RemoteRobotChatHandler ChatGptRobotHandler error retry failed all time , event:" + JSONObject.toJSONString(messageReceiveEvent));
             // 不可用告警
@@ -167,6 +147,79 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         }
         return messageSendAction;
     }
+
+    private MessageSendAction processWithoutStream(JSONObject body, List<Header> headers, String modelUrl, MessageSendAction messageSendAction) throws Exception {
+        body.put("stream", false);
+        String res = HttpUtil.INSTANCE.post(MODEL_URL, body, 300000, headers.toArray(new Header[]{}));
+        messageSendAction.setResponsesText(ChatGptSolution.parseResult(res));
+
+        log.info("RemoteRobotChatHandler processWithoutStream success, action:" + JSONObject.toJSONString(messageSendAction));
+        return messageSendAction;
+    }
+
+    private MessageSendAction processWithStream(JSONObject body, List<Header> headers, String modelUrl,
+                                                MessageSendAction messageSendAction, MessageReceiveEvent messageReceiveEvent) throws Exception {
+        body.put("stream", true);
+        AtomicBoolean outputReasoningContent = new AtomicBoolean(false);
+        if (sessionSolution.existStreamConnect(messageReceiveEvent.getRobotChatter().getId(),
+                messageReceiveEvent.getSessionId())) {
+            log.warn("processWithStream 存在进行中的stream，忽略, messageReceiveEvent = {}", messageReceiveEvent);
+            messageSendAction.setSkip(true);
+            return messageSendAction;
+        }
+        HttpUtil.INSTANCE.postWithStreamRes(modelUrl, body, 300000, headers.toArray(new Header[]{}),
+                part -> {
+                    try {
+                        Thread.sleep(new Random().nextInt(50) + 50);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    // 思维链样式
+                    Map<String, String> showStyleProps = Maps.newHashMap();
+                    showStyleProps.put("color", "#8b8b8b");
+                    showStyleProps.put("font-size", "1.25rem");
+
+                    // 思维链
+                    String reasoningContent = ChatGptSolution.parseStreamContent(part, "reasoning_content");
+                    if (reasoningContent != null) {
+                        if (!outputReasoningContent.get()) {
+                            outputReasoningContent.set(true);
+                            sendStreamMessage(THINK_START + "\n", messageReceiveEvent,
+                                    ChatGptSolution.isStreamResultStop(part), showStyleProps);
+                        }
+                        sendStreamMessage(reasoningContent, messageReceiveEvent,
+                                ChatGptSolution.isStreamResultStop(part), null);
+                    }
+
+                    // 内容
+                    String content = ChatGptSolution.parseStreamContent(part, "content");
+                    if (content != null) {
+                        if (outputReasoningContent.get() && StringUtils.isNotEmpty(content)) {
+                            outputReasoningContent.set(false);
+                            sendStreamMessage("\n" + THINK_END, messageReceiveEvent, true, showStyleProps);
+                        }
+                        sendStreamMessage(content, messageReceiveEvent, ChatGptSolution.isStreamResultStop(part), null);
+                    }
+                });
+
+        log.info("RemoteRobotChatHandler processWithStream success, action:" + JSONObject.toJSONString(messageSendAction));
+        messageSendAction.setSkip(true);
+        return messageSendAction;
+    }
+
+    private void sendStreamMessage(String content, MessageReceiveEvent messageReceiveEvent,
+                                   boolean end, Map<String, String> showStyleProps) {
+        // 发送流式消息
+        StreamMessage msg = new StreamMessage();
+        msg.setContent(content);
+        msg.setChatterId(messageReceiveEvent.getRobotChatter().getId());
+        msg.setSessionId(messageReceiveEvent.getSessionId());
+        msg.setCreateTime(new Date());
+        msg.setEnd(end);
+        msg.setShowStyleProps(showStyleProps);
+        sessionSolution.sendStreamMessage(messageReceiveEvent.getSessionId(), msg);
+    }
+
 
     @Override
     public Class<? extends BaseRobotEvent> acceptEvent() {
@@ -183,8 +236,9 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         ChatterDTO chatterDTO = chatterService.selectById(messageReceiveEvent.getMessage().getChatterId());
 
         RobotChatter robotChatter = messageReceiveEvent.getRobotChatter();
-        messageInput.add(getLine("system", "你是一个专业的女程序员，名字叫做" + robotChatter.getName() +
-                "，语言柔和，充满少女气息，你的个性签名是:" + robotChatter.getSignature() +
+        messageInput.add(getLine("system",
+                "你是一个专业的女程序员，名字叫做" + robotChatter.getName() +
+                "；你的语言柔和，逻辑严谨，你的个性签名是:" + robotChatter.getSignature() +
                 "，与你对话的人名字叫做:" + chatterDTO.getName()));
         String sessionId = messageReceiveEvent.getSessionId();
         SessionDTO session = sessionService.findSession(sessionId);
@@ -211,6 +265,9 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                     content = content.substring(0, maxPromptMsgSize);
                 }
                 if (ALERT_TEXT.equals(content) || PROXY_ERROR.equals(content)) {
+                    continue;
+                }
+                if (content.contains(THINK_START) && content.contains(THINK_END)) {
                     continue;
                 }
                 if (CLEAR_CMD.equals(content)) {

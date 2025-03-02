@@ -3,6 +3,7 @@ package com.mola.molachat.session.model;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.Map;
 
 /**
  * @Author: molamola
@@ -42,5 +43,10 @@ public class Message {
      * 会话id
      */
     private String sessionId;
+
+    /**
+     * 前端展示的属性
+     */
+    private Map<String, String> showStyleProps;
 
 }

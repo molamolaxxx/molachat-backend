@@ -160,35 +160,7 @@ $(document).ready(function () {
             $(copyIcon).css('padding', '4px');
             $(copyIcon).css('cursor', 'pointer');
             const onClickCallback = (e) => {
-                const codeObj = hljs.highlightAuto(content)
-                // 主流语言，显示用pre方便看
-                let isCommonCode = codeObj.language === 'java' ||
-                    codeObj.language === 'python' ||
-                    codeObj.language === 'cpp' ||
-                    codeObj.language === 'kotlin' ||
-                    codeObj.language === 'c' ||
-                    codeObj.language === 'csharp' ||
-                    codeObj.language === 'javascript' ||
-                    codeObj.language === 'xml' ||
-                    codeObj.language === 'php' ||
-                    codeObj.language === 'perl'
-                // 只有关键字的文本，不需要按照代码格式展示
-                isCommonCode = isCommonCode && (content.includes("{") || content.includes("}") || content.includes(":"))
-                if (isCommonCode) {
-                    $viewContent.addClass("view-content")
-                } else {
-                    $viewContent.removeClass("view-content")
-                }
-                $copyViewBtn[0].copyContent = content
-                const divBlock = document.createElement("div");
-                if (isMarkdown(content)) {
-                    console.log("is markdown");
-                    divBlock.innerHTML = marked.parse(content);
-                } else {
-                    divBlock.innerHTML = content
-                }
-                hljs.highlightElement(divBlock)
-                $viewContent[0].innerHTML = divBlock.innerHTML
+                $viewContent[0].innerHTML = buildHighlightContent(content)
                 $viewModal.modal('open')
             }
             $(copyIcon).on('click', onClickCallback)

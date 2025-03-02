@@ -658,6 +658,10 @@ svg {
     padding-right: 6px;
 }
 
+.reasoning-content{
+    color: #8b8b8b;
+}
+
 @-webkit-keyframes animRipple {
     to {
         -webkit-transform: scale(2.5);
@@ -693,4 +697,89 @@ svg {
 /* 手机点击不显示蓝色框 */
 * {
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+#viewContent h1 {
+    all: revert !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#viewContent h2 {
+    all: revert !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#viewContent h3 {
+    all: revert !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#viewContent h4 {
+    all: revert !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#viewContent ol {
+    all: revert !important;
+    margin: 0 !important;
+}
+
+#viewContent ul {
+    all: revert !important;
+    margin: 0 !important;
+}
+
+#viewContent li {
+    all: revert !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* 表格 */
+#viewContent table {
+    border-collapse: collapse;
+    /* margin: 16px 0; */
+    width: 100%;
+}
+#viewContent th,
+#viewContent td {
+    padding: 10px;
+    border: 1px solid #dfe2e5;
+}
+#viewContent th {
+    background-color: #f6f8fa;
+    font-weight: 600;
+}
+#viewContent tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
+#viewContent hr {
+    height: 2px;
+    padding: 0;
+    background-color: #e7e7e7;
+    border: 0 none;
+    overflow: hidden;
+    box-sizing: content-box;
+}
+
+#viewContent pre code {
+    display: block;
+    overflow-x: auto;
+    background: #f8f8f8;
+    color: #695d69;
+    padding: 0.5em;
+    border-radius: 8px;
+    white-space: pre;
+}
+
+#viewContent code {
+    overflow-x: auto;
+    background: #f8f8f8;
+    color: #695d69;
+    padding: 0.1em;
+    border-radius: 4px;
 }

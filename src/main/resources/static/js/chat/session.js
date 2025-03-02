@@ -19,6 +19,13 @@ $(document).ready(function () {
     // 聊天框dom
     var $messageBox = $(".chat__messages")[0]
 
+    // 消息模态框
+    var $viewContent = $("#viewContent")
+    var $messageViewModel = $("#message-view-modal")
+
+    // 流map
+    var streamMessageMap = new Map()
+
     function selectMessageDom(message, isMain) {
         var dom;
         if (message.content) {
@@ -112,6 +119,18 @@ $(document).ready(function () {
             //dom中添加消息
             $messageBox.append(dom);
         }
+
+        // 如果存在stream消息，也要添加到messageBox中
+        var streamMessageDom = streamMessageMap.get(activeSession.sessionId)
+        if (streamMessageDom) {
+            $messageBox.append(streamMessageDom);
+            $(streamMessageDom.mainDocChild).on('click', () => {
+                $viewContent[0].triggerMessageId = streamMessageDom.messageId
+                $viewContent[0].innerHTML = buildHighlightContent(streamMessageDom.mainDocChild.innerText)
+                $messageViewModel.modal('open')
+            })
+        }
+
         var imgDivArr = document.querySelectorAll("#imgready")
         for (var i = 0; i < imgDivArr.length; i++) {
             var img = imgDivArr[i];
@@ -126,6 +145,96 @@ $(document).ready(function () {
         }
 
         scrollToChatContainerBottom(isSideBarOutside() ? 100 : 1000)
+        timeoutId = setTimeout(() => {
+            activeSession.scrollComplete = true
+        }, 1500)
+    }
+
+
+    //收到消息，回调
+    receiveStreamMessage = function (message) {
+        var dom = streamMessageMap.get(message.sessionId)
+        const end = message.end
+
+        //如果是当前session
+        if (activeChatter && message.chatterId == activeChatter.id && activeSession.scrollComplete) {
+            // 通过map，找到dom，并将文案append到对应的dom上
+            if (!dom) {
+                const cachedMsg = streamMessageMap.get("cache_" + message.sessionId)
+                if (cachedMsg) {
+                    streamMessageMap.delete("cache_" + message.sessionId)
+                    cachedMsg.content = cachedMsg.content + message.content
+                    message = cachedMsg
+                }
+                dom = messageDom(message, false)
+                $(dom.mainDocChild).on('click', () => {
+                    $viewContent[0].triggerMessageId = dom.messageId
+                    $viewContent[0].innerHTML = buildHighlightContent(dom.mainDocChild.innerText)
+                    $messageViewModel.modal('open')
+                })
+                streamMessageMap.set(message.sessionId, dom)
+                $messageBox.append(dom);
+            } else {
+                const cachedMsg = streamMessageMap.get("cache_" + message.sessionId)
+                if (cachedMsg) {
+                    streamMessageMap.delete("cache_" + message.sessionId)
+                    message.content = cachedMsg.content + message.content
+                }
+                dom.mainDocChild.innerText = dom.mainDocChild.innerText + message.content
+                if ($messageViewModel[0].className.indexOf('open') != -1 || end) {
+                    if ($viewContent[0].triggerMessageId === dom.messageId) {
+                        $viewContent[0].innerHTML = buildHighlightContent(dom.mainDocChild.innerText)
+                        scrollToMessageViewBottom(100)
+                    }
+                }
+                if (activeSession.scrollComplete) {
+                    scrollToChatContainerBottom(100)
+                }
+            }
+
+            if (end) {
+                streamMessageMap.delete(message.sessionId)
+                streamMessageMap.delete("cache_" + message.sessionId)
+                scrollToChatContainerBottom(100)
+                // 判断是不是当前页
+                if (!isCurrentPage) {
+                    document.getElementsByTagName("title")[0].innerText = "molachat(当前有未读消息)";
+                }
+                // 消息通知
+                notifyNewMessage(message)
+            }
+        }
+        // 非当前session，只处理结束场景
+        else if (end){
+            streamMessageMap.delete(message.sessionId)
+            streamMessageMap.delete("cache_" + message.sessionId)
+
+            var senderId = message.chatterId;
+            // 这个信息必须不是公共信息
+            if (!message.common && senderId != getChatterId()) {
+                changeStatus(senderId, true);
+            }
+            // 页面提醒
+            if (message.chatterId != getChatterId() && activeChatter != null && message.chatterId != activeChatter.id && $chat.css("display") === "block") {
+                if (!alertMap.get(message.chatterId) && !message.common) {
+                    // 群消息免提醒
+                    showToast("外部有新的消息", 1000)
+                }
+                // 设置成已经提醒
+                setAlertMap(message.chatterId, true);
+            }
+
+            // 消息通知，需要拿到整体的消息
+            notifyNewMessage(message)
+        } else {
+            const cachedMsg = streamMessageMap.get("cache_" + message.sessionId)
+            if (!cachedMsg) {
+                streamMessageMap.set("cache_" + message.sessionId, message)
+            } else {
+                cachedMsg.content = cachedMsg.content + message.content
+            }
+        }
+
     }
 
     //收到消息，回调
@@ -272,10 +381,12 @@ $(document).ready(function () {
         let chatterMap = getChatterMap()
         if (chatterMap && chatterMap.get(message.chatterId)) {
             let chatterName = chatterMap.get(message.chatterId).name
-            if (message.content) {
+            if (message.fileName && message.fileName !== '') {
+                sendNotification(`${chatterName} 向你发送了文件`)
+            } else if (message.content) {
                 sendNotification(`${chatterName} 说 ${message.content}`)
             } else{
-                sendNotification(`${chatterName} 向你发送了文件`)
+                sendNotification(`${chatterName} 向你发送了消息`)
             }
         } else {
             sendNotification("您有新的消息")
