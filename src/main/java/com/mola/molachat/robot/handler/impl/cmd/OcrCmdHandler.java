@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.mola.molachat.common.config.SelfConfig;
+import com.mola.molachat.robot.model.CmdDescription;
 import com.mola.molachat.session.model.FileMessage;
 import com.mola.molachat.session.model.Message;
 import com.mola.molachat.session.dto.SessionDTO;
@@ -123,5 +124,14 @@ public class OcrCmdHandler extends BaseCmdRobotHandler {
     @Override
     public String getDesc() {
         return "图片文字识别";
+    }
+
+    @Override
+    public CmdDescription cmdDescription() {
+        return CmdDescription.builder()
+                .cmdName("ocr")
+                .cmdDesc("图片文字提取")
+                .executeScript("sendMessageInner('ocr')")
+                .build();
     }
 }

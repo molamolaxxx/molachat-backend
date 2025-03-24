@@ -87,4 +87,15 @@ public class RobotController {
             return ServerResponse.createByErrorMessage(e.getMessage());
         }
     }
+
+    @GetMapping("/cmd/markdown/{robotId}/{sessionId}")
+    public ServerResponse<String> fetchCmdMarkdown(@PathVariable("robotId") String robotId,
+                                                   @PathVariable("sessionId") String sessionId) {
+        try {
+            return ServerResponse.createBySuccess(robotSolution.fetchCmdMarkdown(robotId, sessionId));
+        } catch (Exception e) {
+            log.error("fetchCmdMarkdown error", e);
+            return ServerResponse.createByErrorMessage(e.getMessage());
+        }
+    }
 }

@@ -61,6 +61,7 @@ $(document).ready(function () {
                 }
                 //获取当前chatter
                 activeChatter = chatterListData[this.index];
+                console.log("activeChatter", activeChatter);
                 // 设置签名
                 var sign = cutStrByByte(activeChatter.signature, 28);
                 $(".chat__status").text(sign);
@@ -84,6 +85,8 @@ $(document).ready(function () {
                 setAlertMap(activeChatter.id, false);
                 //设置消息已读
                 changeStatus(activeChatter.id, false);
+                // 设置工具栏
+                loadMiniTool(activeChatter)
             });
         }
     }
@@ -146,7 +149,9 @@ $(document).ready(function () {
 
         scrollToChatContainerBottom(isSideBarOutside() ? 100 : 1000)
         timeoutId = setTimeout(() => {
-            activeSession.scrollComplete = true
+            if (activeSession) {
+                activeSession.scrollComplete = true
+            }
         }, 1500)
     }
 

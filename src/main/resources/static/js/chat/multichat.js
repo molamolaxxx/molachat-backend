@@ -28,6 +28,8 @@ $(document).ready(function () {
             hint: "已进入群聊会话，可以畅所欲言"
         }
         onStartGroupSession(groupInfo)
+        // 设置工具栏
+        loadMiniTool(getActiveChatter())
     });
 
     /**

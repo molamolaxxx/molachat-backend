@@ -1,6 +1,8 @@
 package com.mola.molachat.robot.solution;
 
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.common.utils.MapUtils;
+import com.mola.cmd.proxy.client.consumer.CmdSender;
 import com.mola.molachat.chatter.data.ChatterFactoryInterface;
 import com.mola.molachat.chatter.dto.ChatterDTO;
 import com.mola.molachat.chatter.enums.ChatterStatusEnum;
@@ -12,6 +14,7 @@ import com.mola.molachat.robot.action.FileMessageSendAction;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.bus.RobotEventBus;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
+import com.mola.molachat.robot.model.CmdDescription;
 import com.mola.molachat.session.dto.SessionDTO;
 import com.mola.molachat.session.model.FileMessage;
 import com.mola.molachat.session.model.Message;
@@ -23,8 +26,11 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -137,6 +143,48 @@ public class RobotSolution implements InitializingBean {
         msg.setSessionId(session.getSessionId());
         // 2、向session发送消息
         sessionSolution.insertMessage(session.getSessionId(), msg);
+    }
+
+    public String fetchCmdMarkdown(String robotId, String sessionId) {
+        Chatter robot = chatterFactory.select(robotId);
+        if (!(robot instanceof RobotChatter)) {
+            throw new IllegalArgumentException("robotId is not robot's id, " + robotId);
+        }
+        RobotChatter robotChatter = (RobotChatter) robot;
+        // 先取自定义的eventbus，没有就用默认的
+        RobotEventBus eventBus = robotEventBus;
+        if (StringUtils.isNotBlank(robotChatter.getEventBusBeanName())) {
+            eventBus = applicationContext.getBean(robotChatter.getEventBusBeanName(), RobotEventBus.class);
+        }
+        // 获取对应的命令描述
+        List<CmdDescription> allCmdDescriptions = eventBus.getAllCmdDescriptions();
+        // 远程指令
+        Map<String, String> remoteCmdDescMap = CmdSender.INSTANCE.fetchDescriptionMap(sessionId);
+        if (MapUtils.isNotEmpty(remoteCmdDescMap)) {
+            remoteCmdDescMap.forEach((cmd, desc) -> {
+                String[] split = desc.split("#script:");
+                if (split.length != 2) {
+                    return;
+                }
+                allCmdDescriptions.add(
+                        CmdDescription.builder()
+                                .cmdName(cmd)
+                                .cmdDesc(split[0])
+                                .executeScript(split[1]).build()
+                );
+            });
+        }
+        if (CollectionUtils.isEmpty(allCmdDescriptions)) {
+            return null;
+        }
+        StringBuilder result = new StringBuilder();
+        result.append("| 命令   | 描述   | 操作                                         |\n")
+                .append("| ----- | ----- | -------------------------------------------- |\n");
+        for (CmdDescription allCmdDescription : allCmdDescriptions) {
+            result.append(allCmdDescription.renderLine());
+            result.append("\n");
+        }
+        return result.toString();
     }
 
     class OnReceiveMessageRunnableTask implements Runnable {

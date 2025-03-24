@@ -11,6 +11,8 @@ $(document).ready(function () {
     // chatterId -> Chatter
     var chatterMap;
 
+    var $miniTools =  $("#mini-tools");
+
     initChatterMap = function() {
         chatterMap = new Map();
         // 初始化chatterMap
@@ -79,6 +81,16 @@ $(document).ready(function () {
         mainDoc.append(statusDoc);
         mainDoc.append(intro);
         return mainDoc;
+    }
+    $("#mini-tools")
+
+    loadMiniTool = function (activeChatter) {
+        $("#tool-cmd").remove();
+        if (activeChatter.robot) {
+            var cmd = "<div class='tool-item' id='tool-cmd'><i class='material-icons' style='font-size: 18px;'>code</i></div>"
+            $miniTools.append(cmd)
+        }
+        registerOnClick()
     }
 
     /**

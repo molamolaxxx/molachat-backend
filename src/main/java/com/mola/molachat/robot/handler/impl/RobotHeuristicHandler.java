@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RobotHeuristicHandler implements IRobotEventHandler<MessageSendEvent, EmptyAction> {
 
-    private ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(10);
+    private ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
 
     @Resource
     private SessionSolution sessionSolution;

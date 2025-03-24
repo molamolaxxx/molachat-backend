@@ -14,6 +14,7 @@ import com.mola.molachat.robot.bus.GptRobotEventBus;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
+import com.mola.molachat.robot.model.CmdDescription;
 import com.mola.molachat.robot.solution.ChatGptSolution;
 import com.mola.molachat.robot.solution.CmdProxyInvokeSolution;
 import com.mola.molachat.server.service.ServerService;
@@ -290,5 +291,14 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         line.put("role", role);
         line.put("content", message);
         return line;
+    }
+
+    @Override
+    public CmdDescription cmdDescription() {
+        return CmdDescription.builder()
+                .cmdName("#clear#")
+                .cmdDesc("清空对话上下文")
+                .executeScript("sendMessageInner('#clear#')")
+                .build();
     }
 }

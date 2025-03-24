@@ -357,6 +357,10 @@ $(document).ready(function () {
         $chatEditor.val('')
         $chatInput.value = "";
 
+        sendMessageInner(content)
+    })
+
+    sendMessageInner = function(content) {
         //显示在屏幕上，滚动
         addMessage($chatMsg, content, true);
 
@@ -373,5 +377,5 @@ $(document).ready(function () {
         action.data = data;
 
         socket.send(JSON.stringify(action));
-    })
+    }
 });

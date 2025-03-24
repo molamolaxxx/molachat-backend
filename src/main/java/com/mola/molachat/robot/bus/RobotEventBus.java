@@ -8,6 +8,7 @@ import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
 import com.mola.molachat.robot.handler.impl.ChatGptRobotHandler;
 import com.mola.molachat.robot.handler.impl.ImageGenerateChatHandler;
+import com.mola.molachat.robot.model.CmdDescription;
 import com.mola.molachat.session.model.Message;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author : molamola
@@ -80,5 +82,12 @@ public class RobotEventBus implements EventBus<BaseRobotEvent, BaseAction>, Init
 
     protected List<IRobotEventHandler> getRobotEventHandlers() {
         return robotEventHandlers;
+    }
+
+    public List<CmdDescription> getAllCmdDescriptions() {
+        return getRobotEventHandlers().stream()
+                .map(IRobotEventHandler::cmdDescription)
+                .filter(CmdDescription::support)
+                .collect(Collectors.toList());
     }
 }

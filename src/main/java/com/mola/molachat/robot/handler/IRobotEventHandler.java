@@ -2,6 +2,7 @@ package com.mola.molachat.robot.handler;
 
 import com.mola.molachat.common.event.action.BaseAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
+import com.mola.molachat.robot.model.CmdDescription;
 
 /**
  * @author : molamola
@@ -34,5 +35,9 @@ public interface IRobotEventHandler<E extends BaseRobotEvent, A extends BaseActi
 
     default boolean isDefaultHandler() {
         return false;
+    }
+
+    default CmdDescription cmdDescription() {
+        return CmdDescription.NOT_SUPPORT;
     }
 }

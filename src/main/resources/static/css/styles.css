@@ -63,6 +63,10 @@ body {
     text-align: center;
     padding: 7px;
     cursor: pointer;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+/Edge */
+    user-select: none; /* Standard */
 }
 
 .static {
@@ -777,6 +781,120 @@ svg {
 }
 
 #viewContent code {
+    overflow-x: auto;
+    background: #f8f8f8;
+    color: #695d69;
+    padding: 0.1em;
+    border-radius: 4px;
+}
+
+.blue-ring-button {
+    position: relative;
+    padding: 4px 8px;
+    background: white;
+    border: none;
+    color: #2196F3;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+    /* 外层蓝色光环 */
+    box-shadow: 0 0 0 2px #2196F3;
+    border-radius: 4px;
+    width: 4.5rem;
+}
+
+/* 悬停效果 */
+.blue-ring-button:hover {
+    background: #f5faff;
+    box-shadow: 0 0 0 2px #2196F3, 0 4px 8px rgba(33, 150, 243, 0.2);
+}
+
+/* 点击效果 */
+.blue-ring-button:active {
+    transform: translateY(1px);
+}
+
+
+#cmdContent h1 {
+    all: revert !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#cmdContent h2 {
+    all: revert !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#cmdContent h3 {
+    all: revert !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#cmdContent h4 {
+    all: revert !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#cmdContent ol {
+    all: revert !important;
+    margin: 0 !important;
+}
+
+#cmdContent ul {
+    all: revert !important;
+    margin: 0 !important;
+}
+
+#cmdContent li {
+    all: revert !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* 表格 */
+#cmdContent table {
+    border-collapse: collapse;
+    /* margin: 16px 0; */
+    width: 100%;
+}
+#cmdContent th,
+#cmdContent td {
+    padding: 10px;
+    border: 1px solid #dfe2e5;
+}
+#cmdContent th {
+    background-color: #f6f8fa;
+    font-weight: 600;
+}
+#cmdContent tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
+#cmdContent hr {
+    height: 2px;
+    padding: 0;
+    background-color: #e7e7e7;
+    border: 0 none;
+    overflow: hidden;
+    box-sizing: content-box;
+}
+
+#cmdContent pre code {
+    display: block;
+    overflow-x: auto;
+    background: #f8f8f8;
+    color: #695d69;
+    padding: 0.5em;
+    border-radius: 8px;
+    white-space: pre;
+}
+
+#cmdContent code {
     overflow-x: auto;
     background: #f8f8f8;
     color: #695d69;
