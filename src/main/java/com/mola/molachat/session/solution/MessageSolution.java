@@ -4,37 +4,33 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.mola.molachat.chatter.data.ChatterFactoryInterface;
 import com.mola.molachat.chatter.enums.ChatterPointEnum;
-import com.mola.molachat.chatter.enums.ChatterTagEnum;
 import com.mola.molachat.chatter.model.Chatter;
 import com.mola.molachat.chatter.model.RobotChatter;
 import com.mola.molachat.chatter.service.ChatterService;
 import com.mola.molachat.common.annotation.AddPoint;
 import com.mola.molachat.common.enums.ServiceErrorEnum;
-import com.mola.molachat.common.exception.service.GroupServiceException;
 import com.mola.molachat.common.exception.service.SessionServiceException;
-import com.mola.molachat.common.utils.BeanUtilsPlug;
-import com.mola.molachat.common.utils.IdUtils;
 import com.mola.molachat.group.service.GroupService;
 import com.mola.molachat.robot.solution.RobotSolution;
 import com.mola.molachat.server.ChatServer;
 import com.mola.molachat.server.service.ServerService;
 import com.mola.molachat.server.session.SessionWrapper;
 import com.mola.molachat.server.websocket.WSResponse;
-import com.mola.molachat.server.websocket.video.VideoWSResponse;
 import com.mola.molachat.session.data.SessionFactoryInterface;
-import com.mola.molachat.session.dto.SessionDTO;
 import com.mola.molachat.session.model.Message;
 import com.mola.molachat.session.model.Session;
-import com.mola.molachat.session.model.StreamMessageConnect;
 import com.mola.molachat.session.model.StreamMessage;
+import com.mola.molachat.session.model.StreamMessageConnect;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -45,7 +41,7 @@ import java.util.stream.Collectors;
  **/
 @Component
 @Slf4j
-public class SessionSolution {
+public class MessageSolution {
 
     @Resource
     private ServerService serverService;
@@ -104,16 +100,28 @@ public class SessionSolution {
         return message;
     }
 
+    public void updateMessage(String sessionId, Message message) throws SessionServiceException {
+        //1.查询是否存在对应session
+        Session session = sessionFactory.selectById(sessionId);
+        if (null == session){
+            throw new SessionServiceException(ServiceErrorEnum.SESSION_NOT_FOUND);
+        }
+
+        //2.向session中插入message
+        sessionFactory.insertMessage(session.getSessionId(), message);
+    }
+
     /**
      * 是否已经存在stream
      * @param senderId
      * @param sessionId
      * @return
      */
-    public boolean existStreamConnect(String senderId, String sessionId) {
+    public StreamMessageConnect findStreamConnect(String senderId, String sessionId) {
         return streamMessageConnectPool.stream()
-                .anyMatch(connect -> Objects.equals(connect.getSenderId(), senderId)
-                        && Objects.equals(connect.getSessionId(), sessionId));
+                .filter(connect -> Objects.equals(connect.getSenderId(), senderId)
+                        && Objects.equals(connect.getSessionId(), sessionId))
+                .findAny().orElse(null);
     }
 
     /**
@@ -139,7 +147,8 @@ public class SessionSolution {
                         streamMessage.getChatterId(),sessionId,
                         new StringBuilder(),
                         streamMessage,
-                        Sets.newHashSet()
+                        Sets.newHashSet(),
+                        false
                 );
                 streamMessageConnectPool.add(messageConnect);
             }
@@ -185,43 +194,4 @@ public class SessionSolution {
         }
     }
 
-    public void deleteVideoSession(String chatterId) {
-        String needToAlert = sessionFactory.removeVideoSession(chatterId);
-        // 发消息,挂断视频
-        if (null != needToAlert) {
-            serverService.sendResponse(needToAlert, VideoWSResponse
-                    .requestVideoOff("挂断视频", null));
-        }
-    }
-
-
-    public SessionDTO createGroupSession(Set<String> chatterIds, String creatorId) {
-        // 1、每一个游客最多创建1个群组，组内不超过3个用户
-        Chatter creator = chatterFactory.select(creatorId);
-        Assert.notNull(creator, "群组创建者不能为空，group creator can not be null");
-        Assert.isTrue(null != chatterIds && chatterIds.size() > 0,
-                "群组成员个数必须存在且大于0，members size need to be exist and over than zero");
-        Assert.isTrue(chatterIds.contains(creatorId), "成员必须包含创建者，members must contains creator!");
-        if (ChatterTagEnum.VISITOR.getCode().equals(creator.getTag())) {
-            // 1 最多创建1个群组 不能多于3个用户
-            if (groupService.listByOwner(creatorId).size() > 0 || chatterIds.size() > 3) {
-                throw new GroupServiceException(ServiceErrorEnum.VISITOR_CREATE_GROUP_ERROR);
-            }
-        }
-        Session groupSessionInner = createGroupSessionInner(chatterIds, creatorId);
-        return (SessionDTO) BeanUtilsPlug.copyPropertiesReturnTarget(groupSessionInner, new SessionDTO());
-    }
-
-
-    private Session createGroupSessionInner(Set<String> chatterIds, String creatorId) {
-        Session groupSession = new Session();
-        groupSession.setSessionId(IdUtils.getSessionId());
-        List<Chatter> chatters = chatterIds.stream()
-                .map(id -> chatterFactory.select(id))
-                .filter(chatter -> null != chatter)
-                .collect(Collectors.toList());
-        groupSession.setChatterSet(new HashSet<>(chatters));
-        sessionFactory.create(groupSession);
-        return groupSession;
-    }
 }

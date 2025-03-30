@@ -8,6 +8,7 @@ import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
 import com.mola.molachat.robot.handler.impl.ChatGptRobotHandler;
 import com.mola.molachat.robot.handler.impl.ImageGenerateChatHandler;
+import com.mola.molachat.robot.handler.impl.cmd.StopChatStreamRobotHandler;
 import com.mola.molachat.robot.model.CmdDescription;
 import com.mola.molachat.session.model.Message;
 import org.springframework.beans.factory.InitializingBean;
@@ -71,7 +72,8 @@ public class RobotEventBus implements EventBus<BaseRobotEvent, BaseAction>, Init
         List<IRobotEventHandler> robotEventHandlers = new ArrayList<>();
         for (IRobotEventHandler robotEventHandler : this.robotEventHandlers) {
             if (robotEventHandler instanceof ChatGptRobotHandler
-                    || robotEventHandler instanceof ImageGenerateChatHandler) {
+                    || robotEventHandler instanceof ImageGenerateChatHandler
+                    || robotEventHandler instanceof StopChatStreamRobotHandler) {
                 continue;
             }
             robotEventHandlers.add(robotEventHandler);
@@ -84,9 +86,9 @@ public class RobotEventBus implements EventBus<BaseRobotEvent, BaseAction>, Init
         return robotEventHandlers;
     }
 
-    public List<CmdDescription> getAllCmdDescriptions() {
+    public List<CmdDescription> getAllCmdDescriptions(String robotId, String sessionId) {
         return getRobotEventHandlers().stream()
-                .map(IRobotEventHandler::cmdDescription)
+                .map(iRobotEventHandler -> iRobotEventHandler.cmdDescription(robotId, sessionId))
                 .filter(CmdDescription::support)
                 .collect(Collectors.toList());
     }

@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.apache.http.client.config.RequestConfig.custom;
 
@@ -190,7 +190,7 @@ public enum HttpUtil {
     }
 
     public void postWithStreamRes(String url, JSONObject body,
-                                  int timeout, Header[] headers, Consumer<String> responseConsumer) throws Exception {
+                                  int timeout, Header[] headers, Function<String, Boolean> responseConsumer) throws Exception {
         bootMonitorThread();
         URI uri = new URIBuilder(url).build();
         HttpPost httpPost = new HttpPost(uri);
@@ -213,8 +213,8 @@ public enum HttpUtil {
                     if ("[DONE]".equals(data)) {
                         break;
                     }
-                    if (responseConsumer != null) {
-                        responseConsumer.accept(data);
+                    if (responseConsumer != null && !responseConsumer.apply(data)) {
+                        return;
                     }
                 }
             }

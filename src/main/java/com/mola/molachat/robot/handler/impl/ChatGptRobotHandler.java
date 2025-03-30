@@ -19,10 +19,12 @@ import com.mola.molachat.robot.solution.ChatGptSolution;
 import com.mola.molachat.robot.solution.CmdProxyInvokeSolution;
 import com.mola.molachat.server.service.ServerService;
 import com.mola.molachat.session.dto.SessionDTO;
+import com.mola.molachat.session.model.FileMessage;
 import com.mola.molachat.session.model.Message;
 import com.mola.molachat.session.model.StreamMessage;
+import com.mola.molachat.session.model.StreamMessageConnect;
 import com.mola.molachat.session.service.SessionService;
-import com.mola.molachat.session.solution.SessionSolution;
+import com.mola.molachat.session.solution.MessageSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
@@ -49,7 +51,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     private SessionService sessionService;
 
     @Resource
-    private SessionSolution sessionSolution;
+    private MessageSolution messageSolution;
 
     @Resource
     private ServerService serverService;
@@ -80,6 +82,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
 
     public static final String CLEAR_CMD = "#clear#";
 
+    public static final String STOP_STEAM_CMD = "#stop-stream#";
+
     private static final int RETRY_TIME = 12;
 
     private static final int CHANGE_API_KEY_TIME = 8;
@@ -96,7 +100,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         // 默认主账号
         String usedApiKey = robotChatter.getApiKey();
         try {
-            if (CLEAR_CMD.equals(messageReceiveEvent.getMessage().getContent())) {
+            if (CLEAR_CMD.equals(messageReceiveEvent.getMessage().getContent())
+             || STOP_STEAM_CMD.equals(messageReceiveEvent.getMessage().getContent())) {
                 messageSendAction.setSkip(true);
                 return messageSendAction;
             }
@@ -162,8 +167,9 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                                                 MessageSendAction messageSendAction, MessageReceiveEvent messageReceiveEvent) throws Exception {
         body.put("stream", true);
         AtomicBoolean outputReasoningContent = new AtomicBoolean(false);
-        if (sessionSolution.existStreamConnect(messageReceiveEvent.getRobotChatter().getId(),
-                messageReceiveEvent.getSessionId())) {
+        StreamMessageConnect streamConnect = messageSolution.findStreamConnect(messageReceiveEvent.getRobotChatter().getId(),
+                messageReceiveEvent.getSessionId());
+        if (streamConnect != null) {
             log.warn("processWithStream 存在进行中的stream，忽略, messageReceiveEvent = {}", messageReceiveEvent);
             messageSendAction.setSkip(true);
             return messageSendAction;
@@ -180,16 +186,25 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                     showStyleProps.put("color", "#8b8b8b");
                     showStyleProps.put("font-size", "1.25rem");
 
+                    StreamMessageConnect existStreamConnect =
+                            messageSolution.findStreamConnect(messageReceiveEvent.getRobotChatter().getId(),
+                            messageReceiveEvent.getSessionId());
+                    boolean stop = ChatGptSolution.isStreamResultStop(part)
+                            || (existStreamConnect != null && existStreamConnect.isClosed());
+
                     // 思维链
                     String reasoningContent = ChatGptSolution.parseStreamContent(part, "reasoning_content");
                     if (reasoningContent != null) {
                         if (!outputReasoningContent.get()) {
                             outputReasoningContent.set(true);
-                            sendStreamMessage(THINK_START + "\n", messageReceiveEvent,
-                                    ChatGptSolution.isStreamResultStop(part), showStyleProps);
+                            sendStreamMessage(THINK_START + "\n", messageReceiveEvent, stop, showStyleProps);
                         }
-                        sendStreamMessage(reasoningContent, messageReceiveEvent,
-                                ChatGptSolution.isStreamResultStop(part), null);
+                        if (stop) {
+                            sendStreamMessage(reasoningContent + "\n" + THINK_END, messageReceiveEvent, true
+                                    , showStyleProps);
+                        } else {
+                            sendStreamMessage(reasoningContent, messageReceiveEvent, false, null);
+                        }
                     }
 
                     // 内容
@@ -199,8 +214,9 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                             outputReasoningContent.set(false);
                             sendStreamMessage("\n" + THINK_END, messageReceiveEvent, true, showStyleProps);
                         }
-                        sendStreamMessage(content, messageReceiveEvent, ChatGptSolution.isStreamResultStop(part), null);
+                        sendStreamMessage(content, messageReceiveEvent, stop, null);
                     }
+                    return !stop;
                 });
 
         log.info("RemoteRobotChatHandler processWithStream success, action:" + JSONObject.toJSONString(messageSendAction));
@@ -218,7 +234,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         msg.setCreateTime(new Date());
         msg.setEnd(end);
         msg.setShowStyleProps(showStyleProps);
-        sessionSolution.sendStreamMessage(messageReceiveEvent.getSessionId(), msg);
+        messageSolution.sendStreamMessage(messageReceiveEvent.getSessionId(), msg);
     }
 
 
@@ -260,7 +276,15 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         List<Map<String, String>> contentLines = Lists.newArrayList();
         for (int i = start; i < messageList.size(); i++) {
             Message message = messageList.get(i);
-            if (StringUtils.isNotBlank(message.getContent())) {
+            if (message instanceof FileMessage) {
+                FileMessage fileMessage = (FileMessage) message;
+                if (StringUtils.isNotBlank(fileMessage.getOcrResultCache())) {
+                    contentLines.add(getLine("user",
+                            String.format("用户发来一张包含文字的图片，图片的名称是：%s，" +
+                                    "图片的内容是：%s",fileMessage.getFileName(),
+                                    fileMessage.getOcrResultCache())));
+                }
+            } else if (StringUtils.isNotBlank(message.getContent())) {
                 String content = message.getContent();
                 if (content.length() > maxPromptMsgSize && i != messageList.size() - 1) {
                     content = content.substring(0, maxPromptMsgSize);
@@ -294,11 +318,15 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     }
 
     @Override
-    public CmdDescription cmdDescription() {
-        return CmdDescription.builder()
-                .cmdName("#clear#")
-                .cmdDesc("清空对话上下文")
-                .executeScript("sendMessageInner('#clear#')")
-                .build();
+    public CmdDescription cmdDescription(String robotId, String sessionId) {
+        StreamMessageConnect streamConnect = messageSolution.findStreamConnect(robotId, sessionId);
+        if (streamConnect == null) {
+            return CmdDescription.builder()
+                    .cmdName("#clear#")
+                    .cmdDesc("清空对话上下文")
+                    .executeScript("sendMessageInner('#clear#')")
+                    .build();
+        }
+        return CmdDescription.NOT_SUPPORT;
     }
 }

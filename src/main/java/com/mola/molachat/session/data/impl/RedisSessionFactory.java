@@ -107,6 +107,12 @@ public class RedisSessionFactory extends SessionFactory{
     }
 
     @Override
+    public void updateMessage(String sessionId, Message message) {
+        super.updateMessage(sessionId, message);
+        redisUtil.set(redisKeyPrefix + sessionId ,super.selectById(sessionId));
+    }
+
+    @Override
     public VideoSession createVideoSession(String requestChatterId, String acceptChatterId) {
         return super.createVideoSession(requestChatterId, acceptChatterId);
     }

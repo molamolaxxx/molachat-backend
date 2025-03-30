@@ -3,6 +3,7 @@ package com.mola.molachat.session.data.impl;
 import com.mola.molachat.chatter.data.impl.ChatterFactory;
 import com.mola.molachat.common.condition.CacheCondition;
 import com.mola.molachat.common.config.SelfConfig;
+import com.mola.molachat.common.utils.BeanUtilsPlug;
 import com.mola.molachat.session.data.SessionFactoryInterface;
 import com.mola.molachat.chatter.model.Chatter;
 import com.mola.molachat.session.model.Message;
@@ -144,6 +145,12 @@ public class SessionFactory implements SessionFactoryInterface {
         return insertMessageInner(session, message);
     }
 
+    @Override
+    public void updateMessage(String sessionId, Message message) {
+        Session session = sessionMap.get(sessionId);
+        updateMessageInner(session, message);
+    }
+
     protected Message insertMessageInner(Session session, Message message) {
         if (null == session) {
             throw new SessionException(DataErrorCodeEnum.SESSION_NOT_EXIST);
@@ -160,6 +167,18 @@ public class SessionFactory implements SessionFactoryInterface {
         }
 
         return message;
+    }
+
+    protected void updateMessageInner(Session session, Message message) {
+        if (null == session) {
+            throw new SessionException(DataErrorCodeEnum.SESSION_NOT_EXIST);
+        }
+        List<Message> messageList = session.getMessageList();
+        Message found = messageList.stream().filter(msg -> Objects.equals(msg.getId(), message.getId()))
+                .findAny().orElse(null);
+        if (found != null) {
+            BeanUtilsPlug.copyNonNullProperties(message, found);
+        }
     }
 
     @Override

@@ -8,7 +8,7 @@ import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageSendEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.session.service.SessionService;
-import com.mola.molachat.session.solution.SessionSolution;
+import com.mola.molachat.session.solution.MessageSolution;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -28,7 +28,7 @@ public class RobotHeuristicHandler implements IRobotEventHandler<MessageSendEven
     private ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
 
     @Resource
-    private SessionSolution sessionSolution;
+    private MessageSolution messageSolution;
 
 
     @Resource
@@ -41,7 +41,7 @@ public class RobotHeuristicHandler implements IRobotEventHandler<MessageSendEven
             // 1、查询session，没有则创建
             SessionDTO session = sessionService.findSession(messageSendEvent.getSessionId());
             // 2、向session发送消息
-            sessionSolution.insertMessage(session.getSessionId(), messageSendEvent.getMessage());
+            messageSolution.insertMessage(session.getSessionId(), messageSendEvent.getMessage());
         }, messageSendEvent.getDelayTime(), TimeUnit.MILLISECONDS);
         return new EmptyAction();
     }

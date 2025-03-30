@@ -37,6 +37,11 @@ public class FileMessage extends Message {
      */
     private boolean isCommon = false;
 
+    /**
+     * ocr结果缓存
+     */
+    private String ocrResultCache;
+
     public String fetchRealStoredFileName(boolean useSnapshot) {
         String urlTmp = url;
         if (useSnapshot) {

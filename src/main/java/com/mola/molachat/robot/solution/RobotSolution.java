@@ -10,6 +10,8 @@ import com.mola.molachat.chatter.model.Chatter;
 import com.mola.molachat.chatter.model.RobotChatter;
 import com.mola.molachat.chatter.service.ChatterService;
 import com.mola.molachat.common.event.action.BaseAction;
+import com.mola.molachat.common.model.ResponseCode;
+import com.mola.molachat.common.model.ServerResponse;
 import com.mola.molachat.robot.action.FileMessageSendAction;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.bus.RobotEventBus;
@@ -19,7 +21,7 @@ import com.mola.molachat.session.dto.SessionDTO;
 import com.mola.molachat.session.model.FileMessage;
 import com.mola.molachat.session.model.Message;
 import com.mola.molachat.session.service.SessionService;
-import com.mola.molachat.session.solution.SessionSolution;
+import com.mola.molachat.session.solution.MessageSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -53,7 +55,7 @@ public class RobotSolution implements InitializingBean {
 
 
     @Resource
-    private SessionSolution sessionSolution;
+    private MessageSolution messageSolution;
 
     @Resource
     private ChatterService chatterService;
@@ -64,6 +66,9 @@ public class RobotSolution implements InitializingBean {
 
     @Resource
     private ApplicationContext applicationContext;
+
+    @Resource
+    private OcrSolution ocrSolution;
 
     /**
      * 业务线程池
@@ -142,7 +147,7 @@ public class RobotSolution implements InitializingBean {
         SessionDTO session = sessionService.findOrCreateSession(appKey, toChatterId);
         msg.setSessionId(session.getSessionId());
         // 2、向session发送消息
-        sessionSolution.insertMessage(session.getSessionId(), msg);
+        messageSolution.insertMessage(session.getSessionId(), msg);
     }
 
     public String fetchCmdMarkdown(String robotId, String sessionId) {
@@ -157,7 +162,7 @@ public class RobotSolution implements InitializingBean {
             eventBus = applicationContext.getBean(robotChatter.getEventBusBeanName(), RobotEventBus.class);
         }
         // 获取对应的命令描述
-        List<CmdDescription> allCmdDescriptions = eventBus.getAllCmdDescriptions();
+        List<CmdDescription> allCmdDescriptions = eventBus.getAllCmdDescriptions(robotId, sessionId);
         // 远程指令
         Map<String, String> remoteCmdDescMap = CmdSender.INSTANCE.fetchDescriptionMap(sessionId);
         if (MapUtils.isNotEmpty(remoteCmdDescMap)) {
@@ -207,6 +212,12 @@ public class RobotSolution implements InitializingBean {
                 return;
             }
             if (message instanceof FileMessage) {
+                FileMessage fm = (FileMessage) message;
+                ServerResponse<String> result = ocrSolution.ocr(fm);
+                if (result.getStatus() == ResponseCode.SUCCESS.getCode()) {
+                    fm.setOcrResultCache(result.getData());
+                    messageSolution.updateMessage(sessionId, fm);
+                }
                 return;
             }
             MessageReceiveEvent messageReceiveEvent = new MessageReceiveEvent();
@@ -226,7 +237,7 @@ public class RobotSolution implements InitializingBean {
             // 1、查询session，没有则创建
             SessionDTO session = sessionService.findSession(sessionId);
             // 2、向session发送消息
-            sessionSolution.insertMessage(session.getSessionId(), messageByAction);
+            messageSolution.insertMessage(session.getSessionId(), messageByAction);
         }
 
         private Message getMessageByAction(BaseAction action, String sessionId) {
@@ -251,6 +262,9 @@ public class RobotSolution implements InitializingBean {
             if (action instanceof MessageSendAction) {
                 Message msg = new Message();
                 msg.setContent(((MessageSendAction)action).getResponsesText());
+                if (StringUtils.isEmpty(msg.getContent())) {
+                    return null;
+                }
                 msg.setChatterId(robot.getId());
                 msg.setSessionId(sessionId);
                 return msg;

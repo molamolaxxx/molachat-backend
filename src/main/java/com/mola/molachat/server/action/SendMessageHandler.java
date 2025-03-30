@@ -7,7 +7,7 @@ import com.mola.molachat.server.websocket.ActionCode;
 import com.mola.molachat.server.websocket.WSResponse;
 import com.mola.molachat.session.model.Message;
 import com.mola.molachat.common.exception.service.SessionServiceException;
-import com.mola.molachat.session.solution.SessionSolution;
+import com.mola.molachat.session.solution.MessageSolution;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Resource;
@@ -23,7 +23,7 @@ import javax.annotation.Resource;
 public class SendMessageHandler implements WSRequestActionHandler{
 
     @Resource
-    private SessionSolution sessionSolution;
+    private MessageSolution messageSolution;
 
     @Override
     public Integer actonCode() {
@@ -52,7 +52,7 @@ public class SendMessageHandler implements WSRequestActionHandler{
 
         //3.调用session
         try {
-            sessionSolution.insertMessage(data.getString("sessionId"), message);
+            messageSolution.insertMessage(data.getString("sessionId"), message);
         } catch (SessionServiceException e) {
             //发送异常信息
             log.error("插入信息异常", e);

@@ -6,6 +6,8 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.ApplicationContext;
 
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.function.Supplier;
 
 /**
@@ -45,5 +47,29 @@ public class BeanUtilsPlug {
         BeanDefinitionRegistry beanFactory = (BeanDefinitionRegistry) applicationContext.getAutowireCapableBeanFactory();
         beanFactory.registerBeanDefinition(name, beanDefinition);
         return applicationContext.getBean(name, clazz);
+    }
+
+    public static void copyNonNullProperties(Object source, Object target) {
+        // 获取源对象所有属性
+        PropertyDescriptor[] sourceDescriptors = BeanUtils.getPropertyDescriptors(source.getClass());
+
+        for (PropertyDescriptor sourceDescriptor : sourceDescriptors) {
+            try {
+                // 跳过无读方法或不可读的属性
+                if (sourceDescriptor.getReadMethod() == null) continue;
+                Object value = sourceDescriptor.getReadMethod().invoke(source);
+
+                // 仅当值非null时，拷贝到目标对象
+                if (value != null) {
+                    // 获取目标对象对应的属性
+                    PropertyDescriptor targetDescriptor = BeanUtils.getPropertyDescriptor(target.getClass(), sourceDescriptor.getName());
+                    if (targetDescriptor != null && targetDescriptor.getWriteMethod() != null) {
+                        targetDescriptor.getWriteMethod().invoke(target, value);
+                    }
+                }
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException("拷贝属性失败", e);
+            }
+        }
     }
 }

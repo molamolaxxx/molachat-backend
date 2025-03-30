@@ -1,8 +1,8 @@
 package com.mola.molachat.robot.task;
 
 import com.alibaba.fastjson.JSONObject;
-import com.mola.molachat.robot.handler.impl.cmd.OcrCmdHandler;
 import com.mola.molachat.common.utils.HttpUtil;
+import com.mola.molachat.robot.solution.OcrSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
@@ -24,7 +24,6 @@ import java.util.List;
 @Slf4j
 public class TokenRefreshScheduleTask {
 
-
     /**
      * 刷新token
      */
@@ -44,7 +43,7 @@ public class TokenRefreshScheduleTask {
         );
         JSONObject jsonObject = JSONObject.parseObject(result);
         if (jsonObject.containsKey("access_token")) {
-            OcrCmdHandler.TokenHolder.refresh(jsonObject.getString("access_token"));
+            OcrSolution.TokenHolder.refresh(jsonObject.getString("access_token"));
         }
     }
 }

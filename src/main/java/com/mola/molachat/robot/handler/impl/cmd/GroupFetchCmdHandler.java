@@ -40,7 +40,7 @@ public class GroupFetchCmdHandler extends BaseCmdRobotHandler {
     }
 
     @Override
-    public CmdDescription cmdDescription() {
+    public CmdDescription cmdDescription(String robotId, String sessionId) {
         return CmdDescription.builder()
                 .cmdName("fetch")
                 .cmdDesc("获取远程代理命令的group")

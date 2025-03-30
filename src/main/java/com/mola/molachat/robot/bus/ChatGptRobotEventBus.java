@@ -3,6 +3,7 @@ package com.mola.molachat.robot.bus;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.robot.handler.impl.ChatGptRobotHandler;
 import com.mola.molachat.robot.handler.impl.RobotHeuristicHandler;
+import com.mola.molachat.robot.handler.impl.cmd.StopChatStreamRobotHandler;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -24,7 +25,10 @@ public class ChatGptRobotEventBus extends RobotEventBus {
     @Resource
     private RobotHeuristicHandler robotHeuristicHandler;
 
+    @Resource
+    private StopChatStreamRobotHandler stopChatStreamRobotHandler;
+
     protected List<IRobotEventHandler> getRobotEventHandlers() {
-        return Arrays.asList(chatGptRobotHandler, robotHeuristicHandler);
+        return Arrays.asList(stopChatStreamRobotHandler, chatGptRobotHandler, robotHeuristicHandler);
     }
 }

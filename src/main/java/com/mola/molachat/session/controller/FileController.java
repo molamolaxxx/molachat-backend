@@ -7,7 +7,7 @@ import com.mola.molachat.common.config.SelfConfig;
 import com.mola.molachat.session.model.FileMessage;
 import com.mola.molachat.common.handler.FileTransferHandler;
 import com.mola.molachat.session.service.FileService;
-import com.mola.molachat.session.solution.SessionSolution;
+import com.mola.molachat.session.solution.MessageSolution;
 import com.mola.molachat.common.utils.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.fileupload.FileUploadBase;
@@ -34,7 +34,7 @@ public class FileController {
     private FileService fileService;
 
     @Resource
-    private SessionSolution sessionSolution;
+    private MessageSolution messageSolution;
 
     @Resource
     private FileUploadLock lock;
@@ -81,7 +81,7 @@ public class FileController {
             if (sessionId.equals("common-session")) {
                 fileMessage.setCommon(true);
             }
-            sessionSolution.insertMessage(sessionId, fileMessage);
+            messageSolution.insertMessage(sessionId, fileMessage);
 
         } catch (Exception e) {
             e.printStackTrace();

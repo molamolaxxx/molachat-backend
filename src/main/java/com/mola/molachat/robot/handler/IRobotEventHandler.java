@@ -37,7 +37,7 @@ public interface IRobotEventHandler<E extends BaseRobotEvent, A extends BaseActi
         return false;
     }
 
-    default CmdDescription cmdDescription() {
+    default CmdDescription cmdDescription(String robotId, String sessionId) {
         return CmdDescription.NOT_SUPPORT;
     }
 }

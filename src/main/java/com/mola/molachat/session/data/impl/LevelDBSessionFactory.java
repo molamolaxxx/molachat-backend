@@ -131,6 +131,12 @@ public class LevelDBSessionFactory extends SessionFactory{
     }
 
     @Override
+    public void updateMessage(String sessionId, Message message) {
+        super.updateMessage(sessionId, message);
+        levelDBClient.put(levelDBKeyPrefix + sessionId, JSONObject.toJSONString(super.selectById(sessionId)));
+    }
+
+    @Override
     public VideoSession createVideoSession(String requestChatterId, String acceptChatterId) {
         return super.createVideoSession(requestChatterId, acceptChatterId);
     }

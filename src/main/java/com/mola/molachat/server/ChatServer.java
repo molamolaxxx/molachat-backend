@@ -2,17 +2,17 @@ package com.mola.molachat.server;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.Objects;
-import com.mola.molachat.server.websocket.Action;
-import com.mola.molachat.server.websocket.WSResponse;
-import com.mola.molachat.session.model.Message;
 import com.mola.molachat.chatter.enums.ChatterStatusEnum;
-import com.mola.molachat.session.enums.VideoStateEnum;
+import com.mola.molachat.chatter.service.ChatterService;
 import com.mola.molachat.common.exception.service.ServerServiceException;
 import com.mola.molachat.server.action.ActionStrategyContext;
-import com.mola.molachat.server.session.SessionWrapper;
-import com.mola.molachat.chatter.service.ChatterService;
 import com.mola.molachat.server.service.ServerService;
-import com.mola.molachat.session.solution.SessionSolution;
+import com.mola.molachat.server.session.SessionWrapper;
+import com.mola.molachat.server.websocket.Action;
+import com.mola.molachat.server.websocket.WSResponse;
+import com.mola.molachat.session.enums.VideoStateEnum;
+import com.mola.molachat.session.model.Message;
+import com.mola.molachat.session.solution.VideoSessionSolution;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
@@ -44,7 +44,7 @@ public class ChatServer {
     private ServerService serverService;
 
     @Resource
-    private SessionSolution sessionSolution;
+    private VideoSessionSolution videoSessionSolution;
 
     @Resource
     private ChatterService chatterService;
@@ -125,7 +125,7 @@ public class ChatServer {
             chatterService.setChatterStatus(chatterId, ChatterStatusEnum.OFFLINE.getCode());
 
             //3.删除关联的video-session
-            sessionSolution.deleteVideoSession(chatterId);
+            videoSessionSolution.deleteVideoSession(chatterId);
 
             //4、将video状态改为未占用
             chatterService.changeVideoState(chatterId, VideoStateEnum.FREE.getCode());

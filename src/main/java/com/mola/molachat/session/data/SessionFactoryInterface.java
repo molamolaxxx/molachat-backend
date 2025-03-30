@@ -58,6 +58,15 @@ public interface SessionFactoryInterface {
      */
     Message insertMessage(String sessionId, Message message);
 
+
+    /**
+     * 向会话中插入消息
+     * @param sessionId
+     * @param message
+     * @return
+     */
+    void updateMessage(String sessionId, Message message);
+
     /**
      * 创建video-session
      * @param requestChatterId

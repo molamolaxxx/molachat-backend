@@ -4,7 +4,7 @@ import com.google.common.collect.Sets;
 import com.mola.molachat.robot.event.CommandInputEvent;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
 import com.mola.molachat.session.model.Message;
-import com.mola.molachat.session.solution.SessionSolution;
+import com.mola.molachat.session.solution.MessageSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 public class NotifyCmdHandler extends BaseCmdRobotHandler {
 
     @Resource
-    private SessionSolution sessionSolution;
+    private MessageSolution messageSolution;
 
     private final Set<NotifyTask> notifyTaskSet = Sets.newConcurrentHashSet();
 
@@ -111,7 +111,7 @@ public class NotifyCmdHandler extends BaseCmdRobotHandler {
             msg.setContent("【提醒】" + notifyTask.content);
             msg.setChatterId(notifyTask.robotId);
             msg.setSessionId(notifyTask.sessionId);
-            sessionSolution.insertMessage(notifyTask.sessionId, msg);
+            messageSolution.insertMessage(notifyTask.sessionId, msg);
         }
     }
 

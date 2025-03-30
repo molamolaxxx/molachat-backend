@@ -1,28 +1,23 @@
 package com.mola.molachat.robot.handler.impl.cmd;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.Lists;
-import com.mola.molachat.common.config.SelfConfig;
-import com.mola.molachat.robot.model.CmdDescription;
-import com.mola.molachat.session.model.FileMessage;
-import com.mola.molachat.session.model.Message;
-import com.mola.molachat.session.dto.SessionDTO;
+import com.mola.molachat.common.model.ResponseCode;
+import com.mola.molachat.common.model.ServerResponse;
 import com.mola.molachat.robot.event.CommandInputEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
+import com.mola.molachat.robot.model.CmdDescription;
+import com.mola.molachat.robot.solution.OcrSolution;
+import com.mola.molachat.session.dto.SessionDTO;
+import com.mola.molachat.session.model.FileMessage;
+import com.mola.molachat.session.model.Message;
 import com.mola.molachat.session.service.SessionService;
-import com.mola.molachat.common.utils.Base64Util;
-import com.mola.molachat.common.utils.FileUtils;
-import com.mola.molachat.common.utils.OcrHttpUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
-import java.io.File;
-import java.net.URLEncoder;
 import java.util.List;
 
 /**
@@ -36,27 +31,15 @@ import java.util.List;
 public class OcrCmdHandler extends BaseCmdRobotHandler {
 
     private static final String NO_IMAGE = "没有可识别的图片";
-    private static final String FILE_IS_NOT_IMAGE = "ocr不支持非图片类型";
     private static final String NO_RESULT = "没有匹配的结果";
-    private static final String FILE_IS_NOT_EXIST = "文件不存在";
     private static final String OCR_EXCEPTION = "orc识别异常";
-    private static final String QUERY_OCR_URL = "https://aip.baidubce.com/rest/2.0/ocr/v1/accurate_basic";
-
-    public static class TokenHolder {
-
-        private static String accessToken;
-
-        public static void refresh(String accessToken) {
-            TokenHolder.accessToken = accessToken;
-        }
-    }
 
 
     @Resource
     private SessionService sessionService;
 
     @Resource
-    private SelfConfig selfConfig;
+    private OcrSolution ocrSolution;
 
     @Override
     public String getCommand() {
@@ -79,41 +62,19 @@ public class OcrCmdHandler extends BaseCmdRobotHandler {
                 return NO_IMAGE;
             }
             FileMessage fm = (FileMessage) message;
-            if (!FileUtils.isImage(fm.getFileName())) {
-                return FILE_IS_NOT_IMAGE;
+            ServerResponse<String> ocrResult = ocrSolution.ocr(fm);
+            if (ocrResult.getStatus() != ResponseCode.SUCCESS.getCode()) {
+                return ocrResult.getMsg();
             }
-            String fPath = selfConfig.getUploadFilePath() + File.separator + fm.fetchRealStoredFileName(false);
-            File file = new File(fPath);
-            if (!file.exists()) {
-                return FILE_IS_NOT_EXIST;
+            String ocrText = ocrResult.getData();
+            if (StringUtils.isBlank(ocrText)) {
+                return NO_RESULT;
             }
-            byte[] imgData = FileUtils.readFileByBytes(fPath);
-            String imgStr = Base64Util.encode(imgData);
-            String imgParam = URLEncoder.encode(imgStr, "UTF-8");
-            String param = "image=" + imgParam;
-            String result = OcrHttpUtil.post(QUERY_OCR_URL, TokenHolder.accessToken,
-                    param);
-            return getOcrResult(result);
+            return ocrText;
         } catch (Exception e) {
             log.error("OcrCmdHandler exception !" + baseEvent.getSessionId(), e);
             return OCR_EXCEPTION;
         }
-    }
-
-    private String getOcrResult(String result) {
-        StringBuilder stringBuilder = new StringBuilder();
-        JSONObject jsonObject = JSONObject.parseObject(result);
-        JSONArray wordsResult = jsonObject.getJSONArray("words_result");
-        if (CollectionUtils.isEmpty(wordsResult)) {
-            return NO_RESULT;
-        }
-        List<String> allLines = Lists.newArrayList();
-        for (Object o : wordsResult) {
-            JSONObject json = (JSONObject) o;
-            String words = json.getString("words");
-            allLines.add(words);
-        }
-        return String.join("\n", allLines);
     }
 
     @Override
@@ -127,7 +88,7 @@ public class OcrCmdHandler extends BaseCmdRobotHandler {
     }
 
     @Override
-    public CmdDescription cmdDescription() {
+    public CmdDescription cmdDescription(String robotId, String sessionId) {
         return CmdDescription.builder()
                 .cmdName("ocr")
                 .cmdDesc("图片文字提取")

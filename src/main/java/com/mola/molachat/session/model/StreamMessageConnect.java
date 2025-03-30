@@ -47,4 +47,9 @@ public class StreamMessageConnect {
      * 初始化过的server
      */
     private Set<SessionWrapper> initedSessions;
+
+    /**
+     * 连接已关闭
+     */
+    private volatile boolean closed;
 }
