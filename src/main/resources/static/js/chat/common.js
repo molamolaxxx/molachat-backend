@@ -344,7 +344,8 @@ isMarkdownMatch = function (text) {
 }
 
 function isMarkdown(text) {
-    if (text.indexOf("| --- |") !== -1) {
+    const tablePattern = /^\|.*\|.*\|\s*\n\|(\s*:?-{3,}:?\s*\|)+/m;
+    if (tablePattern.test(text)) {
         return true;
     }
     // 常见 Markdown 特征正则表达式

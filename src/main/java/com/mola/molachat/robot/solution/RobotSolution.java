@@ -215,8 +215,10 @@ public class RobotSolution implements InitializingBean {
                 FileMessage fm = (FileMessage) message;
                 ServerResponse<String> result = ocrSolution.ocr(fm);
                 if (result.getStatus() == ResponseCode.SUCCESS.getCode()) {
-                    fm.setOcrResultCache(result.getData());
-                    messageSolution.updateMessage(sessionId, fm);
+                    FileMessage toUpdate = new FileMessage();
+                    toUpdate.setId(fm.getId());
+                    toUpdate.setOcrResultCache(result.getData());
+                    messageSolution.updateMessage(sessionId, toUpdate);
                 }
                 return;
             }

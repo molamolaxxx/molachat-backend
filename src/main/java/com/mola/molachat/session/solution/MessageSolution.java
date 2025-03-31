@@ -108,7 +108,7 @@ public class MessageSolution {
         }
 
         //2.向session中插入message
-        sessionFactory.insertMessage(session.getSessionId(), message);
+        sessionFactory.updateMessage(session.getSessionId(), message);
     }
 
     /**
