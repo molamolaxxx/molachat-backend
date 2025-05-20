@@ -130,6 +130,7 @@ $(document).ready(function () {
             $(streamMessageDom.mainDocChild).on('click', () => {
                 $viewContent[0].triggerMessageId = streamMessageDom.messageId
                 $viewContent[0].innerHTML = buildHighlightContent(streamMessageDom.mainDocChild.innerText)
+                addCopyButtonToPre($viewContent[0])
                 $messageViewModel.modal('open')
             })
         }
@@ -175,6 +176,7 @@ $(document).ready(function () {
                 $(dom.mainDocChild).on('click', () => {
                     $viewContent[0].triggerMessageId = dom.messageId
                     $viewContent[0].innerHTML = buildHighlightContent(dom.mainDocChild.innerText)
+                    addCopyButtonToPre($viewContent[0])
                     $messageViewModel.modal('open')
                 })
                 streamMessageMap.set(message.sessionId, dom)
@@ -189,6 +191,7 @@ $(document).ready(function () {
                 if ($messageViewModel[0].className.indexOf('open') != -1 || end) {
                     if ($viewContent[0].triggerMessageId === dom.messageId) {
                         $viewContent[0].innerHTML = buildHighlightContent(dom.mainDocChild.innerText)
+                        addCopyButtonToPre($viewContent[0])
                         scrollToMessageViewBottom(100)
                     }
                 }

@@ -9,6 +9,7 @@ import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
 import com.mola.molachat.robot.handler.impl.ChatGptRobotHandler;
 import com.mola.molachat.robot.handler.impl.ImageGenerateChatHandler;
 import com.mola.molachat.robot.handler.impl.cmd.StopChatStreamRobotHandler;
+import com.mola.molachat.robot.handler.impl.mcp.McpExecHandler;
 import com.mola.molachat.robot.model.CmdDescription;
 import com.mola.molachat.session.model.Message;
 import org.springframework.beans.factory.InitializingBean;
@@ -73,7 +74,8 @@ public class RobotEventBus implements EventBus<BaseRobotEvent, BaseAction>, Init
         for (IRobotEventHandler robotEventHandler : this.robotEventHandlers) {
             if (robotEventHandler instanceof ChatGptRobotHandler
                     || robotEventHandler instanceof ImageGenerateChatHandler
-                    || robotEventHandler instanceof StopChatStreamRobotHandler) {
+                    || robotEventHandler instanceof StopChatStreamRobotHandler
+                    || robotEventHandler instanceof McpExecHandler) {
                 continue;
             }
             robotEventHandlers.add(robotEventHandler);

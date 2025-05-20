@@ -78,6 +78,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
 
     public static final String ALERT_TEXT = "账户已失效";
 
+    public static final String STREAM_FORCE_STOP = "访问异常，输出流自动关闭";
+
     public static final String PROXY_ERROR = "代理异常, 请重试";
 
     public static final String CLEAR_CMD = "#clear#";
@@ -128,6 +130,9 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             }
         } catch (Exception e) {
             log.error("RemoteRobotChatHandler ChatGptRobotHandler error event:" + JSONObject.toJSONString(messageReceiveEvent), e);
+            // 强制关闭流
+            messageSolution.stopStream(messageReceiveEvent.getRobotChatter().getId(),
+                    messageReceiveEvent.getSessionId());
             if (StringUtils.containsIgnoreCase(e.getMessage(), "You exceeded your current quota")) {
                 chatGptSolution.removeApiKey(usedApiKey);
                 // 不可用告警
@@ -219,6 +224,17 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                     return !stop;
                 });
 
+        // 如果stream未结束，则强制结束
+        streamConnect = messageSolution.findStreamConnect(messageReceiveEvent.getRobotChatter().getId(),
+                messageReceiveEvent.getSessionId());
+        if (streamConnect != null) {
+            messageSolution.stopStream(messageReceiveEvent.getRobotChatter().getId(),
+                    messageReceiveEvent.getSessionId());
+            log.error("streamConnect is not stop, force stop {}", streamConnect);
+            messageSendAction.setResponsesText(STREAM_FORCE_STOP);
+            return messageSendAction;
+        }
+
         log.info("RemoteRobotChatHandler processWithStream success, action:" + JSONObject.toJSONString(messageSendAction));
         messageSendAction.setSkip(true);
         return messageSendAction;
@@ -289,7 +305,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 if (content.length() > maxPromptMsgSize && i != messageList.size() - 1) {
                     content = content.substring(0, maxPromptMsgSize);
                 }
-                if (ALERT_TEXT.equals(content) || PROXY_ERROR.equals(content)) {
+                if (ALERT_TEXT.equals(content) || PROXY_ERROR.equals(content)
+                        || STOP_STEAM_CMD.equals(content) || STREAM_FORCE_STOP.equals(content)) {
                     continue;
                 }
                 if (content.contains(THINK_START) && content.contains(THINK_END)) {

@@ -9,9 +9,13 @@ $(document).ready(function () {
     var inEditMode = false
 
     // 配置marked采用高亮
+    const originalCodes = [];
     marked.setOptions({
         highlight: function (code, lang) {
-            return hljs.highlightAuto(code).value;
+            const res = hljs.highlightAuto(code + (window.innerWidth <= 600 ? "\n " : ""))
+            // code 参数即为原始代码内容
+            originalCodes.push(code);
+            return res.value;
         },
         langPrefix: 'hljs '
     });
@@ -123,6 +127,7 @@ $(document).ready(function () {
                     // 流消息会自动刷新模态框，不用重置
                     $viewContent[0].triggerMessageId = mainDoc.messageId
                     $viewContent[0].innerHTML = buildHighlightContent(content)
+                    addCopyButtonToPre($viewContent[0])
                     $viewModal.modal('open')
                 }
                 $(copyIcon).on('click', onClickCallback)
@@ -136,6 +141,20 @@ $(document).ready(function () {
             }
         }
         return mainDoc;
+    }
+
+    addCopyButtonToPre = function (doc) {
+        // 为所有pre元素添加复制按钮
+        doc.querySelectorAll('pre').forEach(pre => {
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'copy-btn';
+            copyBtn.textContent = 'Copy';
+            copyBtn.toCopy = originalCodes.shift()
+            copyBtn.onclick = () => copyText(copyBtn.toCopy);
+            pre.appendChild(copyBtn);/*  */
+        });
+        // 清空代码缓存
+        originalCodes.splice(0, originalCodes.length)
     }
 
     buildHighlightContent = function (content) {
@@ -360,7 +379,7 @@ $(document).ready(function () {
         sendMessageInner(content)
     })
 
-    sendMessageInner = function(content) {
+    sendMessageInner = function (content) {
         //显示在屏幕上，滚动
         addMessage($chatMsg, content, true);
 

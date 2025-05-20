@@ -194,4 +194,23 @@ public class MessageSolution {
         }
     }
 
+    public void stopStream(String senderId, String sessionId) {
+        //1.查询是否存在对应session
+        Session session = sessionFactory.selectById(sessionId);
+        if (null == session){
+            throw new SessionServiceException(ServiceErrorEnum.SESSION_NOT_FOUND);
+        }
+
+        StreamMessageConnect streamConnect = findStreamConnect(senderId, sessionId);
+        if (streamConnect == null) {
+            return;
+        }
+
+        streamMessageConnectPool.remove(streamConnect);
+        Message message = new Message();
+        BeanUtils.copyProperties(streamConnect, message);
+        message.setContent(streamConnect.getMessageContent().toString());
+        sessionFactory.insertMessage(session.getSessionId(), message);
+    }
+
 }

@@ -435,6 +435,18 @@ getStringLength = function (str) {
     return length;
 }
 
+
+var flowControlTimeID = null
+flowControl = function(timeout) {
+    if (flowControlTimeID) {
+        return false
+    }
+    flowControlTimeID = setTimeout(() => {
+        flowControlTimeID = null
+    }, timeout)
+    return true
+}    
+
 shortenString = function (str, cnt) {
     var length = 0;
     var shortenStr = ""

@@ -1,10 +1,10 @@
 package com.mola.molachat.robot.creator;
 
-import com.mola.molachat.common.config.AppConfig;
 import com.mola.molachat.chatter.data.ChatterFactoryInterface;
-import com.mola.molachat.chatter.model.RobotChatter;
 import com.mola.molachat.chatter.enums.ChatterStatusEnum;
 import com.mola.molachat.chatter.enums.ChatterTagEnum;
+import com.mola.molachat.chatter.model.RobotChatter;
+import com.mola.molachat.common.config.AppConfig;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -16,7 +16,7 @@ import javax.annotation.Resource;
  * @date : 2023-06-10 23:05
  **/
 @Component
-public class ToolRobotCreator implements RobotCreator{
+public class McpCreator implements RobotCreator{
 
     @Resource
     private AppConfig appConfig;
@@ -28,20 +28,20 @@ public class ToolRobotCreator implements RobotCreator{
     public RobotChatter create() {
         RobotChatter robot = new RobotChatter();
         robot.setId(matchedAppKey());
-        robot.setName("工具人胡桃");
-        robot.setSignature("我是一个可爱的工具人");
+        robot.setName("流水线之王");
+        robot.setSignature("Model Context Protocol");
         robot.setStatus(ChatterStatusEnum.ONLINE.getCode());
         robot.setTag(ChatterTagEnum.ROBOT.getCode());
-        robot.setImgUrl("img/hutao.jpeg");
+        robot.setImgUrl("img/mcp.png");
         robot.setIp("127.0.0.1");
         robot.setAppKey(matchedAppKey());
         robot.setApiKey(appConfig.getRobotApiKey().get(matchedAppKey()));
-        robot.setEventBusBeanName("robotEventBus");
+        robot.setEventBusBeanName("mcpEventBus");
         return (RobotChatter) chatterFactory.create(robot);
     }
 
     @Override
     public String matchedAppKey() {
-        return "toolRobot";
+        return "mcp";
     }
 }
