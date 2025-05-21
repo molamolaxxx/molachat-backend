@@ -9,6 +9,7 @@ import com.mola.cmd.proxy.client.consumer.CmdSender;
 import com.mola.cmd.proxy.client.resp.CmdInvokeResponse;
 import com.mola.cmd.proxy.client.resp.CmdResponseContent;
 import com.mola.molachat.common.event.action.BaseAction;
+import com.mola.molachat.common.utils.Base64Util;
 import com.mola.molachat.common.utils.KvUtils;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
@@ -16,6 +17,7 @@ import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.robot.model.CmdDescription;
 import com.mola.molachat.robot.solution.ChatGptSolution;
+import com.mola.molachat.session.model.Message;
 import com.mola.molachat.session.model.StreamMessage;
 import com.mola.molachat.session.solution.MessageSolution;
 import lombok.AllArgsConstructor;
@@ -36,6 +38,7 @@ import java.util.stream.Collectors;
  * @date : 2025-05-18 10:59
  **/
 @Component
+@Slf4j
 public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, BaseAction> {
 
     private Map<String, McpProcess> processMap = Maps.newConcurrentMap();
@@ -96,6 +99,13 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             return MessageSendAction.skip();
         }
 
+        if (userRequest.startsWith("#settings#")) {
+            userRequest = userRequest.replace("#settings# ", "");
+            kvUtils.set("mcpUserConfig_" + sessionId, userRequest,
+                    messageReceiveEvent.getMessage().getChatterId());
+            return MessageSendAction.withResp("用户设置成功");
+        }
+
         if (processMap.containsKey(processUniKey)) {
             return MessageSendAction.withResp("当前Mcp流程正在进行中，请稍后提交");
         }
@@ -137,6 +147,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
             return MessageSendAction.withResp("Mcp流程执行完成");
         } catch (Exception e) {
+            log.error("McpExecHandler error", e);
             return MessageSendAction.withResp("Mcp流程执行失败，原因：" + e.getMessage());
         } finally {
             processMap.remove(processUniKey);
@@ -204,7 +215,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     Map<String, String> resultMap = cmdResp.getData().getResultMap();
 
                     String cmdResult = resultMap.getOrDefault("result", "无");
-                    sendNotify(String.format("执行命令%s完成\n入参:%s\n结果:%s",
+                    sendNotifyImmediately(String.format("执行命令%s完成\n入参:%s\n结果:%s",
                             entry.getKey(), JSON.toJSON(entry.getValue()), cmdResult));
                     cmdHistory.add(Pair.of(nextCmd, cmdResult));
                 }
@@ -271,7 +282,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
             // userConfig
             parsed = parsed.replace(USER_CONFIG_PLACE_HOLDER,
-                    kvUtils.getStringOrDefault("mcpUserConfig", "无"));
+                    kvUtils.getStringOrDefault("mcpUserConfig_" + sessionId, "无"));
 
             // history
             List<String> history = cmdHistory.stream()
@@ -314,6 +325,15 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 }
             }
         }
+
+        public void sendNotifyImmediately(String content) {
+            Message msg = new Message();
+            msg.setContent(content);
+            msg.setChatterId(robotId);
+            msg.setSessionId(sessionId);
+            msg.setCreateTime(new Date());
+            messageSolution.insertMessage(sessionId, msg);
+        }
     }
 
     @Override
@@ -327,6 +347,11 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     .executeScript("sendMessageInner('#clear-mcp#')")
                     .build();
         }
-        return CmdDescription.NOT_SUPPORT;
+        String userSetting = kvUtils.getStringOrDefault("mcpUserConfig_" + sessionId, "无");
+        return CmdDescription.builder()
+                .cmdName("#settings#")
+                .cmdDesc("Mcp用户设置")
+                .executeScript(String.format("popupAndSendCmd('#settings#','%s')", Base64Util.encodeBase64(userSetting)))
+                .build();
     }
 }

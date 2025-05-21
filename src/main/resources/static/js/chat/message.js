@@ -397,4 +397,11 @@ $(document).ready(function () {
 
         socket.send(JSON.stringify(action));
     }
+
+    popupAndSendCmd = function(cmd, args) {
+        const bytes = Uint8Array.from(atob(args), c => c.charCodeAt(0));
+        args = new TextDecoder().decode(bytes);
+        $editModal.modal('open')
+        $chatEditor.val(cmd + " " + args)
+    }
 });

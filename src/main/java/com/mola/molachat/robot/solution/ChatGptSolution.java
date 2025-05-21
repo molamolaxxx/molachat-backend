@@ -76,6 +76,7 @@ public class ChatGptSolution {
             headers.add(new BasicHeader("Authorization", "Bearer " + chatGptChatter.getApiKey()));
             String res = HttpUtil.INSTANCE.post("https://api.sambanova.ai/v1/chat/completions",
                     body, 300000, headers.toArray(new Header[]{}));
+            log.info("ChatGptSolution invoke, body = {}, res = {}", body, res);
             return parseResult(res);
         } catch (InterruptedException e) {
             throw new RuntimeException("请求超时");

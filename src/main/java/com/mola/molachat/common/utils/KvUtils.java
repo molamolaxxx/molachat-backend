@@ -46,9 +46,15 @@ public class KvUtils {
         return keyValue.getValue();
     }
 
-    public void set(String key, String value) {
+    public void set(String key, String value, String userId) {
         KeyValue keyValue = keyValueFactory.selectOne(key);
         if (Objects.isNull(keyValue)) {
+            keyValueFactory.save(KeyValue.builder()
+                    .owner("system")
+                    .desc("系统变量")
+                    .share(false)
+                    .key(key)
+                    .value(value).build());
             return;
         }
         keyValue.setValue(value);
