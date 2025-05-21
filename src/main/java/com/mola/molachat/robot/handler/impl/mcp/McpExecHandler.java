@@ -74,7 +74,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             "已经执行完成的指令列表：\n" +
             "%CMD_HISTORY%" +
             "\n" +
-            "当前有指令时，你需要输出一组相同类型的指令，指令以#start#开头，#end#结尾，每个指令占一行\n" +
+            "当前有指令时，你只需要输出一组相同类型的指令，指令以#start#开头，#end#结尾，每个指令占一行\n" +
             "当前执行完成的指令已经满足用户需求时，无需执行后续的指令，请输出#start#无指令#end#\n，如果用户需要分析指令执行结果，请满足用户需求";
     @Resource
     private ChatGptSolution chatGptSolution;
