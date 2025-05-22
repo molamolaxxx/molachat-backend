@@ -208,6 +208,14 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                         terminate = true;
                         break;
                     }
+                    if (CollectionUtils.isNotEmpty(cmdHistory)) {
+                        String latestCmd = cmdHistory.get(cmdHistory.size() - 1).getFirst();
+                        if (Objects.equals(latestCmd, nextCmd)) {
+                            sendNotify("识别到重复命令，流程终止");
+                            terminate = true;
+                            break;
+                        }
+                    }
                     // 执行命令
                     CmdInvokeResponse<CmdResponseContent> cmdResp = CmdSender.INSTANCE
                             .send(entry.getKey(), sessionId, entry.getValue());
@@ -309,19 +317,30 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
         public void sendNotify(String content) {
             char[] charArray = content.toCharArray();
+            int batchSize = Math.max(charArray.length / 100, 2);
+            StringBuilder builder = new StringBuilder();
+
             for (int i = 0; i < charArray.length; i++) {
+                builder.append(charArray[i]);
+                if (i % batchSize != 0 && i < charArray.length - 1) {
+                    continue;
+                }
                 // 发送流式消息
                 StreamMessage msg = new StreamMessage();
-                msg.setContent(String.valueOf(charArray[i]));
+                msg.setContent(builder.toString());
                 msg.setChatterId(robotId);
                 msg.setSessionId(sessionId);
                 msg.setCreateTime(new Date());
-                msg.setEnd(i == charArray.length - 1);
+                msg.setEnd(i == charArray.length - 1 || terminate);
                 messageSolution.sendStreamMessage(sessionId, msg);
+                builder = new StringBuilder();
                 try {
                     Thread.sleep(new Random().nextInt(30) + 10);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
+                }
+                if (terminate) {
+                    return;
                 }
             }
         }

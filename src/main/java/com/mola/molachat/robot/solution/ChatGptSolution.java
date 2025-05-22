@@ -63,7 +63,8 @@ public class ChatGptSolution {
         String result = null;
         try {
             JSONObject body = new JSONObject();
-            String modelName = kvUtils.getStringOrDefault("chatGptModelName", "Llama-3.2-90B-Vision-Instruct");
+            String modelName = kvUtils.getStringOrDefault("chatGptModelName_chatGpt",
+                    "Llama-3.2-90B-Vision-Instruct");
             body.put("model", modelName);
             List<Map<String, String>> prompt = getInvokePrompt(input, systemPrompt);
             log.info(JSONObject.toJSONString(prompt));
@@ -74,8 +75,9 @@ public class ChatGptSolution {
             List<Header> headers = new ArrayList<>();
             headers.add(new BasicHeader("Content-Type", "application/json"));
             headers.add(new BasicHeader("Authorization", "Bearer " + chatGptChatter.getApiKey()));
-            String res = HttpUtil.INSTANCE.post("https://api.sambanova.ai/v1/chat/completions",
-                    body, 300000, headers.toArray(new Header[]{}));
+
+            String modelUrl = kvUtils.getStringOrDefault("modelUrl_chatGpt", "https://api.sambanova.ai/v1/chat/completions");
+            String res = HttpUtil.INSTANCE.post(modelUrl, body, 300000, headers.toArray(new Header[]{}));
             log.info("ChatGptSolution invoke, body = {}, res = {}", body, res);
             return parseResult(res);
         } catch (InterruptedException e) {
