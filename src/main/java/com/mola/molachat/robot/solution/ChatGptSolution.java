@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Function;
 
 /**
  * @author : molamola
@@ -52,10 +53,11 @@ public class ChatGptSolution {
      * @return
      */
     public String invoke(String input) {
-        return invoke(input, null);
+        return invoke(input, null, false, null);
     }
 
-    public String invoke(String input, String systemPrompt) {
+    public String invoke(String input, String systemPrompt, boolean useStream,
+                         Function<String, Boolean> responseConsumer) {
         ChatterDTO chatGptChatter = chatterService.selectById("chatGpt");
         Assert.notNull(chatGptChatter, "chatGpt robot is null");
         Assert.isTrue(chatGptChatter.isRobot(), "chatGpt robot is not robot");
@@ -69,7 +71,7 @@ public class ChatGptSolution {
             List<Map<String, String>> prompt = getInvokePrompt(input, systemPrompt);
             log.info(JSONObject.toJSONString(prompt));
             body.put("messages", prompt);
-            body.put("stream", false);
+            body.put("stream", useStream);
 
             // headers
             List<Header> headers = new ArrayList<>();
@@ -77,9 +79,17 @@ public class ChatGptSolution {
             headers.add(new BasicHeader("Authorization", "Bearer " + chatGptChatter.getApiKey()));
 
             String modelUrl = kvUtils.getStringOrDefault("modelUrl_chatGpt", "https://api.sambanova.ai/v1/chat/completions");
-            String res = HttpUtil.INSTANCE.post(modelUrl, body, 300000, headers.toArray(new Header[]{}));
-            log.info("ChatGptSolution invoke, body = {}, res = {}", body, res);
-            return parseResult(res);
+            // 非流
+            if (!useStream) {
+                String res = HttpUtil.INSTANCE.post(modelUrl, body, 300000, headers.toArray(new Header[]{}));
+                log.info("ChatGptSolution invoke, body = {}, res = {}", body, res);
+                return parseResult(res);
+            }
+
+            // 流式处理
+            HttpUtil.INSTANCE.postWithStreamRes(modelUrl, body, 300000,
+                    headers.toArray(new Header[]{}), responseConsumer);
+            return null;
         } catch (InterruptedException e) {
             throw new RuntimeException("请求超时");
         } catch (Exception e) {

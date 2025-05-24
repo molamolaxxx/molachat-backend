@@ -186,10 +186,11 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
         public void start() {
             while (!terminate) {
-                String result = chatGptSolution.invoke(buildRequest());
-                sendNotify(result);
+                StringBuilder result = new StringBuilder();
+                chatGptSolution.invoke(buildRequest(),
+                        null, true, part -> processStream(part, result));
                 // 提取命令列表
-                List<String> nextCmdList = parseNextCmd(result);
+                List<String> nextCmdList = parseNextCmd(result.toString());
                 if (CollectionUtils.isEmpty(nextCmdList)) {
                     terminate = true;
                     break;
@@ -267,6 +268,30 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 }
             }
             return commands;
+        }
+
+        public boolean processStream(String part, StringBuilder result) {
+            try {
+                Thread.sleep(new Random().nextInt(50) + 50);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            boolean stop = ChatGptSolution.isStreamResultStop(part) || terminate;
+
+            // 内容
+            String content = ChatGptSolution.parseStreamContent(part, "content");
+            if (content != null) {
+                result.append(content);
+                // 发送流式消息
+                StreamMessage msg = new StreamMessage();
+                msg.setContent(content);
+                msg.setChatterId(robotId);
+                msg.setSessionId(sessionId);
+                msg.setCreateTime(new Date());
+                msg.setEnd(stop);
+                messageSolution.sendStreamMessage(sessionId, msg);
+            }
+            return !stop;
         }
 
         public Map.Entry<String, String[]> splitParam(String inputText) {
