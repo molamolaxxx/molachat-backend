@@ -1,8 +1,10 @@
 package com.mola.molachat.robot.handler.impl.cmd;
 
+import com.mola.molachat.common.utils.Base64Util;
+import com.mola.molachat.common.utils.OperatorUtils;
 import com.mola.molachat.robot.event.CommandInputEvent;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
-import com.mola.molachat.common.utils.OperatorUtils;
+import com.mola.molachat.robot.model.CmdDescription;
 import org.springframework.stereotype.Component;
 
 /**
@@ -36,5 +38,16 @@ public class EvalCmdHandler extends BaseCmdRobotHandler {
     @Override
     public String getDesc() {
         return "计算表达式";
+    }
+
+
+    @Override
+    public CmdDescription cmdDescription(String robotId, String sessionId) {
+        return CmdDescription.builder()
+                .cmdName("eval")
+                .cmdDesc("计算表达式")
+                .executeScript(String.format("popupAndSendCmd('eval','%s')",
+                        Base64Util.encodeBase64("1 + 2 + 3)")))
+                .build();
     }
 }

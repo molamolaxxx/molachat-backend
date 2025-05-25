@@ -1,7 +1,9 @@
 package com.mola.molachat.robot.handler.impl.cmd;
 
+import com.mola.molachat.common.utils.Base64Util;
 import com.mola.molachat.robot.event.CommandInputEvent;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
+import com.mola.molachat.robot.model.CmdDescription;
 import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
@@ -35,5 +37,15 @@ public class DateFormatHandler extends BaseCmdRobotHandler {
     @Override
     public Integer order() {
         return 0;
+    }
+
+    @Override
+    public CmdDescription cmdDescription(String robotId, String sessionId) {
+        return CmdDescription.builder()
+                .cmdName("date")
+                .cmdDesc("转换时间戳到日期")
+                .executeScript(String.format("popupAndSendCmd('date','%s')",
+                        Base64Util.encodeBase64(String.valueOf(new Date().getTime()))))
+                .build();
     }
 }

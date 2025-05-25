@@ -138,14 +138,15 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     false,
                     chatGptSolution,
                     kvUtils,
-                    messageSolution
+                    messageSolution,0,0
             );
             processMap.put(processUniKey, mcpProcess);
 
             // 开启
             mcpProcess.start();
 
-            return MessageSendAction.withResp("Mcp流程执行完成");
+            return MessageSendAction.withResp(
+                    String.format("Mcp流程执行完成，输入token：%s，输出token：%s", mcpProcess.usedInputToken, mcpProcess.usedOutputToken));
         } catch (Exception e) {
             log.error("McpExecHandler error", e);
             return MessageSendAction.withResp("Mcp流程执行失败，原因：" + e.getMessage());
@@ -184,11 +185,18 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
         private MessageSolution messageSolution;
 
+        private int usedInputToken;
+
+        private int usedOutputToken;
+
         public void start() {
             while (!terminate) {
+                String request = buildRequest();
                 StringBuilder result = new StringBuilder();
-                chatGptSolution.invoke(buildRequest(),
-                        null, true, part -> processStream(part, result));
+                chatGptSolution.invoke(request, null, true,
+                        part -> processStream(part, result));
+                usedInputToken += request.length();
+                usedOutputToken += result.length();
                 // 提取命令列表
                 List<String> nextCmdList = parseNextCmd(result.toString());
                 if (CollectionUtils.isEmpty(nextCmdList)) {

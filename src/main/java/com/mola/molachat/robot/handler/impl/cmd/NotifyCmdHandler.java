@@ -1,8 +1,10 @@
 package com.mola.molachat.robot.handler.impl.cmd;
 
 import com.google.common.collect.Sets;
+import com.mola.molachat.common.utils.Base64Util;
 import com.mola.molachat.robot.event.CommandInputEvent;
 import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
+import com.mola.molachat.robot.model.CmdDescription;
 import com.mola.molachat.session.model.Message;
 import com.mola.molachat.session.solution.MessageSolution;
 import lombok.extern.slf4j.Slf4j;
@@ -185,5 +187,15 @@ public class NotifyCmdHandler extends BaseCmdRobotHandler {
     @Override
     public Integer order() {
         return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public CmdDescription cmdDescription(String robotId, String sessionId) {
+        return CmdDescription.builder()
+                .cmdName("notify")
+                .cmdDesc("定时提醒")
+                .executeScript(String.format("popupAndSendCmd('notify','%s')",
+                        Base64Util.encodeBase64("提醒内容 1m")))
+                .build();
     }
 }
