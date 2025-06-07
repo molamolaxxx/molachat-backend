@@ -78,7 +78,7 @@ public class MessageSolution {
         for (String chatterId : session.getChatterSet().stream().map(Chatter::getId).collect(Collectors.toList())){
             Chatter chatter = chatterFactory.select(chatterId);
             // 如果为机器人，进行插槽调用，利用handler解析message
-            if (chatter instanceof RobotChatter) {
+            if (chatter instanceof RobotChatter && !Objects.equals(message.getChatterId(), chatter.getId())) {
                 robotSolution.onReceiveMessage(message, sessionId, (RobotChatter)chatter);
                 continue;
             }
