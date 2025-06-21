@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * @author : molamola
  * @Project: molachat
@@ -17,7 +20,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CmdDescription {
 
-    public static final CmdDescription NOT_SUPPORT = new CmdDescription();
+    public static final List<CmdDescription> NOT_SUPPORT = Collections.emptyList();
 
     /**
      * 命令名称
@@ -34,12 +37,34 @@ public class CmdDescription {
      */
     private String executeScript;
 
-    public boolean support() {
-        return this != NOT_SUPPORT;
-    }
-
     public String renderLine() {
         return String.format("| %s | %s| <button class=\"blue-ring-button\" onClick=\"%s;closeMessageView()\">触发</button> |",
                 cmdName, cmdDesc, executeScript);
+    }
+
+    public static class CmdDescriptionListBuilder extends CmdDescriptionBuilder {
+
+        public List<CmdDescription> buildSingleton() {
+            return Collections.singletonList(super.build());
+        }
+
+        @Override
+        public CmdDescriptionListBuilder cmdName(String cmdName) {
+            return (CmdDescriptionListBuilder)super.cmdName(cmdName);
+        }
+
+        @Override
+        public CmdDescriptionListBuilder cmdDesc(String cmdDesc) {
+            return (CmdDescriptionListBuilder)super.cmdDesc(cmdDesc);
+        }
+
+        @Override
+        public CmdDescriptionListBuilder executeScript(String executeScript) {
+            return (CmdDescriptionListBuilder)super.executeScript(executeScript);
+        }
+    }
+
+    public static CmdDescriptionListBuilder builder() {
+        return new CmdDescriptionListBuilder();
     }
 }

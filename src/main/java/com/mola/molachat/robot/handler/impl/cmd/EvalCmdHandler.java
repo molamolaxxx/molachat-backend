@@ -7,6 +7,8 @@ import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
 import com.mola.molachat.robot.model.CmdDescription;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 /**
  * @author : molamola
  * @Project: molachat
@@ -42,12 +44,12 @@ public class EvalCmdHandler extends BaseCmdRobotHandler {
 
 
     @Override
-    public CmdDescription cmdDescription(String robotId, String sessionId) {
+    public List<CmdDescription> cmdDescriptions(String robotId, String sessionId) {
         return CmdDescription.builder()
                 .cmdName("eval")
                 .cmdDesc("计算表达式")
                 .executeScript(String.format("popupAndSendCmd('eval','%s')",
                         Base64Util.encodeBase64("1 + 2 + 3)")))
-                .build();
+                .buildSingleton();
     }
 }

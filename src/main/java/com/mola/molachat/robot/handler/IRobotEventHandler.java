@@ -4,6 +4,8 @@ import com.mola.molachat.common.event.action.BaseAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.model.CmdDescription;
 
+import java.util.List;
+
 /**
  * @author : molamola
  * @Project: molachat
@@ -37,7 +39,7 @@ public interface IRobotEventHandler<E extends BaseRobotEvent, A extends BaseActi
         return false;
     }
 
-    default CmdDescription cmdDescription(String robotId, String sessionId) {
+    default List<CmdDescription> cmdDescriptions(String robotId, String sessionId) {
         return CmdDescription.NOT_SUPPORT;
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author : molamola
@@ -57,13 +58,13 @@ public class DateParseHandler extends BaseCmdRobotHandler {
     }
 
     @Override
-    public CmdDescription cmdDescription(String robotId, String sessionId) {
+    public List<CmdDescription> cmdDescriptions(String robotId, String sessionId) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return CmdDescription.builder()
                 .cmdName("time")
                 .cmdDesc("转换日期到时间戳")
                 .executeScript(String.format("popupAndSendCmd('time','%s')",
                         Base64Util.encodeBase64(dateFormat.format(new Date()))))
-                .build();
+                .buildSingleton();
     }
 }

@@ -13,10 +13,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -190,12 +187,12 @@ public class NotifyCmdHandler extends BaseCmdRobotHandler {
     }
 
     @Override
-    public CmdDescription cmdDescription(String robotId, String sessionId) {
+    public List<CmdDescription> cmdDescriptions(String robotId, String sessionId) {
         return CmdDescription.builder()
                 .cmdName("notify")
                 .cmdDesc("定时提醒")
                 .executeScript(String.format("popupAndSendCmd('notify','%s')",
                         Base64Util.encodeBase64("提醒内容 1m")))
-                .build();
+                .buildSingleton();
     }
 }

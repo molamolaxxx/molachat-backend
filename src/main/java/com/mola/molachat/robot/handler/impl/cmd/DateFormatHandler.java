@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author : molamola
@@ -40,12 +41,12 @@ public class DateFormatHandler extends BaseCmdRobotHandler {
     }
 
     @Override
-    public CmdDescription cmdDescription(String robotId, String sessionId) {
+    public List<CmdDescription> cmdDescriptions(String robotId, String sessionId) {
         return CmdDescription.builder()
                 .cmdName("date")
                 .cmdDesc("转换时间戳到日期")
                 .executeScript(String.format("popupAndSendCmd('date','%s')",
                         Base64Util.encodeBase64(String.valueOf(new Date().getTime()))))
-                .build();
+                .buildSingleton();
     }
 }

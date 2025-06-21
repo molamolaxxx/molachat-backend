@@ -88,11 +88,11 @@ public class OcrCmdHandler extends BaseCmdRobotHandler {
     }
 
     @Override
-    public CmdDescription cmdDescription(String robotId, String sessionId) {
+    public List<CmdDescription> cmdDescriptions(String robotId, String sessionId) {
         return CmdDescription.builder()
                 .cmdName("ocr")
                 .cmdDesc("图片文字提取")
                 .executeScript("sendMessageInner('ocr')")
-                .build();
+                .buildSingleton();
     }
 }

@@ -7,6 +7,7 @@ import com.mola.molachat.chatter.dto.ChatterDTO;
 import com.mola.molachat.chatter.model.RobotChatter;
 import com.mola.molachat.chatter.service.ChatterService;
 import com.mola.molachat.common.config.AppConfig;
+import com.mola.molachat.common.utils.Base64Util;
 import com.mola.molachat.common.utils.HttpUtil;
 import com.mola.molachat.common.utils.KvUtils;
 import com.mola.molachat.robot.action.MessageSendAction;
@@ -84,6 +85,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
 
     public static final String CLEAR_CMD = "#clear#";
 
+    public static final String SETTINGS = "#settings#";
+
     public static final String STOP_STEAM_CMD = "#stop-stream#";
 
     private static final int RETRY_TIME = 12;
@@ -101,9 +104,17 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         Message message = messageReceiveEvent.getMessage();
         // 默认主账号
         String usedApiKey = robotChatter.getApiKey();
+        String content = message.getContent();
         try {
+            if (content.startsWith(SETTINGS)) {
+                content = content.replace( SETTINGS + " ", "");
+                kvUtils.set("modelUserConfig_" + message.getSessionId(), content,
+                        messageReceiveEvent.getMessage().getChatterId());
+                return MessageSendAction.withResp("设置成功");
+            }
             if (CLEAR_CMD.equals(messageReceiveEvent.getMessage().getContent())
-             || STOP_STEAM_CMD.equals(messageReceiveEvent.getMessage().getContent())) {
+             || STOP_STEAM_CMD.equals(messageReceiveEvent.getMessage().getContent())
+             || SETTINGS.equals(messageReceiveEvent.getMessage().getContent())) {
                 messageSendAction.setSkip(true);
                 return messageSendAction;
             }
@@ -269,13 +280,17 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         ChatterDTO chatterDTO = chatterService.selectById(messageReceiveEvent.getMessage().getChatterId());
 
         RobotChatter robotChatter = messageReceiveEvent.getRobotChatter();
-        messageInput.add(getLine("system",
-                "你是一个专业的女程序员，名字叫做" + robotChatter.getName() +
-                "；你的语言柔和，逻辑严谨，你的个性签名是:" + robotChatter.getSignature() +
-                "，与你对话的人名字叫做:" + chatterDTO.getName()));
         String sessionId = messageReceiveEvent.getSessionId();
         SessionDTO session = sessionService.findSession(sessionId);
         Assert.notNull(session, "session is null in getPrompt，" + sessionId);
+
+//        messageInput.add(getLine("system",
+//                "你是一个专业的女程序员，名字叫做" + robotChatter.getName() +
+//                "；你的语言柔和，逻辑严谨，你的个性签名是:" + robotChatter.getSignature() +
+//                "，与你对话的人名字叫做:" + chatterDTO.getName()));
+        messageInput.add(getLine("system",
+                kvUtils.getStringOrDefault("modelUserConfig_" + sessionId, "")));
+
         List<Message> messageList = session.getMessageList();
         if (CollectionUtils.isEmpty(messageList)) {
             messageInput.add(getLine("user", messageReceiveEvent.getMessage().getContent()));
@@ -306,7 +321,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                     content = content.substring(0, maxPromptMsgSize);
                 }
                 if (ALERT_TEXT.equals(content) || PROXY_ERROR.equals(content)
-                        || STOP_STEAM_CMD.equals(content) || STREAM_FORCE_STOP.equals(content)) {
+                        || STOP_STEAM_CMD.equals(content) || STREAM_FORCE_STOP.equals(content)
+                      || SETTINGS.equals(content)) {
                     continue;
                 }
                 if (content.contains(THINK_START) && content.contains(THINK_END)) {
@@ -335,14 +351,23 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     }
 
     @Override
-    public CmdDescription cmdDescription(String robotId, String sessionId) {
+    public List<CmdDescription> cmdDescriptions(String robotId, String sessionId) {
         StreamMessageConnect streamConnect = messageSolution.findStreamConnect(robotId, sessionId);
         if (streamConnect == null) {
-            return CmdDescription.builder()
-                    .cmdName("#clear#")
-                    .cmdDesc("清空对话上下文")
-                    .executeScript("sendMessageInner('#clear#')")
-                    .build();
+            List<CmdDescription> descriptionList = Lists.newArrayList(
+                    CmdDescription.builder()
+                            .cmdName("#clear#")
+                            .cmdDesc("清空对话上下文")
+                            .executeScript("sendMessageInner('#clear#')")
+                            .build()
+            );
+            String userSetting = kvUtils.getStringOrDefault("modelUserConfig_" + sessionId, "无");
+            descriptionList.add(CmdDescription.builder()
+                    .cmdName("#settings#")
+                    .cmdDesc("用户设置")
+                    .executeScript(String.format("popupAndSendCmd('#settings#','%s')", Base64Util.encodeBase64(userSetting)))
+                    .build());
+            return descriptionList;
         }
         return CmdDescription.NOT_SUPPORT;
     }

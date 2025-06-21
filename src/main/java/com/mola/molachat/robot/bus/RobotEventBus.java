@@ -1,5 +1,6 @@
 package com.mola.molachat.robot.bus;
 
+import com.google.common.collect.Lists;
 import com.mola.molachat.common.event.EventBus;
 import com.mola.molachat.common.event.action.BaseAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
@@ -19,7 +20,6 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author : molamola
@@ -89,9 +89,10 @@ public class RobotEventBus implements EventBus<BaseRobotEvent, BaseAction>, Init
     }
 
     public List<CmdDescription> getAllCmdDescriptions(String robotId, String sessionId) {
-        return getRobotEventHandlers().stream()
-                .map(iRobotEventHandler -> iRobotEventHandler.cmdDescription(robotId, sessionId))
-                .filter(CmdDescription::support)
-                .collect(Collectors.toList());
+        List<CmdDescription> resultList = Lists.newArrayList();
+        getRobotEventHandlers().forEach(handler -> {
+            resultList.addAll(handler.cmdDescriptions(robotId, sessionId));
+        });
+        return resultList;
     }
 }

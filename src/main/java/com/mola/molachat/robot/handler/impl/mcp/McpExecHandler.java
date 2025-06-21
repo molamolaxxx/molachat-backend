@@ -389,7 +389,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
     }
 
     @Override
-    public CmdDescription cmdDescription(String robotId, String sessionId) {
+    public List<CmdDescription> cmdDescriptions(String robotId, String sessionId) {
         String processUniKey = String.format("%s_%s", robotId, sessionId);
         McpProcess mcpProcess = processMap.get(processUniKey);
         if (mcpProcess != null) {
@@ -397,13 +397,13 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     .cmdName("#clear-mcp#")
                     .cmdDesc("清空mcp流程")
                     .executeScript("sendMessageInner('#clear-mcp#')")
-                    .build();
+                    .buildSingleton();
         }
         String userSetting = kvUtils.getStringOrDefault("mcpUserConfig_" + sessionId, "无");
         return CmdDescription.builder()
                 .cmdName("#settings#")
                 .cmdDesc("Mcp用户设置")
                 .executeScript(String.format("popupAndSendCmd('#settings#','%s')", Base64Util.encodeBase64(userSetting)))
-                .build();
+                .buildSingleton();
     }
 }

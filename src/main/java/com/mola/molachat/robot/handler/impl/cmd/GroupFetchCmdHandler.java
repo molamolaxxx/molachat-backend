@@ -5,6 +5,8 @@ import com.mola.molachat.robot.handler.impl.BaseCmdRobotHandler;
 import com.mola.molachat.robot.model.CmdDescription;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 /**
  * @author : molamola
  * @Project: molachat
@@ -40,11 +42,11 @@ public class GroupFetchCmdHandler extends BaseCmdRobotHandler {
     }
 
     @Override
-    public CmdDescription cmdDescription(String robotId, String sessionId) {
+    public List<CmdDescription> cmdDescriptions(String robotId, String sessionId) {
         return CmdDescription.builder()
                 .cmdName("fetch")
                 .cmdDesc("获取远程代理命令的group")
                 .executeScript("sendMessageInner('fetch')")
-                .build();
+                .buildSingleton();
     }
 }

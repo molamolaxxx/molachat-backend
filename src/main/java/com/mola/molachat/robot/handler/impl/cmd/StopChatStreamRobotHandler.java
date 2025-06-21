@@ -9,6 +9,7 @@ import com.mola.molachat.session.solution.MessageSolution;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * @author : molamola
@@ -45,14 +46,14 @@ public class StopChatStreamRobotHandler extends BaseCmdRobotHandler {
     }
 
     @Override
-    public CmdDescription cmdDescription(String robotId, String sessionId) {
+    public List<CmdDescription> cmdDescriptions(String robotId, String sessionId) {
         StreamMessageConnect streamConnect = messageSolution.findStreamConnect(robotId, sessionId);
         if (streamConnect != null) {
             return CmdDescription.builder()
                     .cmdName("#stop-stream#")
                     .cmdDesc("终止当前对话")
                     .executeScript("sendMessageInner('#stop-stream#')")
-                    .build();
+                    .buildSingleton();
         }
         return CmdDescription.NOT_SUPPORT;
     }
