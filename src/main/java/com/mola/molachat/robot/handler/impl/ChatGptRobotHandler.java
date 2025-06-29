@@ -77,11 +77,11 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
 
     public static final String MODEL_URL = "https://api.sambanova.ai/v1/chat/completions";
 
-    public static final String ALERT_TEXT = "账户已失效";
+    public static final String ALERT_TEXT = "error:[账户已失效]";
 
-    public static final String STREAM_FORCE_STOP = "访问异常，输出流自动关闭";
+    public static final String STREAM_FORCE_STOP = "error:[访问异常，输出流自动关闭]";
 
-    public static final String PROXY_ERROR = "代理异常, 请重试";
+    public static final String PROXY_ERROR = "error:[代理异常, 请重试]";
 
     public static final String CLEAR_CMD = "#clear#";
 
@@ -105,16 +105,18 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         // 默认主账号
         String usedApiKey = robotChatter.getApiKey();
         String content = message.getContent();
+        if (content.length() >= 20000) {
+            return MessageSendAction.withResp("error:[输入长度超出限制]");
+        }
         try {
             if (content.startsWith(SETTINGS)) {
                 content = content.replace( SETTINGS + " ", "");
                 kvUtils.set("modelUserConfig_" + message.getSessionId(), content,
                         messageReceiveEvent.getMessage().getChatterId());
-                return MessageSendAction.withResp("设置成功");
+                return MessageSendAction.withResp("info:[设置成功]");
             }
             if (CLEAR_CMD.equals(messageReceiveEvent.getMessage().getContent())
-             || STOP_STEAM_CMD.equals(messageReceiveEvent.getMessage().getContent())
-             || SETTINGS.equals(messageReceiveEvent.getMessage().getContent())) {
+             || STOP_STEAM_CMD.equals(messageReceiveEvent.getMessage().getContent())) {
                 messageSendAction.setSkip(true);
                 return messageSendAction;
             }
@@ -284,10 +286,6 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         SessionDTO session = sessionService.findSession(sessionId);
         Assert.notNull(session, "session is null in getPrompt，" + sessionId);
 
-//        messageInput.add(getLine("system",
-//                "你是一个专业的女程序员，名字叫做" + robotChatter.getName() +
-//                "；你的语言柔和，逻辑严谨，你的个性签名是:" + robotChatter.getSignature() +
-//                "，与你对话的人名字叫做:" + chatterDTO.getName()));
         messageInput.add(getLine("system",
                 kvUtils.getStringOrDefault("modelUserConfig_" + sessionId, "")));
 
@@ -320,9 +318,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                 if (content.length() > maxPromptMsgSize && i != messageList.size() - 1) {
                     content = content.substring(0, maxPromptMsgSize);
                 }
-                if (ALERT_TEXT.equals(content) || PROXY_ERROR.equals(content)
-                        || STOP_STEAM_CMD.equals(content) || STREAM_FORCE_STOP.equals(content)
-                      || SETTINGS.equals(content)) {
+                if (content.startsWith("error:[") || content.startsWith("info:[")
+                        || STOP_STEAM_CMD.equals(content) || SETTINGS.equals(content)) {
                     continue;
                 }
                 if (content.contains(THINK_START) && content.contains(THINK_END)) {

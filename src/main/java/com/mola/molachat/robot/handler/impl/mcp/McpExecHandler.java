@@ -17,13 +17,18 @@ import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.robot.model.CmdDescription;
 import com.mola.molachat.robot.solution.ChatGptSolution;
+import com.mola.molachat.session.dto.SessionDTO;
+import com.mola.molachat.session.model.FileMessage;
 import com.mola.molachat.session.model.Message;
 import com.mola.molachat.session.model.StreamMessage;
+import com.mola.molachat.session.service.SessionService;
 import com.mola.molachat.session.solution.MessageSolution;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -85,6 +90,9 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
     @Resource
     private MessageSolution messageSolution;
 
+    @Resource
+    private SessionService sessionService;
+
     @Override
     public BaseAction handler(MessageReceiveEvent messageReceiveEvent) {
         String robotId = messageReceiveEvent.getRobotChatter().getId();
@@ -108,6 +116,12 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
         if (processMap.containsKey(processUniKey)) {
             return MessageSendAction.withResp("当前Mcp流程正在进行中，请稍后提交");
+        }
+
+        // ocr图片
+        String lastOcrMessageContent = findLastOcrMessageContent(sessionId);
+        if (StringUtils.isNotBlank(lastOcrMessageContent)) {
+            userRequest = userRequest + lastOcrMessageContent;
         }
 
         try {
@@ -153,7 +167,24 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         } finally {
             processMap.remove(processUniKey);
         }
+    }
 
+    private String findLastOcrMessageContent(String sessionId) {
+        SessionDTO session = sessionService.findSession(sessionId);
+        Assert.notNull(session, "session is null in getPrompt，" + sessionId);
+        List<Message> messageList = session.getMessageList();
+        Message message = messageList.get(messageList.size() - 2);
+        if (!(message instanceof FileMessage)) {
+            return null;
+        }
+        FileMessage fileMessage = (FileMessage) message;
+        if (StringUtils.isNotBlank(fileMessage.getOcrResultCache())) {
+            return String.format("\n用户请求中的附件：\n" +
+                            "图片名称：%s\n" +
+                            "图片内容：%s\n",fileMessage.getFileName(),
+                    fileMessage.getOcrResultCache());
+        }
+        return null;
     }
 
     @Override
@@ -192,6 +223,11 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         public void start() {
             while (!terminate) {
                 String request = buildRequest();
+                if (request.length() > 30000) {
+                    sendNotify("模型单次输入超过最大限制");
+                    terminate = true;
+                    break;
+                }
                 StringBuilder result = new StringBuilder();
                 chatGptSolution.invoke(request, null, true,
                         part -> processStream(part, result));
