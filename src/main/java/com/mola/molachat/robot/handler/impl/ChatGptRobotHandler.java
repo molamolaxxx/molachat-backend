@@ -240,9 +240,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         // 如果stream未结束，则强制结束
         streamConnect = messageSolution.findStreamConnect(messageReceiveEvent.getRobotChatter().getId(),
                 messageReceiveEvent.getSessionId());
-        if (streamConnect != null) {
-            messageSolution.stopStream(messageReceiveEvent.getRobotChatter().getId(),
-                    messageReceiveEvent.getSessionId());
+        if (streamConnect != null && messageSolution.stopStream(messageReceiveEvent.getRobotChatter().getId(),
+                messageReceiveEvent.getSessionId())) {
             log.error("streamConnect is not stop, force stop {}", streamConnect);
             messageSendAction.setResponsesText(STREAM_FORCE_STOP);
             return messageSendAction;

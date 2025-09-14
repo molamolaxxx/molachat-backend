@@ -388,7 +388,14 @@ scrollToChatContainerBottom = function (laterDuring, callback) {
 }
 
 var messageViewTimeoutId
-scrollToMessageViewBottom = function (laterDuring) {
+scrollToMessageViewBottom = function (laterDuring, interrupt) {
+    if (interrupt) {
+        if (messageViewTimeoutId) {
+            clearTimeout(messageViewTimeoutId)
+            messageViewTimeoutId = null
+        }
+        return
+    }
     //滚动
     if (messageViewTimeoutId) {
         return
@@ -406,15 +413,18 @@ scrollToMessageViewBottom = function (laterDuring) {
 }
 
 /**
- * 防抖:在一连串连续触发的事件中，只执行最后一次事件处理函数
+ * 防抖
  */
 debounce = function (func, delay) {
-    let timeoutId;
-
-    return function () {
-        clearTimeout(timeoutId);
-
-        timeoutId = setTimeout(func, delay);
+    var timeoutId;
+    return function (param) {
+        if (timeoutId) {
+            return
+        }
+        timeoutId = setTimeout(() => {
+            func(param)
+            timeoutId = null
+        }, delay);
     };
 }
 

@@ -162,8 +162,7 @@ $(document).ready(function () {
             $(copyIcon).css('padding', '4px');
             $(copyIcon).css('cursor', 'pointer');
             const onClickCallback = (e) => {
-                $viewContent[0].innerHTML = buildHighlightContent(content)
-                addCopyButtonToPre($viewContent[0])
+                buildHighlightContent(content)
                 $viewModal.modal('open')
             }
             $(copyIcon).on('click', onClickCallback)

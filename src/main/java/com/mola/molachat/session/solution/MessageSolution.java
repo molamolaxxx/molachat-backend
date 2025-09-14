@@ -148,7 +148,8 @@ public class MessageSolution {
                         new StringBuilder(),
                         streamMessage,
                         Sets.newHashSet(),
-                        false
+                        false,
+                        Thread.currentThread()
                 );
                 streamMessageConnectPool.add(messageConnect);
             }
@@ -194,7 +195,7 @@ public class MessageSolution {
         }
     }
 
-    public void stopStream(String senderId, String sessionId) {
+    public boolean stopStream(String senderId, String sessionId) {
         //1.查询是否存在对应session
         Session session = sessionFactory.selectById(sessionId);
         if (null == session){
@@ -203,7 +204,12 @@ public class MessageSolution {
 
         StreamMessageConnect streamConnect = findStreamConnect(senderId, sessionId);
         if (streamConnect == null) {
-            return;
+            return false;
+        }
+        if (streamConnect.getHolder() != Thread.currentThread()) {
+            log.info("stopStream thread is not same, senderId = {}, sessionId = {}, stableThread = {}, currentThread = {}",
+                    senderId, sessionId, streamConnect.getHolder(), Thread.currentThread());
+            return false;
         }
 
         streamMessageConnectPool.remove(streamConnect);
@@ -211,6 +217,7 @@ public class MessageSolution {
         BeanUtils.copyProperties(streamConnect, message);
         message.setContent(streamConnect.getMessageContent().toString());
         sessionFactory.insertMessage(session.getSessionId(), message);
+        return true;
     }
 
 }

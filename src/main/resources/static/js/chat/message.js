@@ -126,8 +126,7 @@ $(document).ready(function () {
                 const onClickCallback = (e) => {
                     // 流消息会自动刷新模态框，不用重置
                     $viewContent[0].triggerMessageId = mainDoc.messageId
-                    $viewContent[0].innerHTML = buildHighlightContent(content)
-                    addCopyButtonToPre($viewContent[0])
+                    buildHighlightContent(content)
                     $viewModal.modal('open')
                 }
                 $(copyIcon).on('click', onClickCallback)
@@ -157,7 +156,13 @@ $(document).ready(function () {
         originalCodes.splice(0, originalCodes.length)
     }
 
+
     buildHighlightContent = function (content) {
+        $viewContent[0].innerHTML = buildHighlightContentInner(content)
+        addCopyButtonToPre($viewContent[0])
+    }
+
+    buildHighlightContentInner = function (content) {
         const codeObj = hljs.highlightAuto(content)
         // 主流语言，显示用pre方便看
         let isCommonCode = codeObj.language === 'java' ||
@@ -241,6 +246,11 @@ $(document).ready(function () {
             showToast("输入不能为空", 1000)
             return;
         }
+        
+        if (queryStreamDom(getActiveSessionId())) {
+            showToast("当前状态无法发送新消息，请先终止当前会话", 1000)
+            return;
+        }
 
         //清空文本框
         $chatInput.value = "";
@@ -249,21 +259,7 @@ $(document).ready(function () {
         $chatInput.focus();
 
         //显示在屏幕上，滚动
-        addMessage($chatMsg, content, true);
-
-        //获取socket
-        var socket = getSocket();
-        //构建message对象
-        var action = new Object();
-        action.code = SEND_MESSAGE;
-        action.msg = "ok";
-        var data = new Object();
-        data.chatterId = getChatterId();
-        data.sessionId = getActiveSessionId();
-        data.content = content;
-        action.data = data;
-
-        socket.send(JSON.stringify(action));
+        sendMessageInner(content)
     });
 
     // 明细模态框初始化
@@ -369,6 +365,11 @@ $(document).ready(function () {
         if (content === "") {
             // swal("stop!","输入不能为空","warning");
             showToast("输入不能为空", 1000)
+            return;
+        }
+
+        if (queryStreamDom(getActiveSessionId())) {
+            showToast("当前状态无法发送新消息", 1000)
             return;
         }
 

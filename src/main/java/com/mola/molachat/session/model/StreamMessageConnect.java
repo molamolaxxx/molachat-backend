@@ -52,4 +52,9 @@ public class StreamMessageConnect {
      * 连接已关闭
      */
     private volatile boolean closed;
+
+    /**
+     * 当前持有连接的线程
+     */
+    private volatile Thread holder;
 }

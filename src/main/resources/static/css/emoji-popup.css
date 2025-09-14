@@ -1,11 +1,12 @@
 ul.emoji-list li {
     font-size: 36px;
     float: left;
-    display: inline-block;
+    display: flex;
     padding: 2px;
     margin: 4px;
     width: 40px;
     height: 40px;
+    justify-content: center;
 }
 
 .emoji-root {

@@ -1,6 +1,7 @@
 package com.mola.molachat.common.utils;
 
 import com.alibaba.fastjson.JSONObject;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -21,8 +22,6 @@ import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -44,11 +43,10 @@ import static org.apache.http.client.config.RequestConfig.custom;
  * @Description:
  * @date : 2020-09-22 18:07
  **/
+@Slf4j
 public enum HttpUtil {
 
     PROXY, INSTANCE;
-
-    private Logger logger = LoggerFactory.getLogger(HttpUtil.class);
 
     private AtomicBoolean monitorThreadStart = new AtomicBoolean(false);
 
@@ -95,7 +93,7 @@ public enum HttpUtil {
 
     private void bootMonitorThread() {
         if (monitorThreadStart.compareAndSet(false, true)) {
-            logger.info("[HttpService#bootMoniterThread] monitor thread start");
+            log.info("[HttpService#bootMoniterThread] monitor thread start");
             monitorThread.start();
         }
     }
@@ -117,7 +115,7 @@ public enum HttpUtil {
                 }
             }
         } catch (Exception e) {
-            logger.error("[HttpUtil$mapToUrl] convert map to url exception", e);
+            log.error("[HttpUtil$mapToUrl] convert map to url exception", e);
         }
         return sb.toString();
     }
@@ -182,7 +180,7 @@ public enum HttpUtil {
             } else {
                 String errorMsg = String.format("requestPost remote error, url=%s, code=%d, errMsg=%s",
                         uri.toString(), statusCode, EntityUtils.toString(response.getEntity()));
-                logger.error(errorMsg);
+                log.error(errorMsg);
                 throw new RuntimeException(errorMsg);
 
             }
@@ -194,9 +192,7 @@ public enum HttpUtil {
         bootMonitorThread();
         URI uri = new URIBuilder(url).build();
         HttpPost httpPost = new HttpPost(uri);
-        if (null != body) {
-            httpPost.setEntity(new StringEntity(body.toJSONString(), ContentType.APPLICATION_JSON));
-        }
+        httpPost.setEntity(new StringEntity(body.toJSONString(), ContentType.APPLICATION_JSON));
         if (null != headers) {
             httpPost.setHeaders(headers);
         }
@@ -211,14 +207,17 @@ public enum HttpUtil {
                 if (line.startsWith("data: ")) {
                     String data = line.substring(6).trim();
                     if ("[DONE]".equals(data)) {
+                        log.info("finish postWithStreamRes with [DONE], data = {}, body = {}", data, body.toJSONString());
                         break;
                     }
                     if (responseConsumer != null && !responseConsumer.apply(data)) {
+                        log.info("finish postWithStreamRes with responseConsumer finish, data = {}, body = {}", data, body.toJSONString());
                         return;
                     }
                 }
             }
         }
+        log.info("finish postWithStreamRes finish, body = {}", body.toJSONString());
     }
 
     public String post(String url, JSONObject body, int timeout) throws Exception {

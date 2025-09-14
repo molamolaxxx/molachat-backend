@@ -63,14 +63,21 @@ function init(callback) {
     (function (li, i) {
         function copyToClipboard(e) {
             // 动画效果
-            let dom = box.getElementsByTagName('img')[this.index]
-            $(dom).animate({"width":28},150,function() {
-                $(dom).animate({"width":36,"padding":0},150)
-            })
+            let dom = box.getElementsByTagName('li')[this.index]
             console.info($(dom))
-            callback(dom.alt);
+            if (dom.children.length != 0) {
+                let img = dom.children[0]
+                $(img).animate({"width":28, "height":28},150,function() {
+                    $(img).animate({"width":36,"height":36,"padding":0},150)
+                })
+                callback(img.alt);
+            } else {
+                callback(dom.innerText);
+            }
         }
-        for (i = 0; i < li.length; li[i++].onclick = copyToClipboard) { li[i].index = i }
+        for (i = 0; i < li.length; li[i++].onclick = copyToClipboard) { 
+            li[i].index = i 
+        }
     }(box.getElementsByTagName('li')));
 }
 
