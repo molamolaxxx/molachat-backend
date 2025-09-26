@@ -1,6 +1,7 @@
 package com.mola.molachat.robot.handler.impl.mcp;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.MapUtils;
 import com.google.common.collect.Lists;
@@ -16,6 +17,7 @@ import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.robot.model.CmdDescription;
+import com.mola.molachat.robot.model.Pair;
 import com.mola.molachat.robot.solution.ChatGptSolution;
 import com.mola.molachat.session.dto.SessionDTO;
 import com.mola.molachat.session.model.FileMessage;
@@ -24,9 +26,10 @@ import com.mola.molachat.session.model.StreamMessage;
 import com.mola.molachat.session.service.SessionService;
 import com.mola.molachat.session.solution.MessageSolution;
 import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
@@ -67,20 +70,22 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
      * 用户需求
      */
     private static String USER_REQUEST_PLACE_HOLDER = "%USER_REQUEST%";
+    private static String USER_HISTORY_REQUEST_PLACE_HOLDER = "%USER_HISTORY_REQUEST%";
 
-    private static String TEMPLATE = "你是一个指令执行者，你需要通过执行指令和分析结果，完成用户的需求。可使用的指令如下：\n" +
+    private static String TEMPLATE = "你是专业的指令执行者，需要通过执行指令和分析结果，实现用户的需求。可使用的指令如下：\n" +
             "%CMD_LIST%" +
             "\n" +
-            "用户需求如下：%USER_REQUEST%\n" +
-            "\n" +
-            "用户配置如下：\n" +
+            "当前用户需求：%USER_REQUEST%\n" +
+            "%USER_HISTORY_REQUEST%\n" +
+            "用户配置：\n" +
             "%USER_CONFIG%" +
             "\n" +
-            "已经执行完成的指令列表：\n" +
-            "%CMD_HISTORY%" +
-            "\n" +
-            "当前有指令时，你只需要输出一组相同类型的指令，指令以#start#开头，#end#结尾，每个指令占一行\n" +
-            "当前执行完成的指令已经满足用户需求时，无需执行后续的指令，请输出#start#无指令#end#\n，如果用户需要分析指令执行结果，请满足用户需求";
+            "已经执行完成的指令：\n" +
+            "%CMD_HISTORY%\n" +
+            "指令以#start#开头，#end#结尾，每个指令占一行。\n" +
+            "每次输出一组指令时，需要保证这一组指令名相同。\n" +
+            "当前执行完成的指令已经满足用户需求时，无需执行后续的指令，请输出#start#无指令#end#";
+
     @Resource
     private ChatGptSolution chatGptSolution;
 
@@ -99,11 +104,20 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         String sessionId = messageReceiveEvent.getSessionId();
         String processUniKey = String.format("%s_%s", robotId, sessionId);
         String userRequest = messageReceiveEvent.getMessage().getContent();
-        if (Objects.equals(userRequest, "#clear-mcp#")) {
+        if (Objects.equals(userRequest, "#stop-mcp#")) {
             McpProcess mcpProcess = processMap.get(processUniKey);
             if (mcpProcess != null) {
                 mcpProcess.terminate();
             }
+            return MessageSendAction.skip();
+        }
+        if (Objects.equals(userRequest, "#memory-open#")) {
+            kvUtils.set("mcpHistoryProcess_" + sessionId, "[]", robotId);
+            kvUtils.set("mcpMemory_" + sessionId, "Y", robotId);
+            return MessageSendAction.skip();
+        } else if (Objects.equals(userRequest, "#memory-close#")) {
+            kvUtils.set("mcpHistoryProcess_" + sessionId, "[]", robotId);
+            kvUtils.set("mcpMemory_" + sessionId, "N", robotId);
             return MessageSendAction.skip();
         }
 
@@ -142,6 +156,15 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     cmdList.add(cmd);
                 });
             }
+
+            List<McpProcess> processList = JSON.parseObject(
+                    kvUtils.getStringOrDefault("mcpHistoryProcess_" + sessionId, "[]")
+                    , new TypeReference<List<McpProcess>>(){});
+
+
+            boolean useMemory = Objects.equals(
+                            kvUtils.getStringOrDefault("mcpMemory_" + sessionId, "N"),"Y");
+
             McpProcess mcpProcess = new McpProcess(
                     robotId,
                     sessionId,
@@ -152,7 +175,9 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     false,
                     chatGptSolution,
                     kvUtils,
-                    messageSolution,0,0
+                    messageSolution,0,0,
+                    processList,
+                    useMemory
             );
             processMap.put(processUniKey, mcpProcess);
 
@@ -192,8 +217,10 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         return MessageReceiveEvent.class;
     }
 
+    @NoArgsConstructor
     @AllArgsConstructor
     @Slf4j
+    @Data
     public static class McpProcess {
 
         private String robotId;
@@ -210,15 +237,19 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
         private volatile boolean terminate;
 
-        private ChatGptSolution chatGptSolution;
+        private transient ChatGptSolution chatGptSolution;
 
-        private KvUtils kvUtils;
+        private transient KvUtils kvUtils;
 
-        private MessageSolution messageSolution;
+        private transient MessageSolution messageSolution;
 
         private int usedInputToken;
 
         private int usedOutputToken;
+
+        private transient List<McpProcess> historyProcess;
+
+        private transient boolean useMemory;
 
         public void start() {
             while (!terminate) {
@@ -229,8 +260,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     break;
                 }
                 StringBuilder result = new StringBuilder();
-                chatGptSolution.invoke(request, null, true,
-                        part -> processStream(part, result));
+                chatGptSolution.invoke(request, null, true, part -> processStream(part, result), 0.2);
                 usedInputToken += request.length();
                 usedOutputToken += result.length();
                 // 提取命令列表
@@ -273,33 +303,26 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     cmdHistory.add(Pair.of(nextCmd, cmdResult));
                 }
             }
+            if (useMemory) {
+                String mcpHistoryProcessStr = kvUtils.getString("mcpHistoryProcess_" + sessionId);
+                List<McpProcess> processList = Lists.newArrayList();
+                processList.addAll(historyProcess);
+                processList.add(this);
+                // 保存上下文
+                kvUtils.set("mcpHistoryProcess_" + sessionId, JSON.toJSONString(processList), robotId);
+            }
         }
 
         public void terminate() {
             terminate = true;
         }
 
-        public List<String> parseNextCmd(String gptResult) {
+        public static List<String> parseNextCmd(String gptResult) {
             List<String> commands = new ArrayList<>();
 
             // 使用正则表达式匹配两个#之间的命令块
             Pattern blockPattern = Pattern.compile("#start#(.*?)#(?:end)#", Pattern.DOTALL);
             Matcher blockMatcher = blockPattern.matcher(gptResult);
-            while (blockMatcher.find()) {
-                String commandBlock = blockMatcher.group(1).trim();
-
-                // 分割每行命令
-                String[] lines = commandBlock.split("\\r?\\n");
-                for (String line : lines) {
-                    if (!line.trim().isEmpty()) {
-                        commands.add(line.trim());
-                    }
-                }
-            }
-
-
-            blockPattern = Pattern.compile("#start#(.*?)#(?:finish)#", Pattern.DOTALL);
-            blockMatcher = blockPattern.matcher(gptResult);
             while (blockMatcher.find()) {
                 String commandBlock = blockMatcher.group(1).trim();
 
@@ -362,13 +385,29 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     kvUtils.getStringOrDefault("mcpUserConfig_" + sessionId, "无"));
 
             // history
-            List<String> history = cmdHistory.stream()
+            List<Pair<String, String>> allCmdHistory = Lists.newArrayList();
+            for (McpProcess process : historyProcess) {
+                allCmdHistory.addAll(process.cmdHistory);
+            }
+            allCmdHistory.addAll(cmdHistory);
+            List<String> history = allCmdHistory.stream()
                     .map(e -> String.format("%s\n执行结果：%s", e.getFirst(), e.getSecond()))
                     .collect(Collectors.toList());
             parsed = parsed.replace(CMD_HISTORY_PLACE_HOLDER, joinWithIndex(history));
 
             // user Request
             parsed = parsed.replace(USER_REQUEST_PLACE_HOLDER, userRequest);
+            // 历史需求
+            StringBuilder historyRequest = new StringBuilder("用户历史需求：\n");
+            for (McpProcess process : historyProcess) {
+                historyRequest.append(process.userRequest);
+                historyRequest.append("\n");
+            }
+            if (historyProcess.size() == 0) {
+                parsed = parsed.replace(USER_HISTORY_REQUEST_PLACE_HOLDER, "");
+            } else {
+                parsed = parsed.replace(USER_HISTORY_REQUEST_PLACE_HOLDER, historyRequest.toString());
+            }
             return parsed;
         }
 
@@ -378,8 +417,8 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             }
             StringBuilder stringBuilder = new StringBuilder();
             for (int i = 0; i < input.size(); i++) {
-                stringBuilder.append(String.format("%s、%s", i + 1, input.get(i)));
-                stringBuilder.append("\n");
+                stringBuilder.append(input.get(i));
+                stringBuilder.append("\n\n");
             }
             return stringBuilder.toString();
         }
@@ -430,16 +469,35 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         McpProcess mcpProcess = processMap.get(processUniKey);
         if (mcpProcess != null) {
             return CmdDescription.builder()
-                    .cmdName("#clear-mcp#")
-                    .cmdDesc("清空mcp流程")
-                    .executeScript("sendMessageInner('#clear-mcp#')")
+                    .cmdName("#stop-mcp#")
+                    .cmdDesc("停止mcp流程")
+                    .executeScript("sendMessageInner('#stop-mcp#')")
                     .buildSingleton();
         }
         String userSetting = kvUtils.getStringOrDefault("mcpUserConfig_" + sessionId, "无");
-        return CmdDescription.builder()
+        CmdDescription setting = CmdDescription.builder()
                 .cmdName("#settings#")
                 .cmdDesc("Mcp用户设置")
                 .executeScript(String.format("popupAndSendCmd('#settings#','%s')", Base64Util.encodeBase64(userSetting)))
-                .buildSingleton();
+                .build();
+
+
+        String memory = kvUtils.getStringOrDefault("mcpMemory_" + sessionId, "N");
+        CmdDescription clearContext = null;
+        if (Objects.equals(memory, "N")) {
+            clearContext = CmdDescription.builder()
+                    .cmdName("#memory-open#")
+                    .cmdDesc("开启记忆模式")
+                    .executeScript("sendMessageInner('#memory-open#')")
+                    .build();
+        } else {
+            clearContext = CmdDescription.builder()
+                    .cmdName("#memory-close#")
+                    .cmdDesc("关闭记忆模式")
+                    .executeScript("sendMessageInner('#memory-close#')")
+                    .build();
+        }
+
+        return Lists.newArrayList(setting, clearContext);
     }
 }

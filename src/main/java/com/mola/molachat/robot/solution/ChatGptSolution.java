@@ -53,11 +53,11 @@ public class ChatGptSolution {
      * @return
      */
     public String invoke(String input) {
-        return invoke(input, null, false, null);
+        return invoke(input, null, false, null, null);
     }
 
     public String invoke(String input, String systemPrompt, boolean useStream,
-                         Function<String, Boolean> responseConsumer) {
+                         Function<String, Boolean> responseConsumer, Double temperature) {
         ChatterDTO chatGptChatter = chatterService.selectById("chatGpt");
         Assert.notNull(chatGptChatter, "chatGpt robot is null");
         Assert.isTrue(chatGptChatter.isRobot(), "chatGpt robot is not robot");
@@ -72,6 +72,9 @@ public class ChatGptSolution {
             log.info(JSONObject.toJSONString(prompt));
             body.put("messages", prompt);
             body.put("stream", useStream);
+            if (temperature != null) {
+                body.put("temperature", temperature);
+            }
 
             // headers
             List<Header> headers = new ArrayList<>();
