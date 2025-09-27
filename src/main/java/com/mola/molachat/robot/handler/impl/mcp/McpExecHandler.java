@@ -119,6 +119,9 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             kvUtils.set("mcpHistoryProcess_" + sessionId, "[]", robotId);
             kvUtils.set("mcpMemory_" + sessionId, "N", robotId);
             return MessageSendAction.skip();
+        } else if (Objects.equals(userRequest, "#clear-context#")) {
+            kvUtils.set("mcpHistoryProcess_" + sessionId, "[]", robotId);
+            return MessageSendAction.skip();
         }
 
         if (userRequest.startsWith("#settings#")) {
@@ -194,6 +197,35 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         }
     }
 
+    /**
+     * 估算给定字符串的 token 数量
+     * @param text 输入文本
+     * @return 估算的 token 数（四舍五入后的整数）
+     */
+    public static int estimateTokens(String text) {
+        if (text == null || text.isEmpty()) {
+            return 0;
+        }
+
+        int chineseChars = 0;
+        int otherChars   = 0;
+
+        for (char c : text.toCharArray()) {
+            if (isChinese(c)) {
+                chineseChars++;
+            } else {
+                otherChars++;
+            }
+        }
+
+        double tokens = chineseChars * 0.6 + otherChars * 0.3;
+        return (int) Math.round(tokens);
+    }
+
+    private static boolean isChinese(char c) {
+        return '\u4e00' <= c && c <= '\u9fa5';
+    }
+
     private String findLastOcrMessageContent(String sessionId) {
         SessionDTO session = sessionService.findSession(sessionId);
         Assert.notNull(session, "session is null in getPrompt，" + sessionId);
@@ -261,8 +293,8 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 }
                 StringBuilder result = new StringBuilder();
                 chatGptSolution.invoke(request, null, true, part -> processStream(part, result), 0.2);
-                usedInputToken += request.length();
-                usedOutputToken += result.length();
+                usedInputToken += estimateTokens(request);
+                usedOutputToken += estimateTokens(result.toString());
                 // 提取命令列表
                 List<String> nextCmdList = parseNextCmd(result.toString());
                 if (CollectionUtils.isEmpty(nextCmdList)) {
@@ -483,21 +515,27 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
 
         String memory = kvUtils.getStringOrDefault("mcpMemory_" + sessionId, "N");
-        CmdDescription clearContext = null;
+        CmdDescription openMemory = null;
         if (Objects.equals(memory, "N")) {
-            clearContext = CmdDescription.builder()
+            openMemory = CmdDescription.builder()
                     .cmdName("#memory-open#")
                     .cmdDesc("开启记忆模式")
                     .executeScript("sendMessageInner('#memory-open#')")
                     .build();
         } else {
-            clearContext = CmdDescription.builder()
+            openMemory = CmdDescription.builder()
                     .cmdName("#memory-close#")
                     .cmdDesc("关闭记忆模式")
                     .executeScript("sendMessageInner('#memory-close#')")
                     .build();
         }
 
-        return Lists.newArrayList(setting, clearContext);
+        CmdDescription clearContext = CmdDescription.builder()
+                .cmdName("#clear-context#")
+                .cmdDesc("清除上下文")
+                .executeScript("sendMessageInner('#clear-context#')")
+                .build();
+
+        return Lists.newArrayList(setting, openMemory, clearContext);
     }
 }
