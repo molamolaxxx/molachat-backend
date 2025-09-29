@@ -37,7 +37,6 @@ import javax.annotation.Resource;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * @author : molamola
@@ -70,21 +69,37 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
      * 用户需求
      */
     private static String USER_REQUEST_PLACE_HOLDER = "%USER_REQUEST%";
-    private static String USER_HISTORY_REQUEST_PLACE_HOLDER = "%USER_HISTORY_REQUEST%";
 
-    private static String TEMPLATE = "你是专业的指令执行者，需要通过执行指令和分析结果，实现用户的需求。可使用的指令如下：\n" +
+    private static String TEMPLATE = " \n" +
+            "\n" +
+            "你是专业的指令执行者，需要通过执行指令和分析结果，实现用户的需求。\n" +
+            "\n" +
+            "#### 1、要求\n" +
+            "\n" +
+            "（1）指令以#start#开头，#end#结尾，每个指令+参数占一行。\n" +
+            "\n" +
+            "（2）每次输出一组指令时，需要保证这一组指令名相同\n" +
+            "\n" +
+            "（3）当前执行完成的指令已经满足用户需求时，无需执行后续的指令，请输出#start#无指令#end#\n" +
+            "\n" +
+            "#### 2、用户需求列表\n" +
+            "\n" +
+            "| 编号 | 需求内容 | 执行状态   |\n" +
+            "| ---- | -------- | ---------- |\n" +
+            "%USER_REQUEST%" +
+            "\n" +
+            "#### 3、可使用的指令\n" +
+            "\n" +
+            "| 指令                     | 描述                       |\n" +
+            "| ------------------------ | -------------------------- |\n" +
             "%CMD_LIST%" +
             "\n" +
-            "当前用户需求：%USER_REQUEST%\n" +
-            "%USER_HISTORY_REQUEST%\n" +
-            "用户配置：\n" +
-            "%USER_CONFIG%" +
+            "#### 4、已经执行完成的指令\n" +
             "\n" +
-            "已经执行完成的指令：\n" +
-            "%CMD_HISTORY%\n" +
-            "指令以#start#开头，#end#结尾，每个指令占一行。\n" +
-            "每次输出一组指令时，需要保证这一组指令名相同。\n" +
-            "当前执行完成的指令已经满足用户需求时，无需执行后续的指令，请输出#start#无指令#end#";
+            "%CMD_HISTORY%" +
+            "\n" +
+            "#### 5、用户设置\n" +
+            "%USER_CONFIG%\n";
 
     @Resource
     private ChatGptSolution chatGptSolution;
@@ -180,7 +195,8 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     kvUtils,
                     messageSolution,0,0,
                     processList,
-                    useMemory
+                    useMemory,
+                    Lists.newArrayList()
             );
             processMap.put(processUniKey, mcpProcess);
 
@@ -283,18 +299,22 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
         private transient boolean useMemory;
 
+        private List<String> hints;
+
         public void start() {
             while (!terminate) {
                 String request = buildRequest();
+                sendNotifyImmediately(request);
                 if (request.length() > 30000) {
                     sendNotify("模型单次输入超过最大限制");
                     terminate = true;
                     break;
                 }
                 StringBuilder result = new StringBuilder();
-                chatGptSolution.invoke(request, null, true, part -> processStream(part, result), 0.2);
+                chatGptSolution.invoke(request, null, true, part -> processStream(part, result), 0.0);
                 usedInputToken += estimateTokens(request);
                 usedOutputToken += estimateTokens(result.toString());
+                hints.clear();
                 // 提取命令列表
                 List<String> nextCmdList = parseNextCmd(result.toString());
                 if (CollectionUtils.isEmpty(nextCmdList)) {
@@ -315,14 +335,6 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                         terminate = true;
                         break;
                     }
-                    if (CollectionUtils.isNotEmpty(cmdHistory)) {
-                        String latestCmd = cmdHistory.get(cmdHistory.size() - 1).getFirst();
-                        if (Objects.equals(latestCmd, nextCmd)) {
-                            sendNotify("识别到重复命令，流程终止");
-                            terminate = true;
-                            break;
-                        }
-                    }
                     // 执行命令
                     CmdInvokeResponse<CmdResponseContent> cmdResp = CmdSender.INSTANCE
                             .send(entry.getKey(), sessionId, entry.getValue());
@@ -332,6 +344,20 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     String cmdResult = resultMap.getOrDefault("result", "无");
                     sendNotifyImmediately(String.format("执行命令%s完成\n入参:%s\n结果:%s",
                             entry.getKey(), JSON.toJSON(entry.getValue()), cmdResult));
+
+                    // 查询重复命令
+                    Pair<String, String> repeatCmd = cmdHistory.stream()
+                            .filter(e -> Objects.equals(nextCmd, e.getFirst()))
+                            .findAny().orElse(null);
+                    // 存在重复命令，将最新结果进行替换
+                    if (repeatCmd != null) {
+                        if (repeatCmd == cmdHistory.get(cmdHistory.size() - 1)) {
+                            hints.add("请勿重复执行命令" + repeatCmd.getFirst());
+                        } else {
+                            sendNotifyImmediately("存在历史重复命令，将最新结果替换上下文\n重复命令: " + repeatCmd.getFirst());
+                        }
+                        cmdHistory.remove(repeatCmd);
+                    }
                     cmdHistory.add(Pair.of(nextCmd, cmdResult));
                 }
             }
@@ -395,64 +421,73 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
         public Map.Entry<String, String[]> splitParam(String inputText) {
             Map<String, String[]> cmdParams = Maps.newLinkedHashMap();
-            String[] split = inputText.split(" ");
-            if (split.length == 1) {
-                cmdParams.put(split[0], new String[0]);
-            } else {
-                cmdParams.put(split[0], new String[]{
-                        String.join(" ", Arrays.copyOfRange(split, 1, split.length))
-                });
-            }
 
+            for (String cmd : cmdDescList) {
+                String[] split = cmd.split(" ");
+                String cmdName = split[0].trim();
+                if (inputText.startsWith(cmdName)) {
+                    cmdParams.put(cmdName, new String[]{
+                            inputText.replace(cmdName, "").trim()
+                    });
+                }
+            }
             return cmdParams.entrySet().stream().findAny().orElse(null);
         }
 
         public String buildRequest() {
             String parsed = TEMPLATE;
             // cmdList
-            parsed = parsed.replace(CMD_LIST_PLACE_HOLDER, joinWithIndex(cmdDescList));
+            StringBuilder cmdMd = new StringBuilder();
+            for (String cmd : cmdDescList) {
+                String[] split = cmd.split("#next#");
+                cmdMd.append(String.format("| %s | %s |\n", split[0], split[1]));
+            }
+            parsed = parsed.replace(CMD_LIST_PLACE_HOLDER, cmdMd.toString());
 
             // userConfig
             parsed = parsed.replace(USER_CONFIG_PLACE_HOLDER,
                     kvUtils.getStringOrDefault("mcpUserConfig_" + sessionId, "无"));
 
+            StringBuilder cmdHistoryMd = new StringBuilder();
+            StringBuilder requestMd = new StringBuilder();
+
+
+            String cmdHistoryTemp = "(%s)、%s\n关联需求编号:%s\n执行结果:%s\n\n";
+
             // history
-            List<Pair<String, String>> allCmdHistory = Lists.newArrayList();
-            for (McpProcess process : historyProcess) {
-                allCmdHistory.addAll(process.cmdHistory);
+            int lastCmdIdx = 0;
+            for (int i = 0; i < historyProcess.size(); i++) {
+                McpProcess mcpProcess = historyProcess.get(i);
+                String historyUserRequest = mcpProcess.userRequest;
+                requestMd.append(String.format("| %s | %s | %s |\n",i + 1, historyUserRequest
+                        .replace("\r\n", "<br/>")
+                        .replace("\n", "<br/>"), "已完成"));
+                for (int j = 0; j < mcpProcess.cmdHistory.size(); j++) {
+                    Pair<String, String> pair = mcpProcess.cmdHistory.get(j);
+                    cmdHistoryMd.append(String.format(cmdHistoryTemp ,
+                            j + 1, pair.getFirst(), i + 1, pair.getSecond()));
+                    lastCmdIdx = j + 1;
+                }
             }
-            allCmdHistory.addAll(cmdHistory);
-            List<String> history = allCmdHistory.stream()
-                    .map(e -> String.format("%s\n执行结果：%s", e.getFirst(), e.getSecond()))
-                    .collect(Collectors.toList());
-            parsed = parsed.replace(CMD_HISTORY_PLACE_HOLDER, joinWithIndex(history));
+
+            // now
+            requestMd.append(String.format("| %s | %s | %s |\n", historyProcess.size() + 1,
+                    userRequest.replace("\r\n", "<br/>").replace("\n", "<br/>"), "进行中"));
+            for (int j = 0; j < cmdHistory.size(); j++) {
+                Pair<String, String> pair = cmdHistory.get(j);
+                cmdHistoryMd.append(String.format(cmdHistoryTemp ,
+                        lastCmdIdx + j + 1, pair.getFirst(), historyProcess.size() + 1, pair.getSecond()));
+            }
+
+            parsed = parsed.replace(CMD_HISTORY_PLACE_HOLDER, cmdHistoryMd.toString());
 
             // user Request
-            parsed = parsed.replace(USER_REQUEST_PLACE_HOLDER, userRequest);
-            // 历史需求
-            StringBuilder historyRequest = new StringBuilder("用户历史需求：\n");
-            for (McpProcess process : historyProcess) {
-                historyRequest.append(process.userRequest);
-                historyRequest.append("\n");
-            }
-            if (historyProcess.size() == 0) {
-                parsed = parsed.replace(USER_HISTORY_REQUEST_PLACE_HOLDER, "");
-            } else {
-                parsed = parsed.replace(USER_HISTORY_REQUEST_PLACE_HOLDER, historyRequest.toString());
+            parsed = parsed.replace(USER_REQUEST_PLACE_HOLDER, requestMd.toString());
+
+            if (hints.size() != 0) {
+                parsed = parsed + "\n#### 6、警告\n" + String.join("\n", hints);
             }
             return parsed;
-        }
-
-        private String joinWithIndex(List<String> input) {
-            if (CollectionUtils.isEmpty(input)) {
-                return "空\n";
-            }
-            StringBuilder stringBuilder = new StringBuilder();
-            for (int i = 0; i < input.size(); i++) {
-                stringBuilder.append(input.get(i));
-                stringBuilder.append("\n\n");
-            }
-            return stringBuilder.toString();
         }
 
         public void sendNotify(String content) {
