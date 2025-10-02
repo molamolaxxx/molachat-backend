@@ -82,24 +82,24 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             "\n" +
             "（3）当前执行完成的指令已经满足用户需求时，无需执行后续的指令，请输出#start#无指令#end#\n" +
             "\n" +
-            "#### 2、用户需求列表\n" +
+            "#### 2、用户设置\n" +
+            "%USER_CONFIG%\n" +
+            "#### 3、用户需求列表\n" +
             "\n" +
             "| 编号 | 需求内容 | 执行状态   |\n" +
             "| ---- | -------- | ---------- |\n" +
             "%USER_REQUEST%" +
             "\n" +
-            "#### 3、可使用的指令\n" +
+            "#### 4、可使用的指令\n" +
             "\n" +
             "| 指令                     | 描述                       |\n" +
             "| ------------------------ | -------------------------- |\n" +
             "%CMD_LIST%" +
             "\n" +
-            "#### 4、已经执行完成的指令\n" +
+            "#### 5、已经执行完成的指令\n" +
             "\n" +
-            "%CMD_HISTORY%" +
-            "\n" +
-            "#### 5、用户设置\n" +
-            "%USER_CONFIG%\n";
+            "%CMD_HISTORY%";
+
 
     @Resource
     private ChatGptSolution chatGptSolution;
@@ -304,14 +304,16 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         public void start() {
             while (!terminate) {
                 String request = buildRequest();
-                sendNotifyImmediately(request);
-                if (request.length() > 30000) {
-                    sendNotify("模型单次输入超过最大限制");
+                if (Objects.equals("Y", kvUtils.getString("logMcpRequest"))) {
+                    sendNotifyImmediately(request);
+                }
+                if (estimateTokens(request) > 30000) {
+                    sendNotify("模型单次输入超过最大限制token数");
                     terminate = true;
                     break;
                 }
                 StringBuilder result = new StringBuilder();
-                chatGptSolution.invoke(request, null, true, part -> processStream(part, result), 0.0);
+                chatGptSolution.invoke(request, null, true, part -> processStream(part, result), 0.1);
                 usedInputToken += estimateTokens(request);
                 usedOutputToken += estimateTokens(result.toString());
                 hints.clear();
