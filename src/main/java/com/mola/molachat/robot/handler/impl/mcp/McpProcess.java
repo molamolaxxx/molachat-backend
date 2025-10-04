@@ -53,15 +53,14 @@ public class McpProcess  {
      */
     private static String USER_REQUEST_PLACE_HOLDER = "%USER_REQUEST%";
 
-    private static String TEMPLATE = " \n" +
-            "\n" +
+    private static String TEMPLATE =
             "你是专业的指令执行者，需要通过执行指令和分析结果，实现用户的需求。\n" +
             "\n" +
             "#### 1、要求\n" +
             "\n" +
             "（1）指令以#start#开头，#end#结尾，每个指令+参数占一行。\n" +
             "（2）请保证本次输出的所有指令，指令名相同\n" +
-            "（3）在每一条指令的#end#后输出备注，如#remark#这是一条备注，说明了执行指令的原因和目的#remark#\n" +
+            "（3）在每一条指令的#end#后输出执行该命令的目的，如#target#这是一条备注，简要说明了执行指令的目的#target#\n" +
             "（4）执行完成的指令已经满足用户需求时，请输出#start#无指令#end#\n" +
             "\n" +
             "#### 2、用户设置\n" +
@@ -181,7 +180,7 @@ public class McpProcess  {
                 if (repeatCmd != null) {
                     if (repeatCmd == cmdHistory.get(cmdHistory.size() - 1)) {
                         errorRepeatCnt ++;
-                        remark = "[系统提示] 当前命令和上一个命令完全重复，请优化命令生成策略！";
+                        remark = "[警告] 当前命令和上一个命令完全重复，后续禁止输出该命令:" + repeatCmd.getCmdAndParam();
                     } else {
                         sendNotifyImmediately("存在历史重复命令，将最新结果替换上下文\n重复命令: " + repeatCmd.getCmdAndParam());
                     }
@@ -233,7 +232,7 @@ public class McpProcess  {
         List<String> remarks = new ArrayList<>();
 
         // 使用正则表达式匹配两个#之间的命令块
-        Pattern blockPattern = Pattern.compile("#remark#(.*?)#(?:remark)#", Pattern.DOTALL);
+        Pattern blockPattern = Pattern.compile("#target#(.*?)#(?:target)#", Pattern.DOTALL);
         Matcher blockMatcher = blockPattern.matcher(gptResult);
         while (blockMatcher.find()) {
             remarks.add(blockMatcher.group(1).trim());
@@ -281,7 +280,7 @@ public class McpProcess  {
     }
 
     public String buildRequest() {
-        String parsed = TEMPLATE;
+        String parsed = kvUtils.getStringOrDefault("mcpTemplate", TEMPLATE);
         // cmdList
         StringBuilder cmdMd = new StringBuilder();
         for (String cmd : cmdDescList) {
@@ -298,7 +297,7 @@ public class McpProcess  {
         StringBuilder requestMd = new StringBuilder();
 
 
-        String cmdHistoryTemp = "(%s) %s\n关联需求编号:%s\n备注:%s\n执行结果:%s\n\n";
+        String cmdHistoryTemp = "(%s) %s\n执行目的:%s\n关联需求编号:%s\n执行结果:%s\n\n";
 
         // history
         int lastCmdIdx = 0;
@@ -311,7 +310,7 @@ public class McpProcess  {
             for (int j = 0; j < mcpProcess.cmdHistory.size(); j++) {
                 CmdHistoryItem cmdHistoryItem = mcpProcess.cmdHistory.get(j);
                 cmdHistoryMd.append(String.format(cmdHistoryTemp ,
-                        j + 1, cmdHistoryItem.getCmdAndParam(), i + 1, cmdHistoryItem.getRemark(), cmdHistoryItem.getResult()));
+                        j + 1, cmdHistoryItem.getCmdAndParam(),cmdHistoryItem.getRemark(), i + 1,  cmdHistoryItem.getResult()));
                 lastCmdIdx = j + 1;
             }
         }
@@ -322,7 +321,7 @@ public class McpProcess  {
         for (int j = 0; j < cmdHistory.size(); j++) {
             CmdHistoryItem item = cmdHistory.get(j);
             cmdHistoryMd.append(String.format(cmdHistoryTemp ,
-                    lastCmdIdx + j + 1, item.getCmdAndParam(), historyProcess.size() + 1, item.getRemark(), item.getResult()));
+                    lastCmdIdx + j + 1, item.getCmdAndParam(),item.getRemark(), historyProcess.size() + 1,  item.getResult()));
         }
 
         parsed = parsed.replace(CMD_HISTORY_PLACE_HOLDER, cmdHistoryMd.toString());
