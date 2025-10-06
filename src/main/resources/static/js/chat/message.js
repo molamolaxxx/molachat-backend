@@ -380,6 +380,14 @@ $(document).ready(function () {
         sendMessageInner(content)
     })
 
+    // 支持 Ctrl+Enter 或 Shift+Enter 触发 editCompleteBtn 效果
+    $chatEditor.on('keydown', function (e) {
+        if ((e.ctrlKey || e.shiftKey) && e.keyCode === 13) {
+            e.preventDefault();
+            $editCompleteBtn.click();
+        }
+    });
+
     sendMessageInner = function (content) {
         //显示在屏幕上，滚动
         addMessage($chatMsg, content, true);

@@ -8,6 +8,7 @@ import com.mola.cmd.proxy.client.consumer.CmdSender;
 import com.mola.cmd.proxy.client.resp.CmdInvokeResponse;
 import com.mola.cmd.proxy.client.resp.CmdResponseContent;
 import com.mola.molachat.common.utils.KvUtils;
+import com.mola.molachat.robot.constant.CmdProxyConstant;
 import com.mola.molachat.robot.solution.ChatGptSolution;
 import com.mola.molachat.session.model.Message;
 import com.mola.molachat.session.model.StreamMessage;
@@ -53,33 +54,7 @@ public class McpProcess  {
      */
     private static String USER_REQUEST_PLACE_HOLDER = "%USER_REQUEST%";
 
-    private static String TEMPLATE =
-            "你是专业的指令执行者，需要通过执行指令和分析结果，实现用户的需求。\n" +
-            "\n" +
-            "#### 1、要求\n" +
-            "\n" +
-            "（1）指令以#start#开头，#end#结尾，每个指令+参数占一行。\n" +
-            "（2）请保证本次输出的所有指令，指令名相同\n" +
-            "（3）在每一条指令的#end#后输出执行该命令的目的，如#target#这是一条备注，简要说明了执行指令的目的#target#\n" +
-            "（4）执行完成的指令已经满足用户需求时，请输出#start#无指令#end#\n" +
-            "\n" +
-            "#### 2、用户设置\n" +
-            "%USER_CONFIG%\n" +
-            "#### 3、用户需求列表\n" +
-            "\n" +
-            "| 编号 | 需求内容 | 执行状态   |\n" +
-            "| ---- | -------- | ---------- |\n" +
-            "%USER_REQUEST%" +
-            "\n" +
-            "#### 4、可使用的指令\n" +
-            "\n" +
-            "| 指令                     | 描述                       |\n" +
-            "| ------------------------ | -------------------------- |\n" +
-            "%CMD_LIST%" +
-            "\n" +
-            "#### 5、执行完成的指令\n" +
-            "\n" +
-            "%CMD_HISTORY%";
+    private String processId;
 
     private String robotId;
 
@@ -116,7 +91,8 @@ public class McpProcess  {
             if (Objects.equals("Y", kvUtils.getString("logMcpRequest"))) {
                 sendNotifyImmediately(request);
             }
-            if (estimateTokens(request) > 30000) {
+            if (estimateTokens(request) >
+                    Integer.parseInt(kvUtils.getStringOrDefault("mcpPerMaxToken", "30000"))) {
                 sendNotify("模型单次输入超过最大限制token数");
                 terminate = true;
                 break;
@@ -127,7 +103,8 @@ public class McpProcess  {
                 break;
             }
             StringBuilder result = new StringBuilder();
-            chatGptSolution.invoke(request, null, true, part -> processStream(part, result), 0.1);
+            chatGptSolution.invoke(request, null, true,
+                    part -> processStream(part, result), kvUtils.getDoubleOrDefault("mcpTemperature", 0.1));
             usedInputToken += estimateTokens(request);
             usedOutputToken += estimateTokens(result.toString());
             // 提取命令列表
@@ -152,7 +129,7 @@ public class McpProcess  {
                     terminate = true;
                     break;
                 }
-                Map.Entry<String, String[]> entry = splitParam(nextCmd);
+                Map.Entry<String, String[]> entry = buildParam(nextCmd);
                 if (!cmdList.contains(entry.getKey())) {
                     sendNotify("未识别命令，流程终止");
                     terminate = true;
@@ -176,11 +153,11 @@ public class McpProcess  {
                     }
                 }
                 // 存在重复命令，将最新结果进行替换
-                String remark = cmd2Remark.getOrDefault(nextCmd, "无");
+                String headerMessage = "";
                 if (repeatCmd != null) {
                     if (repeatCmd == cmdHistory.get(cmdHistory.size() - 1)) {
                         errorRepeatCnt ++;
-                        remark = "[警告] 当前命令和上一个命令完全重复，后续禁止输出该命令:" + repeatCmd.getCmdAndParam();
+                        headerMessage = "[警告] 检测到重复命令，后续禁止输出该命令:" + repeatCmd.getCmdAndParam() + "\n";
                     } else {
                         sendNotifyImmediately("存在历史重复命令，将最新结果替换上下文\n重复命令: " + repeatCmd.getCmdAndParam());
                     }
@@ -191,7 +168,7 @@ public class McpProcess  {
                 } else {
                     errorRepeatCnt = 0;
                 }
-                cmdHistory.add(new CmdHistoryItem(nextCmd, cmdResult, remark));
+                cmdHistory.add(new CmdHistoryItem(nextCmd, cmdResult, cmd2Remark.getOrDefault(nextCmd, "无"), headerMessage));
             }
         }
         if (useMemory) {
@@ -264,7 +241,7 @@ public class McpProcess  {
         return !stop;
     }
 
-    public Map.Entry<String, String[]> splitParam(String inputText) {
+    public Map.Entry<String, String[]> buildParam(String inputText) {
         Map<String, String[]> cmdParams = Maps.newLinkedHashMap();
 
         for (String cmd : cmdDescList) {
@@ -272,7 +249,8 @@ public class McpProcess  {
             String cmdName = split[0].trim();
             if (inputText.startsWith(cmdName)) {
                 cmdParams.put(cmdName, new String[]{
-                        inputText.replace(cmdName, "").trim()
+                        inputText.replace(cmdName, "").trim(),
+                        processId
                 });
             }
         }
@@ -280,7 +258,7 @@ public class McpProcess  {
     }
 
     public String buildRequest() {
-        String parsed = kvUtils.getStringOrDefault("mcpTemplate", TEMPLATE);
+        String parsed = kvUtils.getStringOrDefault("mcpTemplate", CmdProxyConstant.MCP_TEMPLATE);
         // cmdList
         StringBuilder cmdMd = new StringBuilder();
         for (String cmd : cmdDescList) {
@@ -297,7 +275,7 @@ public class McpProcess  {
         StringBuilder requestMd = new StringBuilder();
 
 
-        String cmdHistoryTemp = "(%s) %s\n执行目的:%s\n关联需求编号:%s\n执行结果:%s\n\n";
+        String cmdHistoryTemp = "(%s) %s\n%s执行目的:%s\n关联需求编号:%s\n执行结果:%s\n\n";
 
         // history
         int lastCmdIdx = 0;
@@ -310,7 +288,8 @@ public class McpProcess  {
             for (int j = 0; j < mcpProcess.cmdHistory.size(); j++) {
                 CmdHistoryItem cmdHistoryItem = mcpProcess.cmdHistory.get(j);
                 cmdHistoryMd.append(String.format(cmdHistoryTemp ,
-                        j + 1, cmdHistoryItem.getCmdAndParam(),cmdHistoryItem.getRemark(), i + 1,  cmdHistoryItem.getResult()));
+                        j + 1, cmdHistoryItem.getCmdAndParam(), cmdHistoryItem.getHeaderMessage(),
+                        cmdHistoryItem.getRemark(), i + 1,  cmdHistoryItem.getResult()));
                 lastCmdIdx = j + 1;
             }
         }
@@ -321,7 +300,8 @@ public class McpProcess  {
         for (int j = 0; j < cmdHistory.size(); j++) {
             CmdHistoryItem item = cmdHistory.get(j);
             cmdHistoryMd.append(String.format(cmdHistoryTemp ,
-                    lastCmdIdx + j + 1, item.getCmdAndParam(),item.getRemark(), historyProcess.size() + 1,  item.getResult()));
+                    lastCmdIdx + j + 1, item.getCmdAndParam(), item.getHeaderMessage()
+                    ,item.getRemark(), historyProcess.size() + 1,  item.getResult()));
         }
 
         parsed = parsed.replace(CMD_HISTORY_PLACE_HOLDER, cmdHistoryMd.toString());
@@ -406,6 +386,10 @@ public class McpProcess  {
 
     public int getUsedOutputToken() {
         return usedOutputToken;
+    }
+
+    public String getProcessId() {
+        return processId;
     }
 }
 

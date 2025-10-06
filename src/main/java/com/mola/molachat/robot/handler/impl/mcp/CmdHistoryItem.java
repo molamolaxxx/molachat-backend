@@ -20,4 +20,6 @@ public class CmdHistoryItem {
     private String result;
 
     private String remark;
+
+    private String headerMessage;
 }

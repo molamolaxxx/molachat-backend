@@ -8,6 +8,7 @@ import com.google.common.collect.Maps;
 import com.mola.cmd.proxy.client.consumer.CmdSender;
 import com.mola.molachat.common.event.action.BaseAction;
 import com.mola.molachat.common.utils.Base64Util;
+import com.mola.molachat.common.utils.IdUtils;
 import com.mola.molachat.common.utils.KvUtils;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
@@ -42,6 +43,13 @@ import java.util.Objects;
 @Slf4j
 public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, BaseAction> {
 
+    private static final String PROCESS_UNI_KEY_FORMAT = "%s_%s";
+    private static final String MCP_USER_CONFIG_PREFIX = "mcpUserConfig_";
+    private static final String MCP_HISTORY_PROCESS_PREFIX = "mcpHistoryProcess_";
+    private static final String MCP_MEMORY_PREFIX = "mcpMemory_";
+    private static final String CHAT_GPT_MODEL_NAME_KEY = "chatGptModelName_chatGpt";
+    private static final String DEFAULT_MODEL_NAME = "Llama-3.2-90B-Vision-Instruct";
+    private static final String CHAT_GPT_MODEL_COST_PREFIX = "chatGptModelCost_";
     private Map<String, McpProcess> processMap = Maps.newConcurrentMap();
 
     @Resource
@@ -60,7 +68,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
     public BaseAction handler(MessageReceiveEvent messageReceiveEvent) {
         String robotId = messageReceiveEvent.getRobotChatter().getId();
         String sessionId = messageReceiveEvent.getSessionId();
-        String processUniKey = String.format("%s_%s", robotId, sessionId);
+        String processUniKey = String.format(PROCESS_UNI_KEY_FORMAT, robotId, sessionId);
         String userRequest = messageReceiveEvent.getMessage().getContent();
         if (Objects.equals(userRequest, "#stop-mcp#")) {
             McpProcess mcpProcess = processMap.get(processUniKey);
@@ -70,21 +78,21 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             return MessageSendAction.skip();
         }
         if (Objects.equals(userRequest, "#memory-open#")) {
-            kvUtils.set("mcpHistoryProcess_" + sessionId, "[]", robotId);
-            kvUtils.set("mcpMemory_" + sessionId, "Y", robotId);
+            kvUtils.set(MCP_HISTORY_PROCESS_PREFIX + sessionId, "[]", robotId);
+            kvUtils.set(MCP_MEMORY_PREFIX + sessionId, "Y", robotId);
             return MessageSendAction.skip();
         } else if (Objects.equals(userRequest, "#memory-close#")) {
-            kvUtils.set("mcpHistoryProcess_" + sessionId, "[]", robotId);
-            kvUtils.set("mcpMemory_" + sessionId, "N", robotId);
+            kvUtils.set(MCP_HISTORY_PROCESS_PREFIX + sessionId, "[]", robotId);
+            kvUtils.set(MCP_MEMORY_PREFIX + sessionId, "N", robotId);
             return MessageSendAction.skip();
         } else if (Objects.equals(userRequest, "#clear-context#")) {
-            kvUtils.set("mcpHistoryProcess_" + sessionId, "[]", robotId);
+            kvUtils.set(MCP_HISTORY_PROCESS_PREFIX + sessionId, "[]", robotId);
             return MessageSendAction.skip();
         }
 
         if (userRequest.startsWith("#settings#")) {
             userRequest = userRequest.replace("#settings# ", "");
-            kvUtils.set("mcpUserConfig_" + sessionId, userRequest,
+            kvUtils.set(MCP_USER_CONFIG_PREFIX + sessionId, userRequest,
                     messageReceiveEvent.getMessage().getChatterId());
             return MessageSendAction.withResp("用户设置成功");
         }
@@ -119,14 +127,15 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             }
 
             List<McpProcess> processList = JSON.parseObject(
-                    kvUtils.getStringOrDefault("mcpHistoryProcess_" + sessionId, "[]")
+                    kvUtils.getStringOrDefault(MCP_HISTORY_PROCESS_PREFIX + sessionId, "[]")
                     , new TypeReference<List<McpProcess>>(){});
 
 
             boolean useMemory = Objects.equals(
-                            kvUtils.getStringOrDefault("mcpMemory_" + sessionId, "N"),"Y");
+                            kvUtils.getStringOrDefault(MCP_MEMORY_PREFIX + sessionId, "N"),"Y");
 
             McpProcess mcpProcess = new McpProcess(
+                    "MCP"+ System.currentTimeMillis() % 1000 + IdUtils.getRandomString(5),
                     robotId,
                     sessionId,
                     Lists.newArrayList(),
@@ -145,9 +154,9 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             // 开启
             mcpProcess.start();
 
-            String modelName = kvUtils.getStringOrDefault("chatGptModelName_chatGpt",
-                    "Llama-3.2-90B-Vision-Instruct");
-            String costStr = kvUtils.getString("chatGptModelCost_" + modelName);
+            String modelName = kvUtils.getStringOrDefault(CHAT_GPT_MODEL_NAME_KEY,
+                    DEFAULT_MODEL_NAME);
+            String costStr = kvUtils.getString(CHAT_GPT_MODEL_COST_PREFIX + modelName);
             if (StringUtils.isNotBlank(costStr) && costStr.contains("#")) {
                 String[] split = costStr.split("#");
                 BigDecimal inputCost = new BigDecimal(mcpProcess.getUsedInputToken())
@@ -158,11 +167,11 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                         .divide(BigDecimal.valueOf(1000000), 2, RoundingMode.HALF_UP);
 
                 return MessageSendAction.withResp(
-                        String.format("Mcp流程执行完成\n输入token：%s\n输出token：%s\n本次开销：%s",
+                        String.format("流程执行完成\n编号：%s\n输入token：%s\n输出token：%s\n本次开销：%s", mcpProcess.getProcessId(),
                                 mcpProcess.getUsedInputToken(), mcpProcess.getUsedOutputToken(), inputCost.add(outputCost).toPlainString()));
             } else {
                 return MessageSendAction.withResp(
-                        String.format("Mcp流程执行完成\n输入token：%s\n输出token：%s",
+                        String.format("流程执行完成\n编号：%s\n输入token：%s\n输出token：%s",mcpProcess.getProcessId(),
                                 mcpProcess.getUsedInputToken(), mcpProcess.getUsedOutputToken()));
             }
         } catch (Exception e) {
@@ -198,7 +207,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
     @Override
     public List<CmdDescription> cmdDescriptions(String robotId, String sessionId) {
-        String processUniKey = String.format("%s_%s", robotId, sessionId);
+        String processUniKey = String.format(PROCESS_UNI_KEY_FORMAT, robotId, sessionId);
         McpProcess mcpProcess = processMap.get(processUniKey);
         if (mcpProcess != null) {
             return CmdDescription.builder()
@@ -207,7 +216,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     .executeScript("sendMessageInner('#stop-mcp#')")
                     .buildSingleton();
         }
-        String userSetting = kvUtils.getStringOrDefault("mcpUserConfig_" + sessionId, "无");
+        String userSetting = kvUtils.getStringOrDefault(MCP_USER_CONFIG_PREFIX + sessionId, "无");
         CmdDescription setting = CmdDescription.builder()
                 .cmdName("#settings#")
                 .cmdDesc("Mcp用户设置")
@@ -215,7 +224,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 .build();
 
 
-        String memory = kvUtils.getStringOrDefault("mcpMemory_" + sessionId, "N");
+        String memory = kvUtils.getStringOrDefault(MCP_MEMORY_PREFIX + sessionId, "N");
         CmdDescription openMemory = null;
         if (Objects.equals(memory, "N")) {
             openMemory = CmdDescription.builder()

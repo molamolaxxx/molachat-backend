@@ -30,6 +30,16 @@ public class KvUtils {
         return Integer.parseInt(keyValue.getValue());
     }
 
+
+    public Double getDoubleOrDefault(String key, Double defaultValue) {
+        KeyValue keyValue = keyValueFactory.selectOne(key);
+        if (Objects.isNull(keyValue)) {
+            return defaultValue;
+        }
+        return Double.parseDouble(keyValue.getValue());
+    }
+
+
     public String getString(String key) {
         KeyValue keyValue = keyValueFactory.selectOne(key);
         if (Objects.isNull(keyValue)) {
