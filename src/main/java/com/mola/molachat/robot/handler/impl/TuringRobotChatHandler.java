@@ -21,24 +21,38 @@ public class TuringRobotChatHandler implements IRobotEventHandler<MessageReceive
 
     private final static String USER_ID = "287686";
 
+    private static final String TURING_API_URL = "http://openapi.turingapi.com/openapi/api/v2";
+    private static final String REQ_TYPE_KEY = "reqType";
+    private static final String PERCEPTION_KEY = "perception";
+    private static final String INPUT_TEXT_KEY = "inputText";
+    private static final String TEXT_KEY = "text";
+    private static final String USER_INFO_KEY = "userInfo";
+    private static final String API_KEY = "apiKey";
+    private static final String USER_ID_KEY = "userId";
+    private static final String RESULTS_KEY = "results";
+    private static final String VALUES_KEY = "values";
+    private static final String MESSAGE_NULL_MSG = "message is null";
+    private static final String ROBOT_CHATTER_NULL_MSG = "robotChatter is null";
+    private static final String REMOTE_ROBOT_ERROR_MSG = "RemoteRobotChatHandler error ";
+
     @Override
     public MessageSendAction handler(MessageReceiveEvent messageReceiveEvent) {
         MessageSendAction messageSendAction = new MessageSendAction();
         try {
             RobotChatter robotChatter = messageReceiveEvent.getRobotChatter();
-            Assert.notNull(messageReceiveEvent.getMessage(), "message is null");
-            Assert.notNull(robotChatter, "robotChatter is null");
+            Assert.notNull(messageReceiveEvent.getMessage(), MESSAGE_NULL_MSG);
+            Assert.notNull(robotChatter, ROBOT_CHATTER_NULL_MSG);
             JSONObject body = assembleBody(messageReceiveEvent.getMessage().getContent(), robotChatter.getApiKey());
-            String res = HttpUtil.INSTANCE.post("http://openapi.turingapi.com/openapi/api/v2",
+            String res = HttpUtil.INSTANCE.post(TURING_API_URL,
                     body, 1000);
             JSONObject jsonObject = JSONObject.parseObject(res);
-            String text = jsonObject.getJSONArray("results")
+            String text = jsonObject.getJSONArray(RESULTS_KEY)
                     .getJSONObject(0)
-                    .getJSONObject("values")
-                    .getString("text");
+                    .getJSONObject(VALUES_KEY)
+                    .getString(TEXT_KEY);
             messageSendAction.setResponsesText(text);
         } catch (Exception e) {
-            log.error("RemoteRobotChatHandler error " + JSONObject.toJSONString(messageReceiveEvent), e);
+            log.error(REMOTE_ROBOT_ERROR_MSG + JSONObject.toJSONString(messageReceiveEvent), e);
             messageSendAction.setSkip(Boolean.TRUE);
         }
         return messageSendAction;
@@ -46,16 +60,16 @@ public class TuringRobotChatHandler implements IRobotEventHandler<MessageReceive
 
     private JSONObject assembleBody(String text, String apiKey) {
         JSONObject body = new JSONObject();
-        body.put("reqType", 0);
+        body.put(REQ_TYPE_KEY, 0);
         JSONObject perception = new JSONObject();
         JSONObject inputText = new JSONObject();
-        inputText.put("text", text);
-        perception.put("inputText", inputText);
+        inputText.put(TEXT_KEY, text);
+        perception.put(INPUT_TEXT_KEY, inputText);
         JSONObject userInfo = new JSONObject();
-        userInfo.put("apiKey",apiKey);
-        userInfo.put("userId",USER_ID);
-        body.put("perception", perception);
-        body.put("userInfo", userInfo);
+        userInfo.put(API_KEY,apiKey);
+        userInfo.put(USER_ID_KEY,USER_ID);
+        body.put(PERCEPTION_KEY, perception);
+        body.put(USER_INFO_KEY, userInfo);
         return body;
     }
 

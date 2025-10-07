@@ -110,6 +110,7 @@ $(document).ready(function () {
             mainDocChild.innerText = content.length > 200 ? content.slice(0, 200) + "\n...." : content
         } else {
             mainDocChild.innerText = content;
+            mainDocChild.fullText = content;
         }
         mainDoc.append(mainDocChild);
         mainDoc.mainDocChild = mainDocChild;
