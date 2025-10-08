@@ -17,6 +17,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.Validate;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -68,7 +70,7 @@ public class McpProcess  {
 
     private List<String> cmdList;
 
-    private volatile boolean terminate;
+    private transient volatile boolean terminate;
 
     private transient ChatGptSolution chatGptSolution;
 
@@ -80,39 +82,72 @@ public class McpProcess  {
 
     private int usedOutputToken;
 
+    private int estimateUsedInputToken;
+
+    private int estimateUsedOutputToken;
+
+    private int totalCachedTokens;
+
     private transient List<McpProcess> historyProcess;
 
     private transient boolean useMemory;
 
+    private transient volatile String terminalMessage;
+
     public void start() {
-        int errorRepeatCnt = 0;
         if (Objects.equals("Y", kvUtils.getString("logMcpRequest"))) {
             sendNotifyImmediately(buildRequest());
         }
+        try {
+            loop();
+        } catch (Exception e) {
+            log.error("McpProcess process error", e);
+            terminate("流程执行异常，异常原因:" + e.getMessage());
+        }
+        Validate.isTrue(terminate, "确认流程终止");
+        // 终止当前输出流对话
+        stopStream();
+        if (StringUtils.isNotBlank(terminalMessage)) {
+            sendNotifyImmediately(terminalMessage);
+        }
+        if (Objects.equals("Y", kvUtils.getString("logMcpRequest"))) {
+            sendNotifyImmediately(buildRequest());
+        }
+        if (useMemory) {
+            String mcpHistoryProcessStr = kvUtils.getString("mcpHistoryProcess_" + sessionId);
+            List<McpProcess> processList = Lists.newArrayList();
+            processList.addAll(historyProcess);
+            processList.add(this);
+            // 保存上下文
+            kvUtils.set("mcpHistoryProcess_" + sessionId, JSON.toJSONString(processList), robotId);
+        }
+    }
+
+    private void loop() {
+        int errorRepeatCnt = 0;
         sendNotify(buildLogPrefix());
         while (!terminate) {
             String request = buildRequest();
             if (estimateTokens(request) >
                     Integer.parseInt(kvUtils.getStringOrDefault("mcpPerMaxToken", "30000"))) {
-                stopStream();
-                sendNotifyImmediately("模型单次输入超过最大限制token数");
-                terminate = true;
+                terminate("模型单次输入超过最大限制token数");
                 break;
             }
             if (errorRepeatCnt >= 3) {
-                stopStream();
-                sendNotifyImmediately("检测到错误循环，请调整提示词重试");
-                terminate = true;
+                terminate("检测到错误循环，请调整提示词重试");
                 break;
             }
             StringBuilder result = new StringBuilder();
 
             sendNotify("#### 模型输出\n");
-            chatGptSolution.invoke(request, null, true,
-                    part -> processStream(part, result), kvUtils.getDoubleOrDefault("mcpTemperature", 0.1));
+            Map<String, Object> streamOptions = Maps.newHashMap();
+            streamOptions.put("include_usage", true);
+            chatGptSolution.invoke(request, null, true, streamOptions,
+                    part -> processStream(part, result),
+                    kvUtils.getDoubleOrDefault("mcpTemperature", 0.1));
 
-            usedInputToken += estimateTokens(request);
-            usedOutputToken += estimateTokens(result.toString());
+            estimateUsedInputToken += estimateTokens(request);
+            estimateUsedOutputToken += estimateTokens(result.toString());
             // 提取命令列表
             List<String> nextCmdList = parseNextCmd(result.toString());
             // 提取备注列表
@@ -124,8 +159,7 @@ public class McpProcess  {
                 }
             }
             if (CollectionUtils.isEmpty(nextCmdList)) {
-                stopStream();
-                terminate = true;
+                terminate(null);
                 break;
             }
 
@@ -144,15 +178,12 @@ public class McpProcess  {
                             processBeforeSend(targetDesc, -1),
                             ""
                     ));
-                    stopStream();
-                    terminate = true;
+                    terminate(null);
                     break;
                 }
                 Map.Entry<String, String[]> entry = buildParam(nextCmd);
                 if (!cmdList.contains(entry.getKey())) {
-                    stopStream();
-                    sendNotifyImmediately("未识别命令，流程终止");
-                    terminate = true;
+                    terminate(String.format("未知命令%s，流程终止", entry.getKey()));
                     break;
                 }
                 // 执行命令
@@ -201,17 +232,6 @@ public class McpProcess  {
                 cmdHistory.add(new CmdHistoryItem(nextCmd, cmdResult, targetDesc, headerMessage));
             }
         }
-        if (Objects.equals("Y", kvUtils.getString("logMcpRequest"))) {
-            sendNotifyImmediately(buildRequest());
-        }
-        if (useMemory) {
-            String mcpHistoryProcessStr = kvUtils.getString("mcpHistoryProcess_" + sessionId);
-            List<McpProcess> processList = Lists.newArrayList();
-            processList.addAll(historyProcess);
-            processList.add(this);
-            // 保存上下文
-            kvUtils.set("mcpHistoryProcess_" + sessionId, JSON.toJSONString(processList), robotId);
-        }
     }
 
     private String processBeforeSend(String input, int width) {
@@ -256,7 +276,8 @@ public class McpProcess  {
                 .replace("`", "\\`");       // 圆括号
     }
 
-    public void terminate() {
+    public void terminate(String terminalMessage) {
+        this.terminalMessage = terminalMessage;
         terminate = true;
     }
 
@@ -298,8 +319,6 @@ public class McpProcess  {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        boolean stop = ChatGptSolution.isStreamResultStop(part) || terminate;
-
         // 内容
         String content = ChatGptSolution.parseStreamContent(part, "content");
         if (content != null) {
@@ -312,7 +331,17 @@ public class McpProcess  {
             msg.setCreateTime(new Date());
             messageSolution.sendStreamMessage(sessionId, msg);
         }
-        return !stop;
+        boolean streamResultStop = ChatGptSolution.hasUsage(part) || terminate;
+        // 统计cached_tokens
+        if (ChatGptSolution.hasUsage(part)) {
+            this.totalCachedTokens += ChatGptSolution.queryCachedTokenNum(part);
+            this.usedInputToken += ChatGptSolution.queryTokenNum(part, "prompt_tokens");
+            this.usedOutputToken += ChatGptSolution.queryTokenNum(part, "completion_tokens");
+        } else if (terminate){
+            this.usedInputToken = estimateUsedInputToken;
+            this.usedOutputToken = estimateUsedOutputToken;
+        }
+        return !streamResultStop;
     }
 
     private void stopStream() {
@@ -441,7 +470,6 @@ public class McpProcess  {
                 throw new RuntimeException(e);
             }
             if (terminate) {
-                stopStream();
                 return;
             }
         }
@@ -496,6 +524,10 @@ public class McpProcess  {
 
     public String getProcessId() {
         return processId;
+    }
+
+    public int getTotalCachedTokens() {
+        return totalCachedTokens;
     }
 }
 

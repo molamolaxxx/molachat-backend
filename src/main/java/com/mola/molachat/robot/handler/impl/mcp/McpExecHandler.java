@@ -73,7 +73,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         if (Objects.equals(userRequest, "#stop-mcp#")) {
             McpProcess mcpProcess = processMap.get(processUniKey);
             if (mcpProcess != null) {
-                mcpProcess.terminate();
+                mcpProcess.terminate(null);
             }
             return MessageSendAction.skip();
         }
@@ -145,9 +145,11 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     false,
                     chatGptSolution,
                     kvUtils,
-                    messageSolution,0,0,
+                    messageSolution,
+                    0,0,0,0,0,
                     processList,
-                    useMemory
+                    useMemory,
+                    null
             );
             processMap.put(processUniKey, mcpProcess);
 
@@ -159,20 +161,26 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             String costStr = kvUtils.getString(CHAT_GPT_MODEL_COST_PREFIX + modelName);
             if (StringUtils.isNotBlank(costStr) && costStr.contains("#")) {
                 String[] split = costStr.split("#");
-                BigDecimal inputCost = new BigDecimal(mcpProcess.getUsedInputToken())
+                BigDecimal inputCost = new BigDecimal(mcpProcess.getUsedInputToken() - mcpProcess.getTotalCachedTokens())
                         .multiply(new BigDecimal(split[0]))
                         .divide(BigDecimal.valueOf(1000000), 2, RoundingMode.HALF_UP);
                 BigDecimal outputCost = new BigDecimal(mcpProcess.getUsedOutputToken())
                         .multiply(new BigDecimal(split[1]))
                         .divide(BigDecimal.valueOf(1000000), 2, RoundingMode.HALF_UP);
+                if (split.length == 3 && mcpProcess.getTotalCachedTokens() != 0) {
+                    inputCost.add(new BigDecimal(mcpProcess.getTotalCachedTokens())
+                            .multiply(new BigDecimal(split[2]))
+                            .divide(BigDecimal.valueOf(1000000), 2, RoundingMode.HALF_UP));
+                }
 
                 return MessageSendAction.withResp(
-                        String.format("流程执行完成\n编号：%s\n输入token：%s\n输出token：%s\n本次开销：%s", mcpProcess.getProcessId(),
-                                mcpProcess.getUsedInputToken(), mcpProcess.getUsedOutputToken(), inputCost.add(outputCost).toPlainString()));
+                        String.format("流程执行完成\n编号：%s\n输入token：%s\n命中缓存token：%s\n输出token：%s\n本次开销：%s",
+                                mcpProcess.getProcessId(), mcpProcess.getUsedInputToken(),mcpProcess.getTotalCachedTokens(), mcpProcess.getUsedOutputToken(),
+                                inputCost.add(outputCost).toPlainString()));
             } else {
                 return MessageSendAction.withResp(
-                        String.format("流程执行完成\n编号：%s\n输入token：%s\n输出token：%s",mcpProcess.getProcessId(),
-                                mcpProcess.getUsedInputToken(), mcpProcess.getUsedOutputToken()));
+                        String.format("流程执行完成\n编号：%s\n输入token：%s\n命中缓存token：%s\n输出token：%s",mcpProcess.getProcessId(),
+                                mcpProcess.getUsedInputToken(), mcpProcess.getTotalCachedTokens(), mcpProcess.getUsedOutputToken()));
             }
         } catch (Exception e) {
             log.error("McpExecHandler error", e);

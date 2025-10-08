@@ -53,10 +53,11 @@ public class ChatGptSolution {
      * @return
      */
     public String invoke(String input) {
-        return invoke(input, null, false, null, null);
+        return invoke(input, null, false,null, null, null);
     }
 
     public String invoke(String input, String systemPrompt, boolean useStream,
+                         Map<String, Object> streamOptions,
                          Function<String, Boolean> responseConsumer, Double temperature) {
         ChatterDTO chatGptChatter = chatterService.selectById("chatGpt");
         Assert.notNull(chatGptChatter, "chatGpt robot is null");
@@ -74,6 +75,9 @@ public class ChatGptSolution {
             body.put("stream", useStream);
             if (temperature != null) {
                 body.put("temperature", temperature);
+            }
+            if (streamOptions != null) {
+                body.put("stream_options", streamOptions);
             }
 
             // headers
@@ -167,6 +171,34 @@ public class ChatGptSolution {
             return Objects.equals(inner.getString("finish_reason"), "stop");
         }
         return false;
+    }
+
+    public static boolean hasUsage(String result) {
+        JSONObject jsonObject = JSONObject.parseObject(result);
+        return jsonObject.get("usage") != null;
+    }
+
+    public static int queryTokenNum(String result, String key) {
+        JSONObject jsonObject = JSONObject.parseObject(result);
+        if (jsonObject.get("usage") != null) {
+            JSONObject usage = jsonObject.getJSONObject("usage");
+            if (usage.get(key) != null) {
+                return usage.getIntValue(key);
+            }
+        }
+        return 0;
+    }
+
+    public static int queryCachedTokenNum(String result) {
+        JSONObject jsonObject = JSONObject.parseObject(result);
+        if (jsonObject.get("usage") != null) {
+            JSONObject usage = jsonObject.getJSONObject("usage");
+            if (usage.get("prompt_tokens_details") != null) {
+                JSONObject promptTokensDetails = usage.getJSONObject("prompt_tokens_details");
+                return promptTokensDetails.getIntValue("cached_tokens");
+            }
+        }
+        return 0;
     }
 
     public void callback(String virtualChatterId, String result, boolean exception) {
