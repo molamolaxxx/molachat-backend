@@ -2,6 +2,7 @@ package com.mola.molachat.common.utils;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -214,6 +215,8 @@ public enum HttpUtil {
                         log.info("finish postWithStreamRes with responseConsumer finish, data = {}, body = {}", data, body.toJSONString());
                         return;
                     }
+                } else if (StringUtils.isNotBlank(line)){
+                    log.info(line);
                 }
             }
         }

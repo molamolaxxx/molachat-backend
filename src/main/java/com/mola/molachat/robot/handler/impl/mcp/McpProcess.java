@@ -82,10 +82,6 @@ public class McpProcess  {
 
     private int usedOutputToken;
 
-    private int estimateUsedInputToken;
-
-    private int estimateUsedOutputToken;
-
     private int totalCachedTokens;
 
     private transient List<McpProcess> historyProcess;
@@ -142,19 +138,22 @@ public class McpProcess  {
             sendNotify("#### 模型输出\n");
             Map<String, Object> streamOptions = Maps.newHashMap();
             streamOptions.put("include_usage", true);
-            chatGptSolution.invoke(request, null, true, streamOptions,
-                    part -> processStream(part, result),
-                    kvUtils.getDoubleOrDefault("mcpTemperature", 0.1));
 
-            estimateUsedInputToken += estimateTokens(request);
-            estimateUsedOutputToken += estimateTokens(result.toString());
+            UsedToken usedToken = new UsedToken();
+            chatGptSolution.invoke(request, null, true, streamOptions,
+                    part -> processStream(part, result, usedToken, request),
+                    kvUtils.getDoubleOrDefault("mcpTemperature", 0.1));
+            this.usedOutputToken += usedToken.usedOutputToken;
+            this.usedInputToken += usedToken.usedInputToken;
+            this.totalCachedTokens += usedToken.totalCachedTokens;
+
             // 提取命令列表
             List<String> nextCmdList = parseNextCmd(result.toString());
             // 提取备注列表
             List<String> targets = parseNextTargets(result.toString());
             Map<String, String> cmd2TargetDesc = Maps.newHashMap();
-            if (nextCmdList.size() == targets.size()) {
-                for (int i = 0; i < nextCmdList.size(); i++) {
+            for (int i = 0; i < nextCmdList.size(); i++) {
+                if (i < targets.size()) {
                     cmd2TargetDesc.put(nextCmdList.get(i), targets.get(i));
                 }
             }
@@ -313,7 +312,7 @@ public class McpProcess  {
         return target;
     }
 
-    public boolean processStream(String part, StringBuilder result) {
+    public boolean processStream(String part, StringBuilder result, UsedToken usedToken, String input) {
         try {
             Thread.sleep(new Random().nextInt(50) + 50);
         } catch (InterruptedException e) {
@@ -331,17 +330,17 @@ public class McpProcess  {
             msg.setCreateTime(new Date());
             messageSolution.sendStreamMessage(sessionId, msg);
         }
-        boolean streamResultStop = ChatGptSolution.hasUsage(part) || terminate;
+
         // 统计cached_tokens
         if (ChatGptSolution.hasUsage(part)) {
-            this.totalCachedTokens += ChatGptSolution.queryCachedTokenNum(part);
-            this.usedInputToken += ChatGptSolution.queryTokenNum(part, "prompt_tokens");
-            this.usedOutputToken += ChatGptSolution.queryTokenNum(part, "completion_tokens");
+            usedToken.totalCachedTokens = ChatGptSolution.queryCachedTokenNum(part);
+            usedToken.usedInputToken = ChatGptSolution.queryTokenNum(part, "prompt_tokens");
+            usedToken.usedOutputToken = ChatGptSolution.queryTokenNum(part, "completion_tokens");
         } else if (terminate){
-            this.usedInputToken = estimateUsedInputToken;
-            this.usedOutputToken = estimateUsedOutputToken;
+            usedToken.usedInputToken = estimateTokens(input);
+            usedToken.usedOutputToken = estimateTokens(result.toString());
         }
-        return !streamResultStop;
+        return !terminate;
     }
 
     private void stopStream() {
@@ -528,6 +527,12 @@ public class McpProcess  {
 
     public int getTotalCachedTokens() {
         return totalCachedTokens;
+    }
+
+    public static class UsedToken {
+        private int totalCachedTokens;
+        private int usedInputToken;
+        private int usedOutputToken;
     }
 }
 

@@ -10,14 +10,17 @@ import com.mola.molachat.chatter.service.ChatterService;
 import com.mola.molachat.common.utils.HttpUtil;
 import com.mola.molachat.common.utils.KvUtils;
 import com.mola.molachat.robot.data.KeyValueFactoryInterface;
+import com.mola.molachat.robot.model.InvokeLimiter;
 import com.mola.molachat.robot.model.KeyValue;
 import io.jsonwebtoken.lang.Assert;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -47,6 +50,23 @@ public class ChatGptSolution {
     @Resource
     private KvUtils kvUtils;
 
+    @Getter
+    private final Map<String, InvokeLimiter> limiters = Maps.newHashMap();
+
+    @PostConstruct
+    public void init() {
+        String limiterStr = kvUtils.getString("chatGptLimiters");
+        if (StringUtils.isNotBlank(limiterStr)) {
+            for (String s : limiterStr.split(";")) {
+                String[] split = s.split(":");
+                if (split.length != 2) {
+                    continue;
+                }
+                limiters.put(split[0], new InvokeLimiter(Integer.parseInt(split[1])));
+            }
+        }
+    }
+
     /**
      * 调用chatgpt
      * @param input
@@ -63,22 +83,34 @@ public class ChatGptSolution {
         Assert.notNull(chatGptChatter, "chatGpt robot is null");
         Assert.isTrue(chatGptChatter.isRobot(), "chatGpt robot is not robot");
         String virtualChatterId = String.format("%s_%s", "system", UUID.randomUUID());
+
         String result = null;
         try {
             JSONObject body = new JSONObject();
             String modelName = kvUtils.getStringOrDefault("chatGptModelName_chatGpt",
                     "Llama-3.2-90B-Vision-Instruct");
+
+            InvokeLimiter invokeLimiter = limiters.get(modelName);
+            if (invokeLimiter != null) {
+                invokeLimiter.tryAcquire();
+            }
+
             body.put("model", modelName);
             List<Map<String, String>> prompt = getInvokePrompt(input, systemPrompt);
             log.info(JSONObject.toJSONString(prompt));
             body.put("messages", prompt);
             body.put("stream", useStream);
+            body.put("max_tokens", 32000);
             if (temperature != null) {
                 body.put("temperature", temperature);
             }
             if (streamOptions != null) {
                 body.put("stream_options", streamOptions);
             }
+            // 关闭思维链
+            Map<String, String> thinkMode = Maps.newHashMap();
+            thinkMode.put("type", "disabled");
+            body.put("thinking", thinkMode);
 
             // headers
             List<Header> headers = new ArrayList<>();
@@ -193,6 +225,9 @@ public class ChatGptSolution {
         JSONObject jsonObject = JSONObject.parseObject(result);
         if (jsonObject.get("usage") != null) {
             JSONObject usage = jsonObject.getJSONObject("usage");
+            if (usage.get("cached_tokens") != null) {
+                return usage.getIntValue("cached_tokens");
+            }
             if (usage.get("prompt_tokens_details") != null) {
                 JSONObject promptTokensDetails = usage.getJSONObject("prompt_tokens_details");
                 return promptTokensDetails.getIntValue("cached_tokens");

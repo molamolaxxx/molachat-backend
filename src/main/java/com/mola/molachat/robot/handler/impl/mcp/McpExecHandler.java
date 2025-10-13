@@ -146,7 +146,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                     chatGptSolution,
                     kvUtils,
                     messageSolution,
-                    0,0,0,0,0,
+                    0,0,0,
                     processList,
                     useMemory,
                     null
