@@ -6,6 +6,8 @@ import com.alibaba.nacos.common.utils.MapUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mola.cmd.proxy.client.consumer.CmdSender;
+import com.mola.cmd.proxy.client.resp.CmdInvokeResponse;
+import com.mola.cmd.proxy.client.resp.CmdResponseContent;
 import com.mola.molachat.common.event.action.BaseAction;
 import com.mola.molachat.common.utils.Base64Util;
 import com.mola.molachat.common.utils.IdUtils;
@@ -25,13 +27,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author : molamola
@@ -77,6 +82,11 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             }
             return MessageSendAction.skip();
         }
+
+        List<McpProcess> processList = JSON.parseObject(
+                kvUtils.getStringOrDefault(MCP_HISTORY_PROCESS_PREFIX + sessionId, "[]")
+                , new TypeReference<List<McpProcess>>(){});
+
         if (Objects.equals(userRequest, "#memory-open#")) {
             kvUtils.set(MCP_HISTORY_PROCESS_PREFIX + sessionId, "[]", robotId);
             kvUtils.set(MCP_MEMORY_PREFIX + sessionId, "Y", robotId);
@@ -88,8 +98,15 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         } else if (Objects.equals(userRequest, "#clear-context#")) {
             kvUtils.set(MCP_HISTORY_PROCESS_PREFIX + sessionId, "[]", robotId);
             return MessageSendAction.skip();
+        } else if (Objects.equals(userRequest, "#open-todo#")) {
+            McpProcessTodoItem todoItem = queryTodoItem(sessionId);
+            if (todoItem == null) {
+                return MessageSendAction.withResp("流程无可用代办");
+            }
+            CmdSender.INSTANCE.send("openUrl", sessionId, new String[]{
+                    String.format("{'url':'%s'}", todoItem.getTodoListPath()), todoItem.getProcessId()});
+            return MessageSendAction.skip();
         }
-
         if (userRequest.startsWith("#settings#")) {
             userRequest = userRequest.replace("#settings# ", "");
             kvUtils.set(MCP_USER_CONFIG_PREFIX + sessionId, userRequest,
@@ -98,7 +115,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         }
 
         if (processMap.containsKey(processUniKey)) {
-            return MessageSendAction.withResp("当前Mcp流程正在进行中，请稍后提交");
+            return MessageSendAction.withResp("当前流程正在进行中，请稍后提交");
         }
 
         // ocr图片
@@ -111,7 +128,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             // 查询可用命令
             Map<String, String> remoteCmdDescMap = CmdSender.INSTANCE.fetchDescriptionMap(sessionId);
             if (MapUtils.isEmpty(remoteCmdDescMap)) {
-                return MessageSendAction.withResp("Mcp流程无可用远程命令");
+                return MessageSendAction.withResp("流程无可用远程命令");
             }
             List<String> cmdDescList = Lists.newArrayList();
             List<String> cmdList = Lists.newArrayList();
@@ -126,31 +143,87 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 });
             }
 
-            List<McpProcess> processList = JSON.parseObject(
-                    kvUtils.getStringOrDefault(MCP_HISTORY_PROCESS_PREFIX + sessionId, "[]")
-                    , new TypeReference<List<McpProcess>>(){});
-
-
             boolean useMemory = Objects.equals(
                             kvUtils.getStringOrDefault(MCP_MEMORY_PREFIX + sessionId, "N"),"Y");
+            McpProcess mcpProcess;
+            if (userRequest.startsWith("#make-todo#")) {
+                mcpProcess = new McpProcess(
+                        McpProcess.ProcessType.TODO,
+                        "MCP"+ System.currentTimeMillis() % 1000 + IdUtils.getRandomString(5),
+                        robotId,
+                        sessionId,
+                        Lists.newArrayList(), userRequest.replace("#make-todo# ", ""), cmdDescList, cmdList,
+                        false,
+                        chatGptSolution, kvUtils, messageSolution,
+                        0,0,0,
+                        Lists.newArrayList(),
+                        useMemory,
+                        null,
+                        0,
+                        systemSettings(sessionId),
+                        null
+                );
+            } else if (userRequest.equals("#process-todo#")) {
+                McpProcessTodoItem todoItem = queryTodoItem(sessionId);
+                if (todoItem == null) {
+                    return MessageSendAction.withResp("流程无可用代办");
+                }
+                mcpProcess = new McpProcess(
+                        McpProcess.ProcessType.PROCESS_TODO,
+                        "MCP"+ System.currentTimeMillis() % 1000 + IdUtils.getRandomString(5),
+                        robotId,
+                        sessionId,
+                        Lists.newArrayList(), todoItem.getUserRequest(), cmdDescList, cmdList,
+                        false,
+                        chatGptSolution, kvUtils, messageSolution,
+                        0,0,0,
+                        Lists.newArrayList(),
+                        useMemory,
+                        null,
+                        0,
+                        systemSettings(sessionId),
+                        todoItem
+                );
+            } else {
+                mcpProcess = new McpProcess(
+                        McpProcess.ProcessType.TASK,
+                        "MCP"+ System.currentTimeMillis() % 1000 + IdUtils.getRandomString(5),
+                        robotId,
+                        sessionId,
+                        Lists.newArrayList(), userRequest, cmdDescList, cmdList,
+                        false,
+                        chatGptSolution, kvUtils, messageSolution,
+                        0,0,0,
+                        processList,
+                        useMemory,
+                        null,
+                        0,
+                        systemSettings(sessionId),
+                        null
+                );
+            }
 
-            McpProcess mcpProcess = new McpProcess(
-                    "MCP"+ System.currentTimeMillis() % 1000 + IdUtils.getRandomString(5),
-                    robotId,
-                    sessionId,
-                    Lists.newArrayList(),
-                    userRequest,
-                    cmdDescList,
-                    cmdList,
-                    false,
-                    chatGptSolution,
-                    kvUtils,
-                    messageSolution,
-                    0,0,0,
-                    processList,
-                    useMemory,
-                    null
-            );
+            if (Objects.equals(userRequest, "#show-context#")) {
+                return MessageSendAction.withResp(mcpProcess.buildRequest());
+            }
+            if (Objects.equals(userRequest, "#context-length#")) {
+                if (CollectionUtils.isEmpty(processList)) {
+                    return MessageSendAction.withResp("上下文长度:0");
+                }
+                return MessageSendAction.withResp("上下文长度:"+
+                        McpProcess.estimateTokens(mcpProcess.buildRequest()));
+            }
+
+            if (userRequest.startsWith("#hidden-cmd-result#")) {
+                return MessageSendAction.withResp(
+                        hiddenCmd(userRequest.replace("#hidden-cmd-result# ", ""),
+                                processList, true, sessionId, robotId));
+            }
+            if (userRequest.startsWith("#hidden-cmd#")) {
+                return MessageSendAction.withResp(
+                        hiddenCmd(userRequest.replace("#hidden-cmd# ", ""),
+                                processList, false, sessionId, robotId));
+            }
             processMap.put(processUniKey, mcpProcess);
 
             // 开启
@@ -174,20 +247,89 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 }
 
                 return MessageSendAction.withResp(
-                        String.format("流程执行完成\n编号：%s\n输入token：%s\n命中缓存token：%s\n输出token：%s\n本次开销：%s",
-                                mcpProcess.getProcessId(), mcpProcess.getUsedInputToken(),mcpProcess.getTotalCachedTokens(), mcpProcess.getUsedOutputToken(),
-                                inputCost.add(outputCost).toPlainString()));
+                        String.format("流程执行完成\n编号：%s\n输入token：%s\n命中缓存token：%s\n输出token：%s\n本次开销：%s\n上下文长度：%s",
+                                mcpProcess.getProcessId(), mcpProcess.getUsedInputToken(),
+                                mcpProcess.getTotalCachedTokens(), mcpProcess.getUsedOutputToken(),
+                                inputCost.add(outputCost).toPlainString(), mcpProcess.getContextLength()));
             } else {
                 return MessageSendAction.withResp(
-                        String.format("流程执行完成\n编号：%s\n输入token：%s\n命中缓存token：%s\n输出token：%s",mcpProcess.getProcessId(),
-                                mcpProcess.getUsedInputToken(), mcpProcess.getTotalCachedTokens(), mcpProcess.getUsedOutputToken()));
+                        String.format("流程执行完成\n编号：%s\n输入token：%s\n命中缓存token：%s\n输出token：%s\n上下文长度：%s",mcpProcess.getProcessId(),
+                                mcpProcess.getUsedInputToken(), mcpProcess.getTotalCachedTokens(),
+                                mcpProcess.getUsedOutputToken(), mcpProcess.getContextLength()));
             }
         } catch (Exception e) {
             log.error("McpExecHandler error", e);
-            return MessageSendAction.withResp("Mcp流程执行失败，原因：" + e.getMessage());
+            return MessageSendAction.withResp("流程执行失败，原因：" + e.getMessage());
         } finally {
             processMap.remove(processUniKey);
         }
+    }
+
+    private McpProcessTodoItem queryTodoItem(String sessionId) {
+        try {
+            // 执行命令
+            CmdInvokeResponse<CmdResponseContent> cmdResp = CmdSender.INSTANCE
+                    .send("queryLastProcessDir", sessionId, new String[]{"{}"});
+            Map<String, String> resultMap = cmdResp.getData().getResultMap();
+            String processId = resultMap.get("result");
+            if (StringUtils.isBlank(processId)) {
+                return null;
+            }
+            McpProcessTodoItem todoItem = new McpProcessTodoItem();
+            todoItem.setProcessId(processId);
+            todoItem.setResourcePath("./.process/" + processId + "/resource.md");
+            todoItem.setTodoListPath("./.process/" + processId + "/todoList.md");
+
+            // 执行命令
+            cmdResp = CmdSender.INSTANCE
+                    .send("readFile", sessionId, new String[]{
+                            String.format("{'path':'%s'}", "./.process/" + processId + "/request.txt"), processId});
+            resultMap = cmdResp.getData().getResultMap();
+            if (resultMap.get("result").contains("文件不存在")) {
+                return null;
+            }
+            todoItem.setUserRequest(resultMap.get("result"));
+            return todoItem;
+        } catch (Exception e) {
+            log.warn("queryTodoItem query error, sessionId = " + sessionId + ":" + e.getMessage());
+            return null;
+        }
+    }
+
+    private String systemSettings(String sessionId) {
+        try {
+            // 执行命令
+            CmdInvokeResponse<CmdResponseContent> cmdResp = CmdSender.INSTANCE
+                    .send("systemSettings", sessionId, new String[]{"{}"});
+            Map<String, String> resultMap = cmdResp.getData().getResultMap();
+            return resultMap.get("result");
+        } catch (Exception e) {
+            log.warn("systemSettings query error, sessionId = " + sessionId + ":" + e.getMessage());
+        }
+        return null;
+    }
+
+    private String hiddenCmd(String target, List<McpProcess> processList, boolean onlyHiddenResult,
+                             String sessionId, String robotId) {
+        List<CmdHistoryItem> items = processList.stream().map(McpProcess::getCmdHistory)
+                .flatMap(Collection::stream)
+                .filter(e -> Objects.equals(e.getTarget(), target))
+                .collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(items)) {
+            return "未匹配指令执行记录";
+        }
+        if (items.size() > 1) {
+            return "匹配了多个指令执行记录";
+        }
+        items.forEach(e -> {
+            if (onlyHiddenResult) {
+                e.setHiddenResult(true);
+            } else {
+                e.setHiddenItem(true);
+            }
+        });
+        kvUtils.set(MCP_HISTORY_PROCESS_PREFIX + sessionId, JSON.toJSONString(processList), robotId);
+        return "隐藏成功";
     }
 
     private String findLastOcrMessageContent(String sessionId) {
@@ -220,7 +362,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         if (mcpProcess != null) {
             return CmdDescription.builder()
                     .cmdName("#stop-mcp#")
-                    .cmdDesc("停止mcp流程")
+                    .cmdDesc("停止流程")
                     .executeScript("sendMessageInner('#stop-mcp#')")
                     .buildSingleton();
         }
@@ -254,6 +396,56 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 .executeScript("sendMessageInner('#clear-context#')")
                 .build();
 
-        return Lists.newArrayList(setting, openMemory, clearContext);
+        CmdDescription queryContextLength = CmdDescription.builder()
+                .cmdName("#context-length#")
+                .cmdDesc("查询上下文长度")
+                .executeScript("sendMessageInner('#context-length#')")
+                .build();
+
+        CmdDescription showContext = CmdDescription.builder()
+                .cmdName("#show-context#")
+                .cmdDesc("查询上下文")
+                .executeScript("sendMessageInner('#show-context#')")
+                .build();
+
+        CmdDescription hiddenResult = CmdDescription.builder()
+                .cmdName("#hidden-cmd-result#")
+                .cmdDesc("隐藏指令执行结果")
+                .executeScript(String.format("popupAndSendCmd('#hidden-cmd-result#','%s')",
+                        Base64Util.encodeBase64("{输入目的匹配}")))
+                .build();
+
+        CmdDescription hiddenItem = CmdDescription.builder()
+                .cmdName("#hidden-cmd#")
+                .cmdDesc("隐藏指令执行记录")
+                .executeScript(String.format("popupAndSendCmd('#hidden-cmd#','%s')",
+                        Base64Util.encodeBase64("{输入目的匹配}")))
+                .build();
+
+        CmdDescription todo = CmdDescription.builder()
+                .cmdName("#make-todo#")
+                .cmdDesc("生成计划")
+                .executeScript(String.format("popupAndSendCmd('#make-todo#','%s')",
+                        Base64Util.encodeBase64("{输入需求}")))
+                .build();
+
+        CmdDescription processTodo = null;
+        CmdDescription openTodo = null;
+        McpProcessTodoItem todoItem = queryTodoItem(sessionId);
+        if (todoItem != null) {
+            processTodo = CmdDescription.builder()
+                    .cmdName("#process-todo#")
+                    .cmdDesc("执行计划")
+                    .executeScript("sendMessageInner('#process-todo#')")
+                    .build();
+            openTodo = CmdDescription.builder()
+                    .cmdName("#open-todo#")
+                    .cmdDesc("打开执行计划")
+                    .executeScript("sendMessageInner('#open-todo#')")
+                    .build();
+        }
+
+        return Lists.newArrayList(clearContext,showContext,
+                queryContextLength, todo, processTodo, openTodo,  hiddenResult, hiddenItem, setting, openMemory);
     }
 }

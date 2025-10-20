@@ -106,7 +106,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         // 默认主账号
         String usedApiKey = robotChatter.getApiKey();
         String content = message.getContent();
-        if (content.length() >= 20000) {
+        if (content.length() >= 100000) {
             return MessageSendAction.withResp("error:[输入长度超出限制]");
         }
         try {

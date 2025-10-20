@@ -20,6 +20,8 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author : molamola
@@ -93,6 +95,6 @@ public class RobotEventBus implements EventBus<BaseRobotEvent, BaseAction>, Init
         getRobotEventHandlers().forEach(handler -> {
             resultList.addAll(handler.cmdDescriptions(robotId, sessionId));
         });
-        return resultList;
+        return resultList.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 }
