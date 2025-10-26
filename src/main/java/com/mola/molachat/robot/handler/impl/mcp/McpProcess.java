@@ -338,6 +338,10 @@ public class McpProcess  {
         // 计算重要度
         for (int i = 0; i < historyCmd.size(); i++) {
             CmdHistoryItem cmdHistoryItem = historyCmd.get(i);
+            if (StringUtils.isBlank(cmdHistoryItem.fetchResult())) {
+                cmdHistoryItem.setImportantRate(BigDecimal.ONE);
+                return;
+            }
             // 时效性
             BigDecimal agingRate = BigDecimal.valueOf(historyCmd.size() + i * 1.5)
                     .divide(BigDecimal.valueOf(historyCmd.size()).multiply(new BigDecimal(2)), 5, RoundingMode.HALF_UP);
@@ -381,7 +385,7 @@ public class McpProcess  {
             String line = lines[lineIdx];
             for (int i = 0; i < line.length(); i += width) {
                 if (i > 0) {
-                    result.append("<br/>");
+                    result.append("\n");
                 }
                 result.append(line, i, Math.min(i + width, line.length()));
             }
@@ -390,9 +394,12 @@ public class McpProcess  {
     }
 
     private String replaceToken(String input) {
-        return input.replace("\r\n", "<br/>").replace("\n", "<br/>")
+        return input
+                .replace("<", "＜")
+                .replace(">", "＞")
+                .replace("\r\n", "<br/>").replace("\n", "<br/>")
                 .replace("|", "丨")
-                .replace("`", "\\`");       // 圆括号
+                .replace("`", "\\`");
     }
 
     public void terminate(String terminalMessage) {
@@ -438,10 +445,15 @@ public class McpProcess  {
         if (content != null) {
             messageBuffer.add(content);
             result.append(content);
-            if (messageBuffer.size() >= 10) {
+            if (messageBuffer.size() >= 5) {
                 // 发送流式消息
                 sendStreamMessage(String.join("", messageBuffer));
                 messageBuffer.clear();
+                try {
+                    Thread.sleep(new Random().nextInt(20) + 50);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
 
