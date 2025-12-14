@@ -88,6 +88,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
 
     public static final String SETTINGS = "#settings#";
 
+    public static final String MODEL_CHOOSE = "#modelChoose#-";
+
     public static final String STOP_STEAM_CMD = "#stop-stream#";
 
     private static final int RETRY_TIME = 12;
@@ -104,12 +106,16 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         RobotChatter robotChatter = messageReceiveEvent.getRobotChatter();
         Message message = messageReceiveEvent.getMessage();
         // 默认主账号
-        String usedApiKey = robotChatter.getApiKey();
+        String usedApiKey = findApiKey(message.getSessionId(), robotChatter);
         String content = message.getContent();
         if (content.length() >= 100000) {
             return MessageSendAction.withResp("error:[输入长度超出限制]");
         }
         try {
+            if (content.startsWith(MODEL_CHOOSE)) {
+                handlerModelChoose(message, robotChatter);
+                return MessageSendAction.withResp("info:[设置成功]");
+            }
             if (content.startsWith(SETTINGS)) {
                 content = content.replace( SETTINGS + " ", "");
                 kvUtils.set("modelUserConfig_" + message.getSessionId(), content,
@@ -127,7 +133,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             headers.add(new BasicHeader("Authorization", "Bearer " + usedApiKey));
             // prompt 拼接最近20条历史记录
             JSONObject body = new JSONObject();
-            String modelName = kvUtils.getStringOrDefault("chatGptModelName_" + robotChatter.getId(), "Llama-3.2-90B-Vision-Instruct");
+            String modelName = findModelName(message.getSessionId(), robotChatter.getId());
             InvokeLimiter invokeLimiter = chatGptSolution.getLimiters().get(modelName);
             if (invokeLimiter != null) {
                 invokeLimiter.tryAcquire();
@@ -141,7 +147,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             String useSteam = kvUtils.getStringOrDefault("useSteam", "Y");
 
             // 模型地址
-            String modelUrl = kvUtils.getStringOrDefault("modelUrl_" + robotChatter.getId(), MODEL_URL);
+            String modelUrl = findModelUrl(message.getSessionId(), robotChatter.getId());
             if (Objects.equals(useSteam, "Y")) {
                 return processWithStream(body, headers, modelUrl, messageSendAction, messageReceiveEvent);
             } else {
@@ -176,6 +182,15 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             // ignore exception
         }
         return messageSendAction;
+    }
+
+    private void handlerModelChoose(Message message, RobotChatter robotChatter) {
+        int idx = Integer.parseInt(message.getContent().replace(MODEL_CHOOSE, ""));
+        String modelChoose = kvUtils.getStringOrDefault("modelChoose_" + robotChatter.getId(), "");
+        String[] options = modelChoose.split("\n")[idx].split(";");
+        kvUtils.set("chatGptModelName_" + message.getSessionId(), options[0], robotChatter.getId());
+        kvUtils.set("modelUrl_" + message.getSessionId(), options[1], robotChatter.getId());
+        kvUtils.set("chatGptApiKey_" + message.getSessionId(), options[2], robotChatter.getId());
     }
 
     private MessageSendAction processWithoutStream(JSONObject body, List<Header> headers, String modelUrl, MessageSendAction messageSendAction) throws Exception {
@@ -332,7 +347,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                     content = content.substring(0, maxPromptMsgSize);
                 }
                 if (content.startsWith("error:[") || content.startsWith("info:[")
-                        || STOP_STEAM_CMD.equals(content) || SETTINGS.equals(content)) {
+                        || STOP_STEAM_CMD.equals(content) || SETTINGS.equals(content) || content.startsWith(MODEL_CHOOSE)) {
                     continue;
                 }
                 if (content.contains(THINK_START) && content.contains(THINK_END)) {
@@ -377,8 +392,50 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                     .cmdDesc("用户设置")
                     .executeScript(String.format("popupAndSendCmd('#settings#','%s')", Base64Util.encodeBase64(userSetting)))
                     .build());
+
+            String modelChoose = kvUtils.getStringOrDefault("modelChoose_" + robotId, "");
+            if (StringUtils.isNotBlank(modelChoose)) {
+                String currentModelName = findModelName(sessionId, robotId);
+                String[] split = modelChoose.split("\n");
+                for (int i = 0; i < split.length; i++) {
+                    String modelSetting = split[i];
+                    String[] options = modelSetting.split(";");
+                    String desc = Objects.equals(options[0], currentModelName) ? "切换模型:" + options[0] + "(当前使用)" : "切换模型:" + options[0];
+                    descriptionList.add(CmdDescription.builder()
+                            .cmdName(MODEL_CHOOSE + i)
+                            .cmdDesc(desc)
+                            .executeScript("sendMessageInner('" + MODEL_CHOOSE + i + "')")
+                            .build());
+                }
+            }
+
             return descriptionList;
         }
         return CmdDescription.NOT_SUPPORT;
+    }
+
+    private String findModelName(String sessionId, String robotId) {
+        String modelName = kvUtils.getString("chatGptModelName_" + sessionId);
+        if (StringUtils.isBlank(modelName)) {
+            modelName = kvUtils.getString("chatGptModelName_" + robotId);
+        }
+        return modelName;
+    }
+
+    private String findModelUrl(String sessionId, String robotId) {
+        String res = kvUtils.getString("modelUrl_" + sessionId);
+        if (StringUtils.isBlank(res)) {
+            res = kvUtils.getString("modelUrl_" + robotId);
+        }
+        return res;
+    }
+
+
+    private String findApiKey(String sessionId, RobotChatter robotChatter) {
+        String res = kvUtils.getString("chatGptApiKey_" + sessionId);
+        if (StringUtils.isBlank(res)) {
+            res = robotChatter.getApiKey();
+        }
+        return res;
     }
 }

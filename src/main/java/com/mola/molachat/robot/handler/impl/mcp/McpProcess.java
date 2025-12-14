@@ -215,13 +215,16 @@ public class McpProcess  {
             List<String> messageBuffer = Lists.newLinkedList();
             chatGptSolution.invoke(request, null, true, streamOptions,
                     part -> processStream(part, result, usedToken, request, messageBuffer),
-                    kvUtils.getDoubleOrDefault("mcpTemperature", 0.1));
+                    kvUtils.getDoubleOrDefault("mcpTemperature", 0.1), sessionId);
             if (messageBuffer.size() > 0) {
                 sendStreamMessage(String.join("", messageBuffer));
             }
             this.usedOutputToken += usedToken.usedOutputToken;
             this.usedInputToken += usedToken.usedInputToken;
             this.totalCachedTokens += usedToken.totalCachedTokens;
+            if (terminate) {
+                break;
+            }
 
             // 提取命令列表
             List<String> nextCmdList = parseNextCmd(result.toString());

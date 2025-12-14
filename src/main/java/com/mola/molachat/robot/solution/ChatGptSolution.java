@@ -73,12 +73,12 @@ public class ChatGptSolution {
      * @return
      */
     public String invoke(String input) {
-        return invoke(input, null, false,null, null, null);
+        return invoke(input, null, false,null, null, null, null);
     }
 
     public String invoke(String input, String systemPrompt, boolean useStream,
                          Map<String, Object> streamOptions,
-                         Function<String, Boolean> responseConsumer, Double temperature) {
+                         Function<String, Boolean> responseConsumer, Double temperature, String sessionId) {
         ChatterDTO chatGptChatter = chatterService.selectById("chatGpt");
         Assert.notNull(chatGptChatter, "chatGpt robot is null");
         Assert.isTrue(chatGptChatter.isRobot(), "chatGpt robot is not robot");
@@ -87,8 +87,7 @@ public class ChatGptSolution {
         String result = null;
         try {
             JSONObject body = new JSONObject();
-            String modelName = kvUtils.getStringOrDefault("chatGptModelName_chatGpt",
-                    "Llama-3.2-90B-Vision-Instruct");
+            String modelName = findModelName(sessionId, "chatGpt");
 
             InvokeLimiter invokeLimiter = limiters.get(modelName);
             if (invokeLimiter != null) {
@@ -115,9 +114,9 @@ public class ChatGptSolution {
             // headers
             List<Header> headers = new ArrayList<>();
             headers.add(new BasicHeader("Content-Type", "application/json"));
-            headers.add(new BasicHeader("Authorization", "Bearer " + chatGptChatter.getApiKey()));
+            headers.add(new BasicHeader("Authorization", "Bearer " + findApiKey(sessionId, chatGptChatter)));
 
-            String modelUrl = kvUtils.getStringOrDefault("modelUrl_chatGpt", "https://api.sambanova.ai/v1/chat/completions");
+            String modelUrl = findModelUrl(sessionId, "chatGpt");
             // 非流
             if (!useStream) {
                 String res = HttpUtil.INSTANCE.post(modelUrl, body, 300000, headers.toArray(new Header[]{}));
@@ -136,6 +135,32 @@ public class ChatGptSolution {
         } finally {
             gptInvokeFutureMap.remove(virtualChatterId);
         }
+    }
+
+
+    private String findModelName(String sessionId, String robotId) {
+        String modelName = kvUtils.getString("chatGptModelName_" + sessionId);
+        if (StringUtils.isBlank(modelName)) {
+            modelName = kvUtils.getString("chatGptModelName_" + robotId);
+        }
+        return modelName;
+    }
+
+    private String findModelUrl(String sessionId, String robotId) {
+        String res = kvUtils.getString("modelUrl_" + sessionId);
+        if (StringUtils.isBlank(res)) {
+            res = kvUtils.getString("modelUrl_" + robotId);
+        }
+        return res;
+    }
+
+
+    private String findApiKey(String sessionId, ChatterDTO robotChatter) {
+        String res = kvUtils.getString("chatGptApiKey_" + sessionId);
+        if (StringUtils.isBlank(res)) {
+            res = robotChatter.getApiKey();
+        }
+        return res;
     }
 
     /**

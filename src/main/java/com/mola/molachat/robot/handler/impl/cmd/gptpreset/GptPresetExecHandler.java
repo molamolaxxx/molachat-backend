@@ -54,7 +54,7 @@ public class GptPresetExecHandler extends BaseCmdRobotHandler {
             }
 
             String text = String.join(" ", splitRes);
-            return chatGptSolution.invoke(text, keyValue.getValue(), false, null,  null, null);
+            return chatGptSolution.invoke(text, keyValue.getValue(), false, null,  null, null, null);
         } catch (Exception e) {
             log.error("gpt预存模板执行失败, input = " + baseEvent.getCommandInput(), e);
             return "gpt预存模板执行失败";
