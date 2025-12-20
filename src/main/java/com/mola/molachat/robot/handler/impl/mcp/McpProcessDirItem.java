@@ -9,7 +9,7 @@ import lombok.Data;
  * @date : 2025-10-19 10:47
  **/
 @Data
-public class McpProcessTodoItem {
+public class McpProcessDirItem {
 
     private String processId;
 
@@ -17,9 +17,19 @@ public class McpProcessTodoItem {
 
     private String resourcePath;
 
+    private String questionPath;
+
     private String userRequest;
 
     public String buildPreFilePath() {
         return String.format("\n%s\n%s\n", todoListPath, resourcePath);
+    }
+
+    public boolean isTodoDir() {
+        return processId.startsWith("TODO");
+    }
+
+    public boolean isQuestionDir() {
+        return processId.startsWith("QUESTION");
     }
 }

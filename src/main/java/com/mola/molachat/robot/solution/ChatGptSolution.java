@@ -94,6 +94,7 @@ public class ChatGptSolution {
                 invokeLimiter.tryAcquire();
             }
 
+            log.info("ChatGptSolution 当前使用模型:{}", modelName);
             body.put("model", modelName);
             List<Map<String, String>> prompt = getInvokePrompt(input, systemPrompt);
             log.info(JSONObject.toJSONString(prompt));

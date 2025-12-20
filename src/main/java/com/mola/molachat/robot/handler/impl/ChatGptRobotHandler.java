@@ -76,6 +76,9 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     @Resource
     private AppConfig appConfig;
 
+    @Resource
+    private ModelChooseQueryHelper modelChooseQueryHelper;
+
     public static final String MODEL_URL = "https://api.sambanova.ai/v1/chat/completions";
 
     public static final String ALERT_TEXT = "error:[账户已失效]";
@@ -87,8 +90,6 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
     public static final String CLEAR_CMD = "#clear#";
 
     public static final String SETTINGS = "#settings#";
-
-    public static final String MODEL_CHOOSE = "#modelChoose#-";
 
     public static final String STOP_STEAM_CMD = "#stop-stream#";
 
@@ -112,8 +113,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             return MessageSendAction.withResp("error:[输入长度超出限制]");
         }
         try {
-            if (content.startsWith(MODEL_CHOOSE)) {
-                handlerModelChoose(message, robotChatter);
+            if (content.startsWith(ModelChooseQueryHelper.MODEL_CHOOSE)) {
+                modelChooseQueryHelper.handlerModelChoose(message, robotChatter);
                 return MessageSendAction.withResp("info:[设置成功]");
             }
             if (content.startsWith(SETTINGS)) {
@@ -133,7 +134,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             headers.add(new BasicHeader("Authorization", "Bearer " + usedApiKey));
             // prompt 拼接最近20条历史记录
             JSONObject body = new JSONObject();
-            String modelName = findModelName(message.getSessionId(), robotChatter.getId());
+            String modelName = modelChooseQueryHelper.findModelName(message.getSessionId(), robotChatter.getId());
             InvokeLimiter invokeLimiter = chatGptSolution.getLimiters().get(modelName);
             if (invokeLimiter != null) {
                 invokeLimiter.tryAcquire();
@@ -182,15 +183,6 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             // ignore exception
         }
         return messageSendAction;
-    }
-
-    private void handlerModelChoose(Message message, RobotChatter robotChatter) {
-        int idx = Integer.parseInt(message.getContent().replace(MODEL_CHOOSE, ""));
-        String modelChoose = kvUtils.getStringOrDefault("modelChoose_" + robotChatter.getId(), "");
-        String[] options = modelChoose.split("\n")[idx].split(";");
-        kvUtils.set("chatGptModelName_" + message.getSessionId(), options[0], robotChatter.getId());
-        kvUtils.set("modelUrl_" + message.getSessionId(), options[1], robotChatter.getId());
-        kvUtils.set("chatGptApiKey_" + message.getSessionId(), options[2], robotChatter.getId());
     }
 
     private MessageSendAction processWithoutStream(JSONObject body, List<Header> headers, String modelUrl, MessageSendAction messageSendAction) throws Exception {
@@ -347,7 +339,8 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                     content = content.substring(0, maxPromptMsgSize);
                 }
                 if (content.startsWith("error:[") || content.startsWith("info:[")
-                        || STOP_STEAM_CMD.equals(content) || SETTINGS.equals(content) || content.startsWith(MODEL_CHOOSE)) {
+                        || STOP_STEAM_CMD.equals(content) || SETTINGS.equals(content)
+                        || content.startsWith(ModelChooseQueryHelper.MODEL_CHOOSE)) {
                     continue;
                 }
                 if (content.contains(THINK_START) && content.contains(THINK_END)) {
@@ -393,33 +386,11 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
                     .executeScript(String.format("popupAndSendCmd('#settings#','%s')", Base64Util.encodeBase64(userSetting)))
                     .build());
 
-            String modelChoose = kvUtils.getStringOrDefault("modelChoose_" + robotId, "");
-            if (StringUtils.isNotBlank(modelChoose)) {
-                String currentModelName = findModelName(sessionId, robotId);
-                String[] split = modelChoose.split("\n");
-                for (int i = 0; i < split.length; i++) {
-                    String modelSetting = split[i];
-                    String[] options = modelSetting.split(";");
-                    String desc = Objects.equals(options[0], currentModelName) ? "切换模型:" + options[0] + "(当前使用)" : "切换模型:" + options[0];
-                    descriptionList.add(CmdDescription.builder()
-                            .cmdName(MODEL_CHOOSE + i)
-                            .cmdDesc(desc)
-                            .executeScript("sendMessageInner('" + MODEL_CHOOSE + i + "')")
-                            .build());
-                }
-            }
+            descriptionList.addAll(modelChooseQueryHelper.getModelChoose(robotId, sessionId));
 
             return descriptionList;
         }
         return CmdDescription.NOT_SUPPORT;
-    }
-
-    private String findModelName(String sessionId, String robotId) {
-        String modelName = kvUtils.getString("chatGptModelName_" + sessionId);
-        if (StringUtils.isBlank(modelName)) {
-            modelName = kvUtils.getString("chatGptModelName_" + robotId);
-        }
-        return modelName;
     }
 
     private String findModelUrl(String sessionId, String robotId) {

@@ -112,7 +112,7 @@ public class McpProcess  {
 
     private String systemSettings;
 
-    private McpProcessTodoItem todoItem;
+    private McpProcessDirItem todoItem;
 
     public void start() {
         if (Objects.equals("Y", kvUtils.getString("logMcpRequest"))) {
@@ -141,7 +141,7 @@ public class McpProcess  {
             // 保存上下文
             kvUtils.set("mcpHistoryProcess_" + sessionId, JSON.toJSONString(processList), robotId);
         }
-        if (ProcessType.TODO.equals(processType)) {
+        if (ProcessType.TODO.equals(processType) || ProcessType.QUESTION.equals(processType) || ProcessType.TODO_WITH_QUESTION.equals(processType)) {
             // 创建resource文件
             createResource();
         }
@@ -158,8 +158,13 @@ public class McpProcess  {
             String result = cmdHistoryItem.getResult();
             JSONObject jsonObject = JSON.parseObject(cmdParam);
             if (cmdName.startsWith("readFile") && result.length() > 100) {
-                stringBuilder.append(idx).append("、文件路径:").append(jsonObject.getString("path")).append("\n");
-                stringBuilder.append("文件内容:\n").append(cmdHistoryItem.getResult()).append("\n\n");
+                String path = jsonObject.getString("path");
+                if (path.contains("resource.md")) {
+                    stringBuilder.append(cmdHistoryItem.getResult()).append("\n");
+                } else {
+                    stringBuilder.append(idx).append("、文件路径:").append(path).append("\n");
+                    stringBuilder.append("文件内容:\n").append(cmdHistoryItem.getResult()).append("\n\n");
+                }
             } else if (cmdName.startsWith("treeFile") && result.length() > 100) {
                 stringBuilder.append(idx).append("、文件夹路径:").append(jsonObject.getString("path")).append("\n");
                 stringBuilder.append("文件夹结构:\n").append(cmdHistoryItem.getResult()).append("\n\n");
@@ -184,14 +189,22 @@ public class McpProcess  {
         sendNotify(buildLogPrefix());
 
         // 强制让模型读取todo
-        if (ProcessType.PROCESS_TODO.equals(processType)) {
-            executeCmd(Lists.newArrayList(
-                    "readFile {'path':'" + todoItem.getTodoListPath() + "'}",
-                    "readFile {'path':'" + todoItem.getResourcePath() + "'}"
-            ), Lists.newArrayList(
-                    "读取代办列表，确认当前任务进度与下一步计划",
-                    "读取资源文件，确认是否有可用模板或依赖"
-            ),errorRepeatCnt);
+        if (todoItem != null) {
+            List<String> nextCmdList = Lists.newArrayList();
+            List<String> targets = Lists.newArrayList();
+            if (StringUtils.isNotBlank(todoItem.getTodoListPath())) {
+                nextCmdList.add("readFile {'path':'" + todoItem.getTodoListPath() + "'}");
+                targets.add("读取代办列表，确认当前任务进度与下一步计划");
+            }
+            if (StringUtils.isNotBlank(todoItem.getQuestionPath())) {
+                nextCmdList.add("readFile {'path':'" + todoItem.getQuestionPath() + "'}");
+                targets.add("读取当前需求的疑问和回答");
+            }
+            if (StringUtils.isNotBlank(todoItem.getResourcePath())) {
+                nextCmdList.add("readFile {'path':'" + todoItem.getResourcePath() + "'}");
+                targets.add("读取本次任务依赖的资源文件");
+            }
+            executeCmd(nextCmdList, targets, errorRepeatCnt);
         }
         while (!terminate) {
             calculateImportRate();
@@ -452,11 +465,6 @@ public class McpProcess  {
                 // 发送流式消息
                 sendStreamMessage(String.join("", messageBuffer));
                 messageBuffer.clear();
-                try {
-                    Thread.sleep(new Random().nextInt(20) + 50);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
             }
         }
 
@@ -536,12 +544,14 @@ public class McpProcess  {
 
     public String buildRequest() {
         String parsed;
-        if (ProcessType.TODO.equals(processType)) {
+        if (ProcessType.TODO.equals(processType) || ProcessType.TODO_WITH_QUESTION.equals(processType)) {
             parsed = kvUtils.getStringOrDefault("mcpTodoTemplate", CmdProxyConstant.MCP_TODO_TEMPLATE);
             parsed = parsed.replace(PROCESS_ID_HOLDER, processId);
         } else if (ProcessType.PROCESS_TODO.equals(processType)) {
             parsed = kvUtils.getStringOrDefault("mcpProcessTodoTemplate", CmdProxyConstant.MCP_PROCESS_TODO_TEMPLATE);
-            parsed = parsed.replace(PRE_FILE, todoItem.buildPreFilePath());
+        } else if (ProcessType.QUESTION.equals(processType)) {
+            parsed = kvUtils.getStringOrDefault("mcpQuestionTemplate", CmdProxyConstant.MCP_QUESTION_TEMPLATE);
+            parsed = parsed.replace(PROCESS_ID_HOLDER, processId);
         } else {
             parsed = kvUtils.getStringOrDefault("mcpTemplate", CmdProxyConstant.MCP_TEMPLATE);
         }
@@ -699,7 +709,9 @@ public class McpProcess  {
     public static class ProcessType{
         public static final String TASK = "task";
         public static final String TODO = "todo";
+        public static final String TODO_WITH_QUESTION = "todo_with_question";
         public static final String PROCESS_TODO = "process_todo";
+        public static final String QUESTION = "question";
     }
 }
 
