@@ -152,7 +152,6 @@ public class McpProcess  {
     private void createResource() {
         StringBuilder stringBuilder = new StringBuilder();
 
-        int idx = 1;
         for (CmdHistoryItem cmdHistoryItem : cmdHistory) {
             Map.Entry<String, String[]> entry = buildParam(cmdHistoryItem.getCmdAndParam());
             String cmdName = entry.getKey();
@@ -161,6 +160,10 @@ public class McpProcess  {
             JSONObject jsonObject = JSON.parseObject(cmdParam);
             if (cmdName.startsWith("readFile") && result.length() > 100) {
                 String path = jsonObject.getString("path");
+                if (path.contains("project.md")) {
+                    // do-nothing
+                    continue;
+                }
                 if (path.contains("resource.md")) {
                     stringBuilder.append(cmdHistoryItem.getResult()).append("\n");
                 } else {
@@ -171,7 +174,6 @@ public class McpProcess  {
                 stringBuilder.append("------------------读取文件夹结构:").append(jsonObject.getString("path")).append("------------------").append("\n");
                 stringBuilder.append(cmdHistoryItem.getResult()).append("\n\n");
             }
-            idx++;
         }
 
         String param;
