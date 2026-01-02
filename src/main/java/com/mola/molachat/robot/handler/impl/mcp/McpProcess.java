@@ -114,6 +114,8 @@ public class McpProcess  {
 
     private McpProcessDirItem todoItem;
 
+    private McpProcessDirItem projectFiles;
+
     public void start() {
         if (Objects.equals("Y", kvUtils.getString("logMcpRequest"))) {
             sendNotifyImmediately(buildRequest());
@@ -162,20 +164,23 @@ public class McpProcess  {
                 if (path.contains("resource.md")) {
                     stringBuilder.append(cmdHistoryItem.getResult()).append("\n");
                 } else {
-                    stringBuilder.append(idx).append("、文件路径:").append(path).append("\n");
-                    stringBuilder.append("文件内容:\n").append(cmdHistoryItem.getResult()).append("\n\n");
+                    stringBuilder.append("------------------读取文件:").append(path).append("------------------").append("\n");
+                    stringBuilder.append(cmdHistoryItem.getResult()).append("\n\n\n");
                 }
             } else if (cmdName.startsWith("treeFile") && result.length() > 100) {
-                stringBuilder.append(idx).append("、文件夹路径:").append(jsonObject.getString("path")).append("\n");
-                stringBuilder.append("文件夹结构:\n").append(cmdHistoryItem.getResult()).append("\n\n");
+                stringBuilder.append("------------------读取文件夹结构:").append(jsonObject.getString("path")).append("------------------").append("\n");
+                stringBuilder.append(cmdHistoryItem.getResult()).append("\n\n");
             }
             idx++;
         }
 
-        String param = String.format("{\"path\":\"%s\", \"base64\":\"%s\"}",
-                "./.process/" + processId + "/resource.md", Base64Util.encodeBase64(stringBuilder.toString()));
-        // 执行命令
-        CmdSender.INSTANCE.send("createFile64", sessionId, new String[]{param});
+        String param;
+        if (stringBuilder.toString().length() > 0) {
+            param = String.format("{\"path\":\"%s\", \"base64\":\"%s\"}",
+                    "./.process/" + processId + "/resource.md", Base64Util.encodeBase64(stringBuilder.toString()));
+            // 执行命令
+            CmdSender.INSTANCE.send("createFile64", sessionId, new String[]{param});
+        }
 
         stringBuilder = new StringBuilder();
         stringBuilder.append(userRequest);
@@ -189,9 +194,15 @@ public class McpProcess  {
         sendNotify(buildLogPrefix());
 
         // 强制让模型读取todo
+        List<String> nextCmdList = Lists.newArrayList();
+        List<String> targets = Lists.newArrayList();
+        if (projectFiles != null) {
+            if (StringUtils.isNotBlank(projectFiles.getProjectFilePath())) {
+                nextCmdList.add("readFile {'path':'" + projectFiles.getProjectFilePath() + "'}");
+                targets.add("读取当前路径下的项目说明，确认项目结构和项目规范");
+            }
+        }
         if (todoItem != null) {
-            List<String> nextCmdList = Lists.newArrayList();
-            List<String> targets = Lists.newArrayList();
             if (StringUtils.isNotBlank(todoItem.getTodoListPath())) {
                 nextCmdList.add("readFile {'path':'" + todoItem.getTodoListPath() + "'}");
                 targets.add("读取代办列表，确认当前任务进度与下一步计划");
@@ -204,6 +215,8 @@ public class McpProcess  {
                 nextCmdList.add("readFile {'path':'" + todoItem.getResourcePath() + "'}");
                 targets.add("读取本次任务依赖的资源文件");
             }
+        }
+        if (CollectionUtils.isNotEmpty(nextCmdList)) {
             executeCmd(nextCmdList, targets, errorRepeatCnt);
         }
         while (!terminate) {
@@ -240,9 +253,11 @@ public class McpProcess  {
             }
 
             // 提取命令列表
-            List<String> nextCmdList = parseNextCmd(result.toString());
+            nextCmdList = parseNextCmd(result.toString());
+            log.info("提取命令列表: {}", nextCmdList);
             // 提取备注列表
-            List<String> targets = parseNextTargets(result.toString());
+            targets = parseNextTargets(result.toString());
+            log.info("提取备注列表: {}", targets);
 
             // 执行命令
             executeCmd(nextCmdList, targets, errorRepeatCnt);
@@ -285,11 +300,6 @@ public class McpProcess  {
                 terminate(String.format("未知命令%s，流程终止", entry.getKey()));
                 break;
             }
-            // 执行命令
-            CmdInvokeResponse<CmdResponseContent> cmdResp = CmdSender.INSTANCE
-                    .send(entry.getKey(), sessionId, entry.getValue());
-
-            Map<String, String> resultMap = cmdResp.getData().getResultMap();
 
             // 查询重复命令
             CmdHistoryItem repeatCmd = null;
@@ -309,16 +319,23 @@ public class McpProcess  {
                 } else {
                     remark = "存在历史重复命令;";
                 }
-                // 上下文压缩
-                if (repeatCmd.fetchResult().length() > 512) {
-                    repeatCmd.setResult("检测到相同命令被重复执行，当前执行结果已隐藏");
-                    remark += "，上下文中隐藏历史命令执行结果;";
-                }
             } else {
                 errorRepeatCnt.set(0);
             }
 
-            String cmdResult = resultMap.getOrDefault("result", "无");
+            // 执行命令
+            String cmdResult;
+            try {
+                CmdInvokeResponse<CmdResponseContent> cmdResp = CmdSender.INSTANCE
+                        .send(entry.getKey(), sessionId, entry.getValue());
+
+                Map<String, String> resultMap = cmdResp.getData().getResultMap();
+                cmdResult = resultMap.getOrDefault("result", "无");
+            } catch (Exception e) {
+                log.error("命令执行失败！cmd = {}", entry, e);
+                cmdResult = "命令执行异常";
+            }
+
             int currentResultToken = estimateTokens(cmdResult);
             if (currentResultToken > 512) {
                 remark += "token:" + currentResultToken;
@@ -431,14 +448,7 @@ public class McpProcess  {
         Matcher blockMatcher = blockPattern.matcher(gptResult);
         while (blockMatcher.find()) {
             String commandBlock = blockMatcher.group(1).trim();
-
-            // 分割每行命令
-            String[] lines = commandBlock.split("\\r?\\n");
-            for (String line : lines) {
-                if (!line.trim().isEmpty()) {
-                    commands.add(line.trim());
-                }
-            }
+            commands.add(commandBlock);
         }
         return commands;
     }
@@ -462,6 +472,27 @@ public class McpProcess  {
             messageBuffer.add(content);
             result.append(content);
             if (messageBuffer.size() >= 5) {
+                // 判断是否包含修改语句
+                String currentResult = result.toString();
+                if (currentResult.contains("createFile {") || currentResult.contains("modifyFile {")) {
+                    List<String> currentCmdList = parseNextCmd(currentResult);
+                    // 如果当前已经包含了未执行过的读语句，那么则直接执行，防止读无效
+                    List<String> readCmd = currentCmdList.stream()
+                            .filter(e -> e.contains("readFile {") || e.contains("treeFile {"))
+                            .collect(Collectors.toList());
+                    Set<String> historyCmdSet = cmdHistory.stream().map(CmdHistoryItem::getCmdAndParam)
+                            .collect(Collectors.toSet());
+                    if (readCmd.stream().anyMatch(e -> !historyCmdSet.contains(e))) {
+                        // 发送流式消息
+                        sendStreamMessage(String.join("", messageBuffer));
+                        messageBuffer.clear();
+                        usedToken.usedInputToken = estimateTokens(input);
+                        usedToken.usedOutputToken = estimateTokens(result.toString());
+                        sendStreamMessage("(存在未执行读取命令，系统拦截修改指令)");
+                        return false;
+                    }
+                }
+
                 // 发送流式消息
                 sendStreamMessage(String.join("", messageBuffer));
                 messageBuffer.clear();

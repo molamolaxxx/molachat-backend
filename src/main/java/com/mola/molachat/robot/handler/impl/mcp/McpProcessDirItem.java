@@ -21,15 +21,17 @@ public class McpProcessDirItem {
 
     private String userRequest;
 
+    private String projectFilePath;
+
     public String buildPreFilePath() {
         return String.format("\n%s\n%s\n", todoListPath, resourcePath);
     }
 
-    public boolean isTodoDir() {
+    public boolean matchTodoDir() {
         return processId.startsWith("TODO");
     }
 
-    public boolean isQuestionDir() {
+    public boolean matchQuestionDir() {
         return processId.startsWith("QUESTION");
     }
 }

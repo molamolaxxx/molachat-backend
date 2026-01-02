@@ -87,6 +87,21 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             return MessageSendAction.skip();
         }
 
+        if (userRequest.startsWith("#start#") && userRequest.endsWith("#end#")) {
+            List<String> cmdList = McpProcess.parseNextCmd(userRequest);
+            for (String cmd : cmdList) {
+                String[] split = cmd.split(" ");
+                String cmdName = split[0].trim();
+                // 执行命令
+                CmdInvokeResponse<CmdResponseContent> cmdResp = CmdSender.INSTANCE
+                        .send(cmdName, sessionId, new String[]{
+                                cmd.replace(cmdName, "").trim(),
+                                ""
+                        });
+            }
+            return MessageSendAction.withResp("命令补偿成功");
+        }
+
         if (userRequest.startsWith(ModelChooseQueryHelper.MODEL_CHOOSE)) {
             modelChooseQueryHelper.handlerModelChoose(messageReceiveEvent.getMessage(), messageReceiveEvent.getRobotChatter());
             return MessageSendAction.withResp("info:[设置成功]");
@@ -187,7 +202,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                         null,
                         0,
                         systemSettings(sessionId),
-                        null
+                        null, queryProjectFile(sessionId)
                 );
             } else if (userRequest.startsWith("#make-todo-with-question#")) {
                 McpProcessDirItem todoItem = queryTodoItem(sessionId);
@@ -208,7 +223,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                         null,
                         0,
                         systemSettings(sessionId),
-                        todoItem
+                        todoItem, queryProjectFile(sessionId)
                 );
             } else if (userRequest.startsWith("#make-question#")) {
                 mcpProcess = new McpProcess(
@@ -225,7 +240,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                         null,
                         0,
                         systemSettings(sessionId),
-                        null
+                        null, queryProjectFile(sessionId)
                 );
             } else if (userRequest.equals("#process-todo#")) {
                 McpProcessDirItem todoItem = queryTodoItem(sessionId);
@@ -246,7 +261,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                         null,
                         0,
                         systemSettings(sessionId),
-                        todoItem
+                        todoItem, queryProjectFile(sessionId)
                 );
             } else {
                 mcpProcess = new McpProcess(
@@ -263,7 +278,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                         null,
                         0,
                         systemSettings(sessionId),
-                        null
+                        null, queryProjectFile(sessionId)
                 );
             }
 
@@ -329,6 +344,22 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         }
     }
 
+    private McpProcessDirItem queryProjectFile(String sessionId) {
+        String projectFilePath = "./project.md";
+        CmdInvokeResponse<CmdResponseContent> cmdResp = CmdSender.INSTANCE
+                .send("readFile", sessionId, new String[]{
+                        String.format("{'path':'%s'}", projectFilePath), ""});
+
+        Map<String, String> resultMap = cmdResp.getData().getResultMap();
+        if (resultMap.get("result").contains("文件不存在")) {
+            return null;
+        }
+
+        McpProcessDirItem dirItem = new McpProcessDirItem();
+        dirItem.setProjectFilePath(projectFilePath);
+        return dirItem;
+    }
+
     private McpProcessDirItem queryTodoItem(String sessionId) {
         try {
             // 执行命令
@@ -355,7 +386,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             // 执行命令
             cmdResp = CmdSender.INSTANCE
                     .send("readFile", sessionId, new String[]{
-                            String.format("{'path':'%s'}", "./.process/" + processId + "/request.txt"), processId});
+                            String.format("{'path':'%s','onlyReturnContent':'true'}", "./.process/" + processId + "/request.txt"), processId});
             resultMap = cmdResp.getData().getResultMap();
             if (resultMap.get("result").contains("文件不存在")) {
                 return null;
@@ -495,7 +526,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         CmdDescription todoWithQuestion = null;
         McpProcessDirItem todoItem = queryTodoItem(sessionId);
         if (todoItem != null) {
-            if (todoItem.isTodoDir()) {
+            if (todoItem.matchTodoDir()) {
                 processTodo = CmdDescription.builder()
                         .cmdName("#process-todo#")
                         .cmdDesc("执行计划")
@@ -506,7 +537,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                         .cmdDesc("打开计划")
                         .executeScript("sendMessageInner('#open-todo#')")
                         .build();
-            } else if (todoItem.isQuestionDir()) {
+            } else if (todoItem.matchQuestionDir()) {
                 todoWithQuestion = CmdDescription.builder()
                         .cmdName("#make-todo-with-question#")
                         .cmdDesc("根据问题生成计划")
