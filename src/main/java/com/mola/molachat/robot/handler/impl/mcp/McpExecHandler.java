@@ -244,7 +244,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
             // 开启下一个进程
             McpProcess nextProcess = null;
-            if (userRequest.startsWith("#plan-and-process#")) {
+            if (userRequest.startsWith("#plan-and-process#") && !mcpProcess.isTerminate()) {
                 McpProcessDirItem todoItem = queryTodoItem(sessionId);
                 if (todoItem != null) {
                     nextProcess = createProcessTodoProcess(robotId, sessionId, todoItem, cmdDescList, cmdList, useMemory);
