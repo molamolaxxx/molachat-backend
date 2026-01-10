@@ -107,7 +107,7 @@ public class McpProcess  {
 
     private transient boolean useMemory;
 
-    private transient volatile String terminalMessage;
+    private transient volatile String terminalCause;
 
     private int contextLength;
 
@@ -130,8 +130,8 @@ public class McpProcess  {
         Validate.isTrue(terminate, "确认流程终止");
         // 终止当前输出流对话
         stopStream();
-        if (StringUtils.isNotBlank(terminalMessage)) {
-            sendNotifyImmediately(terminalMessage);
+        if (StringUtils.isNotBlank(terminalCause)) {
+            sendNotifyImmediately(terminalCause);
         }
         if (Objects.equals("Y", kvUtils.getString("logMcpRequest"))) {
             sendNotifyImmediately(buildRequest());
@@ -444,7 +444,7 @@ public class McpProcess  {
     }
 
     public void terminate(String terminalMessage) {
-        this.terminalMessage = terminalMessage;
+        this.terminalCause = terminalMessage;
         terminate = true;
     }
 

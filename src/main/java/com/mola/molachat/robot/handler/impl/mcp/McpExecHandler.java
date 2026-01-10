@@ -82,7 +82,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         if (Objects.equals(userRequest, "#stop-mcp#")) {
             McpProcess mcpProcess = processMap.get(processUniKey);
             if (mcpProcess != null) {
-                mcpProcess.terminate(null);
+                mcpProcess.terminate("手动终止");
             }
             return MessageSendAction.skip();
         }
@@ -90,7 +90,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         if (Objects.equals(userRequest, "#force-stop-mcp#")) {
             McpProcess mcpProcess = processMap.get(processUniKey);
             if (mcpProcess != null) {
-                mcpProcess.terminate(null);
+                mcpProcess.terminate("手动终止");
             }
             processMap.remove(processUniKey);
             return MessageSendAction.skip();
@@ -244,7 +244,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
             // 开启下一个进程
             McpProcess nextProcess = null;
-            if (userRequest.startsWith("#plan-and-process#") && !mcpProcess.isTerminate()) {
+            if (userRequest.startsWith("#plan-and-process#") && StringUtils.isBlank(mcpProcess.getTerminalCause())) {
                 McpProcessDirItem todoItem = queryTodoItem(sessionId);
                 if (todoItem != null) {
                     nextProcess = createProcessTodoProcess(robotId, sessionId, todoItem, cmdDescList, cmdList, useMemory);
