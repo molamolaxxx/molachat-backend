@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.mola.cmd.proxy.client.consumer.CmdSender;
 import com.mola.cmd.proxy.client.resp.CmdInvokeResponse;
 import com.mola.cmd.proxy.client.resp.CmdResponseContent;
@@ -152,6 +153,7 @@ public class McpProcess  {
     private void createResource() {
         StringBuilder stringBuilder = new StringBuilder();
 
+        Set<String> processedPath = Sets.newHashSet();
         for (CmdHistoryItem cmdHistoryItem : cmdHistory) {
             Map.Entry<String, String[]> entry = buildParam(cmdHistoryItem.getCmdAndParam());
             String cmdName = entry.getKey();
@@ -160,6 +162,10 @@ public class McpProcess  {
             JSONObject jsonObject = JSON.parseObject(cmdParam);
             if (cmdName.startsWith("readFile") && result.length() > 100) {
                 String path = jsonObject.getString("path");
+                if (processedPath.contains(path)) {
+                    continue;
+                }
+                processedPath.add(path);
                 if (path.contains("project.md")) {
                     // do-nothing
                     continue;
