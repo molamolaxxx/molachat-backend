@@ -82,7 +82,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         if (Objects.equals(userRequest, "#stop-mcp#")) {
             McpProcess mcpProcess = processMap.get(processUniKey);
             if (mcpProcess != null) {
-                mcpProcess.terminate("手动终止");
+                mcpProcess.terminate("手动终止流程成功");
             }
             return MessageSendAction.skip();
         }
@@ -90,7 +90,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         if (Objects.equals(userRequest, "#force-stop-mcp#")) {
             McpProcess mcpProcess = processMap.get(processUniKey);
             if (mcpProcess != null) {
-                mcpProcess.terminate("手动终止");
+                mcpProcess.terminate("手动终止流程成功");
             }
             processMap.remove(processUniKey);
             return MessageSendAction.skip();
@@ -248,6 +248,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 McpProcessDirItem todoItem = queryTodoItem(sessionId);
                 if (todoItem != null) {
                     nextProcess = createProcessTodoProcess(robotId, sessionId, todoItem, cmdDescList, cmdList, useMemory);
+                    processMap.put(processUniKey, nextProcess);
                 }
             }
             if (nextProcess != null) {
@@ -412,6 +413,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
     private McpProcess createMakeTodoProcess(String robotId, String sessionId, String userRequest,
                                               List<String> cmdDescList, List<String> cmdList, boolean useMemory) {
+        boolean keepStreamMessage = userRequest.startsWith("#plan-and-process#");
         return new McpProcess(
                 McpProcess.ProcessType.TODO,
                 "TODO-"+ System.currentTimeMillis() % 1000 + IdUtils.getRandomString(5),
@@ -419,7 +421,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 sessionId,
                 Lists.newArrayList(), userRequest.replace("#make-todo# ", "")
                 .replace("#plan-and-process#", ""), cmdDescList, cmdList,
-                false,
+                false, keepStreamMessage,
                 chatGptSolution, kvUtils, messageSolution,
                 0,0,0,
                 Lists.newArrayList(),
@@ -439,7 +441,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 robotId,
                 sessionId,
                 Lists.newArrayList(), todoItem.getUserRequest(), cmdDescList, cmdList,
-                false,
+                false, false,
                 chatGptSolution, kvUtils, messageSolution,
                 0,0,0,
                 Lists.newArrayList(),
@@ -459,7 +461,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 robotId,
                 sessionId,
                 Lists.newArrayList(), userRequest.replace("#make-question# ", ""), cmdDescList, cmdList,
-                false,
+                false,false,
                 chatGptSolution, kvUtils, messageSolution,
                 0,0,0,
                 Lists.newArrayList(),
@@ -479,7 +481,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 robotId,
                 sessionId,
                 Lists.newArrayList(), todoItem.getUserRequest(), cmdDescList, cmdList,
-                false,
+                false,false,
                 chatGptSolution, kvUtils, messageSolution,
                 0,0,0,
                 Lists.newArrayList(),
@@ -500,7 +502,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 robotId,
                 sessionId,
                 Lists.newArrayList(), userRequest, cmdDescList, cmdList,
-                false,
+                false,false,
                 chatGptSolution, kvUtils, messageSolution,
                 0,0,0,
                 processList,

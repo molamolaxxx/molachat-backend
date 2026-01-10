@@ -91,6 +91,8 @@ public class McpProcess  {
 
     private transient volatile boolean terminate;
 
+    private transient volatile boolean keepStreamMessage;
+
     private transient ChatGptSolution chatGptSolution;
 
     private transient KvUtils kvUtils;
@@ -107,6 +109,9 @@ public class McpProcess  {
 
     private transient boolean useMemory;
 
+    /**
+     * 非正常关闭流程：异常信息
+     */
     private transient volatile String terminalCause;
 
     private int contextLength;
@@ -129,7 +134,9 @@ public class McpProcess  {
         }
         Validate.isTrue(terminate, "确认流程终止");
         // 终止当前输出流对话
-        stopStream();
+        if (!keepStreamMessage || StringUtils.isNotBlank(terminalCause)) {
+            stopStream();
+        }
         if (StringUtils.isNotBlank(terminalCause)) {
             sendNotifyImmediately(terminalCause);
         }
