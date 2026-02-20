@@ -13,5 +13,10 @@ public class StreamMessage extends Message {
 
     private String streamId;
 
+    /**
+     * 打开模态框
+     */
+    private boolean openViewModal;
+
     private boolean end;
 }

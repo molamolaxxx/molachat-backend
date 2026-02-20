@@ -218,6 +218,9 @@ $(document).ready(function () {
                 })
                 streamMessageMap.set(message.sessionId, dom)
                 $messageBox.append(dom);
+                if (message.openViewModal) {
+                    $(dom.mainDocChild).click()
+                }
             } else {
                 const cachedMsg = streamMessageMap.get("cache_" + message.sessionId)
                 if (cachedMsg) {

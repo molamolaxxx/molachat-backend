@@ -52,6 +52,11 @@ public class McpProcess  {
     private static String SKILLS_LIST_PLACE_HOLDER = "%SKILLS_LIST%";
 
     /**
+     * 可使用的mcpServer列表
+     */
+    private static String MCP_SERVER_LIST_PLACE_HOLDER = "%MCP_SERVER_LIST%";
+
+    /**
      * 用户配置
      */
     private static String USER_CONFIG_PLACE_HOLDER = "%USER_CONFIG%";
@@ -604,6 +609,12 @@ public class McpProcess  {
         String skillsList = resultMap.get("result");
         parsed = parsed.replace(SKILLS_LIST_PLACE_HOLDER, skillsList);
 
+        // mcpServers
+        cmdResp = CmdSender.INSTANCE.send("loadMcpServers", sessionId, new String[]{sessionId});
+        resultMap = cmdResp.getData().getResultMap();
+        String mcpServerTools = resultMap.get("result");
+        parsed = parsed.replace(MCP_SERVER_LIST_PLACE_HOLDER, mcpServerTools);
+
         // userConfig
         String userConfig = StringUtils.defaultString(systemSettings)
                 + kvUtils.getStringOrDefault("mcpUserConfig_" + sessionId, "");
@@ -670,6 +681,7 @@ public class McpProcess  {
             // 发送流式消息
             StreamMessage msg = new StreamMessage();
             msg.setContent(builder.toString());
+            msg.setOpenViewModal(true);
             msg.setChatterId(robotId);
             msg.setSessionId(sessionId);
             msg.setCreateTime(new Date());
