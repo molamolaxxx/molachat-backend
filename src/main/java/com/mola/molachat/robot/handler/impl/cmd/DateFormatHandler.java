@@ -45,7 +45,7 @@ public class DateFormatHandler extends BaseCmdRobotHandler {
         return CmdDescription.builder()
                 .cmdName("date")
                 .cmdDesc("转换时间戳到日期")
-                .executeScript(String.format("popupAndSendCmd('date','%s')",
+                .executeScript(String.format("popupAndSendCmd('date','%s','转换时间戳到日期')",
                         Base64Util.encodeBase64(String.valueOf(new Date().getTime()))))
                 .buildSingleton();
     }

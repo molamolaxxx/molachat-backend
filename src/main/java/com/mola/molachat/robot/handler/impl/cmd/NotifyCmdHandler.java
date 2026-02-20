@@ -191,7 +191,7 @@ public class NotifyCmdHandler extends BaseCmdRobotHandler {
         return CmdDescription.builder()
                 .cmdName("notify")
                 .cmdDesc("定时提醒")
-                .executeScript(String.format("popupAndSendCmd('notify','%s')",
+                .executeScript(String.format("popupAndSendCmd('notify','%s','定时提醒')",
                         Base64Util.encodeBase64("提醒内容 1m")))
                 .buildSingleton();
     }

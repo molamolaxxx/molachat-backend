@@ -23,8 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -47,6 +45,11 @@ public class McpProcess  {
      * 可使用的命令列表
      */
     private static String CMD_LIST_PLACE_HOLDER = "%CMD_LIST%";
+
+    /**
+     * 可使用的技能列表
+     */
+    private static String SKILLS_LIST_PLACE_HOLDER = "%SKILLS_LIST%";
 
     /**
      * 用户配置
@@ -167,7 +170,7 @@ public class McpProcess  {
             String cmdParam = entry.getValue()[0];
             String result = cmdHistoryItem.getResult();
             JSONObject jsonObject = JSON.parseObject(cmdParam);
-            if (cmdName.startsWith("readFile") && result.length() > 100) {
+            if (cmdName.startsWith("readFile")) {
                 String path = jsonObject.getString("path");
                 if (processedPath.contains(path)) {
                     continue;
@@ -177,15 +180,27 @@ public class McpProcess  {
                     // do-nothing
                     continue;
                 }
+                if (result.length() <= 50) {
+                    // do-nothing
+                    continue;
+                }
                 if (path.contains("resource.md")) {
                     stringBuilder.append(cmdHistoryItem.getResult()).append("\n");
                 } else {
                     stringBuilder.append("------------------读取文件:").append(path).append("------------------").append("\n");
                     stringBuilder.append(cmdHistoryItem.getResult()).append("\n\n\n");
                 }
-            } else if (cmdName.startsWith("treeFile") && result.length() > 100) {
+            } else if (cmdName.startsWith("treeFile")) {
+                if (result.length() <= 50) {
+                    // do-nothing
+                    continue;
+                }
                 stringBuilder.append("------------------读取文件夹结构:").append(jsonObject.getString("path")).append("------------------").append("\n");
                 stringBuilder.append(cmdHistoryItem.getResult()).append("\n\n");
+            } else if (!cmdHistoryItem.getCmdAndParam().contains(processId)) {
+                stringBuilder.append("------------------已执行指令:").append(cmdName).append("------------------").append("\n");
+                stringBuilder.append(cmdHistoryItem.getCmdAndParam()).append("\n");
+                stringBuilder.append(cmdHistoryItem.getResult()).append("\n\n\n");
             }
         }
 
@@ -194,14 +209,14 @@ public class McpProcess  {
             param = String.format("{\"path\":\"%s\", \"base64\":\"%s\"}",
                     "./.process/" + processId + "/resource.md", Base64Util.encodeBase64(stringBuilder.toString()));
             // 执行命令
-            CmdSender.INSTANCE.send("createFile64", sessionId, new String[]{param});
+            CmdSender.INSTANCE.send("createFile64", sessionId, new String[]{param, sessionId});
         }
 
         stringBuilder = new StringBuilder();
         stringBuilder.append(userRequest);
         param = String.format("{\"path\":\"%s\", \"base64\":\"%s\"}",
                 "./.process/" + processId + "/request.txt", Base64Util.encodeBase64(stringBuilder.toString()));
-        CmdSender.INSTANCE.send("createFile64", sessionId, new String[]{param});
+        CmdSender.INSTANCE.send("createFile64", sessionId, new String[]{param, sessionId});
     }
 
     private void loop() {
@@ -211,10 +226,17 @@ public class McpProcess  {
         // 强制让模型读取todo
         List<String> nextCmdList = Lists.newArrayList();
         List<String> targets = Lists.newArrayList();
+
+        if (ProcessType.TODO.equals(processType) || ProcessType.QUESTION.equals(processType)
+                || ProcessType.TODO_WITH_QUESTION.equals(processType)) {
+            nextCmdList.add("treeFile {'path':'.'}");
+            targets.add("读取当前路径下的文件夹结构");
+        }
+
         if (projectFiles != null) {
             if (StringUtils.isNotBlank(projectFiles.getProjectFilePath())) {
                 nextCmdList.add("readFile {'path':'" + projectFiles.getProjectFilePath() + "'}");
-                targets.add("读取当前路径下的项目说明，确认项目结构和项目规范");
+                targets.add("读取当前路径下的项目说明，确认项目内容和项目规范");
             }
         }
         if (todoItem != null) {
@@ -235,7 +257,6 @@ public class McpProcess  {
             executeCmd(nextCmdList, targets, errorRepeatCnt);
         }
         while (!terminate) {
-            calculateImportRate();
             String request = buildRequest();
             this.contextLength = estimateTokens(request);
             if (contextLength > Integer.parseInt(kvUtils.getStringOrDefault("mcpPerMaxToken", "30000"))) {
@@ -248,18 +269,21 @@ public class McpProcess  {
             }
             StringBuilder result = new StringBuilder();
 
-            sendNotify("#### 模型输出\n");
+            sendNotify("#### 模型输出\n```\n");
             Map<String, Object> streamOptions = Maps.newHashMap();
             streamOptions.put("include_usage", true);
 
             UsedToken usedToken = new UsedToken();
             List<String> messageBuffer = Lists.newLinkedList();
+
+            String modelName = chatGptSolution.findModelName(sessionId, "chatGpt");
             chatGptSolution.invoke(request, null, true, streamOptions,
                     part -> processStream(part, result, usedToken, request, messageBuffer),
-                    kvUtils.getDoubleOrDefault("mcpTemperature", 0.1), sessionId);
+                    kvUtils.getDoubleOrDefault("mcpTemperature-" + modelName, 0.01), sessionId);
             if (messageBuffer.size() > 0) {
                 sendStreamMessage(String.join("", messageBuffer));
             }
+            sendStreamMessage("\n```");
             this.usedOutputToken += usedToken.usedOutputToken;
             this.usedInputToken += usedToken.usedInputToken;
             this.totalCachedTokens += usedToken.totalCachedTokens;
@@ -364,44 +388,7 @@ public class McpProcess  {
                     processBeforeSend(targetDesc, -1),
                     processBeforeSend(remark, -1)
             ));
-            cmdHistory.add(new CmdHistoryItem(nextCmd, cmdResult, targetDesc, headerMessage, BigDecimal.ONE, false, false));
-        }
-    }
-
-    private void calculateImportRate() {
-        List<McpProcess> processList = Lists.newArrayList();
-        processList.addAll(historyProcess);
-        processList.add(this);
-
-        List<CmdHistoryItem> historyCmd = Lists.newArrayList();
-
-        StringBuilder allResult = new StringBuilder();
-        for (McpProcess mcpProcess : processList) {
-            for (CmdHistoryItem cmdHistoryItem : mcpProcess.getCmdHistory()) {
-                allResult.append(cmdHistoryItem.fetchResult());
-                historyCmd.add(cmdHistoryItem);
-            }
-        }
-
-        // 计算重要度
-        for (int i = 0; i < historyCmd.size(); i++) {
-            CmdHistoryItem cmdHistoryItem = historyCmd.get(i);
-            if (StringUtils.isBlank(cmdHistoryItem.fetchResult())) {
-                cmdHistoryItem.setImportantRate(BigDecimal.ONE);
-                return;
-            }
-            // 时效性
-            BigDecimal agingRate = BigDecimal.valueOf(historyCmd.size() + i * 1.5)
-                    .divide(BigDecimal.valueOf(historyCmd.size()).multiply(new BigDecimal(2)), 5, RoundingMode.HALF_UP);
-            // 长度
-            BigDecimal lengthRate = BigDecimal.valueOf(allResult.length())
-                    .divide(BigDecimal.valueOf(allResult.length()).add(BigDecimal.valueOf(cmdHistoryItem.fetchResult().length())),
-                            5, RoundingMode.HALF_UP);
-
-            // 需求相关度
-            BigDecimal requirementRate = BigDecimal.ONE;
-            cmdHistoryItem.setImportantRate(agingRate.multiply(lengthRate).multiply(requirementRate)
-                    .setScale(5, RoundingMode.HALF_UP));
+            cmdHistory.add(new CmdHistoryItem(nextCmd, cmdResult, targetDesc, headerMessage, false, false));
         }
     }
 
@@ -493,7 +480,8 @@ public class McpProcess  {
                     List<String> currentCmdList = parseNextCmd(currentResult);
                     // 如果当前已经包含了未执行过的读语句，那么则直接执行，防止读无效
                     List<String> readCmd = currentCmdList.stream()
-                            .filter(e -> e.contains("readFile {") || e.contains("treeFile {"))
+                            .filter(e -> e.contains("readFile {") || e.contains("treeFile {")
+                                    || e.contains("executeBash {") || e.contains("executePowerShell {") )
                             .collect(Collectors.toList());
                     Set<String> historyCmdSet = cmdHistory.stream().map(CmdHistoryItem::getCmdAndParam)
                             .collect(Collectors.toSet());
@@ -554,7 +542,8 @@ public class McpProcess  {
             if (inputText.startsWith(cmdName)) {
                 cmdParams.put(cmdName, new String[]{
                         inputText.replace(cmdName, "").trim(),
-                        processId
+                        processId,
+                        sessionId
                 });
             }
         }
@@ -608,6 +597,12 @@ public class McpProcess  {
             cmdMd.append(String.format("| %s | %s |\n", split[0], split[1]));
         }
         parsed = parsed.replace(CMD_LIST_PLACE_HOLDER, cmdMd.toString());
+
+        // skills
+        CmdInvokeResponse<CmdResponseContent> cmdResp = CmdSender.INSTANCE.send("listSkills", sessionId, new String[]{sessionId});
+        Map<String, String> resultMap = cmdResp.getData().getResultMap();
+        String skillsList = resultMap.get("result");
+        parsed = parsed.replace(SKILLS_LIST_PLACE_HOLDER, skillsList);
 
         // userConfig
         String userConfig = StringUtils.defaultString(systemSettings)

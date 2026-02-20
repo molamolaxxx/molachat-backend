@@ -48,8 +48,8 @@ public class EvalCmdHandler extends BaseCmdRobotHandler {
         return CmdDescription.builder()
                 .cmdName("eval")
                 .cmdDesc("计算表达式")
-                .executeScript(String.format("popupAndSendCmd('eval','%s')",
-                        Base64Util.encodeBase64("1 + 2 + 3)")))
+                .executeScript(String.format("popupAndSendCmd('eval','%s','计算表达式')",
+                        Base64Util.encodeBase64("1 + (2 + 3)")))
                 .buildSingleton();
     }
 }

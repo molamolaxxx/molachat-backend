@@ -383,7 +383,7 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
             descriptionList.add(CmdDescription.builder()
                     .cmdName("#settings#")
                     .cmdDesc("用户设置")
-                    .executeScript(String.format("popupAndSendCmd('#settings#','%s')", Base64Util.encodeBase64(userSetting)))
+                    .executeScript(String.format("popupAndSendCmd('#settings#','%s','用户设置')", Base64Util.encodeBase64(userSetting)))
                     .build());
 
             descriptionList.addAll(modelChooseQueryHelper.getModelChoose(robotId, sessionId));

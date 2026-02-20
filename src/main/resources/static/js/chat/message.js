@@ -354,6 +354,9 @@ $(document).ready(function () {
         }
     });
     $openEditBtn.on('click', function () {
+        $editModal.removeData('cmd');
+        $editModal.removeData('cmdDesc');
+        $('#cmdDescContainer .cmd-card').hide();
         $editModal.modal('open')
         if ($chatEditor.val() === '' && $chatInput.value !== '') {
             $chatEditor.val($chatInput.value)
@@ -362,7 +365,13 @@ $(document).ready(function () {
 
     var $editCompleteBtn = $("#editCompleteBtn")
     $editCompleteBtn.on('click', function () {
-        const content = $chatEditor.val()
+        // 获取cmd并拼接
+        let content = $chatEditor.val()
+        const cmd = $editModal.data('cmd');
+        if (cmd) {
+            content = cmd + " " + content;
+        }
+
         if (content === "") {
             // swal("stop!","输入不能为空","warning");
             showToast("输入不能为空", 1000)
@@ -378,14 +387,24 @@ $(document).ready(function () {
         $chatEditor.val('')
         $chatInput.value = "";
 
+        // 清空cmd和cmdDesc
+        $editModal.removeData('cmd');
+        $editModal.removeData('cmdDesc');
+        $('#cmdDescContainer .cmd-card').hide();
+
         sendMessageInner(content)
     })
 
-    // 支持 Ctrl+Enter 或 Shift+Enter 触发 editCompleteBtn 效果
+    // 支持 Enter 触发发送，Shift+Enter 触发换行
     $chatEditor.on('keydown', function (e) {
-        if ((e.ctrlKey || e.shiftKey) && e.keyCode === 13) {
-            e.preventDefault();
-            $editCompleteBtn.click();
+        if (e.keyCode === 13) {
+            if (e.shiftKey) {
+                // Shift+Enter 允许默认换行行为
+            } else {
+                // Enter 触发发送，并阻止默认换行
+                e.preventDefault();
+                $editCompleteBtn.click();
+            }
         }
     });
 
@@ -408,10 +427,18 @@ $(document).ready(function () {
         socket.send(JSON.stringify(action));
     }
 
-    popupAndSendCmd = function(cmd, args) {
+    popupAndSendCmd = function(cmd, args, cmdDesc) {
         const bytes = Uint8Array.from(atob(args), c => c.charCodeAt(0));
         args = new TextDecoder().decode(bytes);
+        // 存储cmd和cmdDesc到editModal
+        $editModal.data('cmd', cmd);
+        $editModal.data('cmdDesc', cmdDesc);
+        // 显示cmdDesc
+        $('#cmdDescContainer .cmd-card').show();
+        $('#cmdDescContainer .cmd-card').text(cmdDesc);
         $editModal.modal('open')
-        $chatEditor.val(cmd + " " + args)
+        if (args && args.length !== 0) {
+            $chatEditor.val(args)
+        }
     }
 });

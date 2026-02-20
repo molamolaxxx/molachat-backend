@@ -5,7 +5,7 @@ server:
   ssl:
     key-store: classpath:molaspace.xyz.pfx
     key-store-type: PKCS12
-    key-store-password: Re6}!zpBq8uPAcp4
+    key-store-password: Mx2)bH5dhf5ppjnf
 
 #个人配置
 self-conf:
@@ -36,7 +36,7 @@ app:
   # websocket的类型 1、spring 2、tomcat 3、netty（待开发）
   server-type: tomcat
   secret: molamolaxxx
-  robot-list: chatGpt,stableDiffusion,toolRobot,deepSeek,mcp
+  robot-list: chatGpt,stableDiffusion,toolRobot,deepSeek,mcp,agent
   robot-api-key:
     chatGpt : sk-xxx
   use-cmd-proxy: true

@@ -63,7 +63,7 @@ public class DateParseHandler extends BaseCmdRobotHandler {
         return CmdDescription.builder()
                 .cmdName("time")
                 .cmdDesc("转换日期到时间戳")
-                .executeScript(String.format("popupAndSendCmd('time','%s')",
+                .executeScript(String.format("popupAndSendCmd('time','%s','转换日期到时间戳')",
                         Base64Util.encodeBase64(dateFormat.format(new Date()))))
                 .buildSingleton();
     }

@@ -111,6 +111,7 @@ public class ChatGptSolution {
             Map<String, String> thinkMode = Maps.newHashMap();
             thinkMode.put("type", "disabled");
             body.put("thinking", thinkMode);
+            body.put("reasoning_split", true);
 
             // headers
             List<Header> headers = new ArrayList<>();
@@ -139,7 +140,7 @@ public class ChatGptSolution {
     }
 
 
-    private String findModelName(String sessionId, String robotId) {
+    public String findModelName(String sessionId, String robotId) {
         String modelName = kvUtils.getString("chatGptModelName_" + sessionId);
         if (StringUtils.isBlank(modelName)) {
             modelName = kvUtils.getString("chatGptModelName_" + robotId);
@@ -215,6 +216,9 @@ public class ChatGptSolution {
         for (Object choice : choices) {
             JSONObject inner = (JSONObject) choice;
             JSONObject delta = inner.getJSONObject("delta");
+            if (delta == null) {
+                return StringUtils.EMPTY;
+            }
             return delta.getString(contentKeyName);
         }
         return StringUtils.EMPTY;

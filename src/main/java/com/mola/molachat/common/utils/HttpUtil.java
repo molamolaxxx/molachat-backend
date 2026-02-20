@@ -198,6 +198,7 @@ public enum HttpUtil {
             httpPost.setHeaders(headers);
         }
         // 执行请求
+        String data = null;
         try (CloseableHttpResponse response = (CloseableHttpResponse) httpClient.execute(httpPost);
              InputStream content = response.getEntity().getContent();
              BufferedReader reader = new BufferedReader(new InputStreamReader(content))) {
@@ -206,7 +207,7 @@ public enum HttpUtil {
             while ((line = reader.readLine()) != null) {
                 // 处理每行数据（格式为 "data: {...}"）
                 if (line.startsWith("data: ")) {
-                    String data = line.substring(6).trim();
+                    data = line.substring(6).trim();
                     if ("[DONE]".equals(data)) {
                         log.info("finish postWithStreamRes with [DONE], data = {}, body = {}", data, body.toJSONString());
                         break;
@@ -219,8 +220,11 @@ public enum HttpUtil {
                     log.info(line);
                 }
             }
+            log.info("finish postWithStreamRes finish, body = {}, data = {}", body.toJSONString(), data);
+        } catch (Exception e) {
+            log.error("finish postWithStreamRes error, body = {}, data = {}", body.toJSONString(), data);
+            throw e;
         }
-        log.info("finish postWithStreamRes finish, body = {}", body.toJSONString());
     }
 
     public String post(String url, JSONObject body, int timeout) throws Exception {

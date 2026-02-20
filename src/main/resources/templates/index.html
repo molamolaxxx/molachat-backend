@@ -248,7 +248,7 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
     </div>
     <div id="message-edit-modal" class="modal bottom-sheet">
         <div class="history-root">
-            <div class="modal-content" style="padding-bottom: 0;">
+            <div class="modal-content" style="padding-bottom: 0; position: relative;">
                 <textarea id="chatEditor" class="chat__input" style="
                 position: relative;
                 width: 100%;
@@ -257,8 +257,11 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
                 outline-color:#8abce0 !important
             " placeholder="Your message"></textarea>
             </div>
-            <div class="modal-footer">
-                <button id="editCompleteBtn" style="margin: 6px;"
+            <div class="modal-footer" style="display: flex; align-items: center; justify-content: space-between;padding-left:20px">
+                <div id="cmdDescContainer" style="margin-left: 6px;">
+                    <span class="cmd-card" style="display: none; background: #e9eaf3; padding: 4px 12px; border-radius: 4px; font-size: 12px; color: #36343D; border: 1px solid #d0d0d0;"></span>
+                </div>
+                <button id="editCompleteBtn" style="margin: 6px; flex-shrink: 0;"
                     class=" modal-action modal-close waves-effect waves-green btn-flat">发送</a>
             </div>
         </div>

@@ -105,7 +105,8 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 CmdInvokeResponse<CmdResponseContent> cmdResp = CmdSender.INSTANCE
                         .send(cmdName, sessionId, new String[]{
                                 cmd.replace(cmdName, "").trim(),
-                                ""
+                                "",
+                                sessionId
                         });
             }
             return MessageSendAction.withResp("命令补偿成功");
@@ -137,7 +138,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 return MessageSendAction.withResp("流程无可用代办");
             }
             CmdSender.INSTANCE.send("openUrl", sessionId, new String[]{
-                    String.format("{'url':'%s'}", todoItem.getTodoListPath()), todoItem.getProcessId()});
+                    String.format("{'url':'%s'}", todoItem.getTodoListPath()), sessionId});
             return MessageSendAction.skip();
         } else if (Objects.equals(userRequest, "#open-question#")) {
             McpProcessDirItem todoItem = queryTodoItem(sessionId);
@@ -145,7 +146,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 return MessageSendAction.withResp("流程无可用代办");
             }
             CmdSender.INSTANCE.send("openUrl", sessionId, new String[]{
-                    String.format("{'url':'%s'}", todoItem.getQuestionPath()), todoItem.getProcessId()});
+                    String.format("{'url':'%s'}", todoItem.getQuestionPath()), sessionId});
             return MessageSendAction.skip();
         } else if (Objects.equals(userRequest, "#open-resource#")) {
             McpProcessDirItem todoItem = queryTodoItem(sessionId);
@@ -153,7 +154,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 return MessageSendAction.withResp("流程无可用代办");
             }
             CmdSender.INSTANCE.send("openUrl", sessionId, new String[]{
-                    String.format("{'url':'%s'}", todoItem.getResourcePath()), todoItem.getProcessId()});
+                    String.format("{'url':'%s'}", todoItem.getResourcePath()), sessionId});
             return MessageSendAction.skip();
         }
 
@@ -197,13 +198,16 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                             kvUtils.getStringOrDefault(MCP_MEMORY_PREFIX + sessionId, "N"),"Y");
             McpProcess mcpProcess;
             if (userRequest.startsWith("#make-todo#") || userRequest.startsWith("#plan-and-process#")) {
-                mcpProcess = createMakeTodoProcess(robotId, sessionId, userRequest, cmdDescList, cmdList, useMemory);
-            } else if (userRequest.startsWith("#make-todo-with-question#")) {
-                McpProcessDirItem todoItem = queryTodoItem(sessionId);
-                if (todoItem == null) {
-                    return MessageSendAction.withResp("流程无可用问题");
+                if (userRequest.trim().replace("\n", "").equals("#make-todo#")
+                        || userRequest.trim().replace("\n", "").equals("#plan-and-process#")) {
+                    McpProcessDirItem todoItem = queryTodoItem(sessionId);
+                    if (todoItem == null) {
+                        return MessageSendAction.withResp("无可用提案");
+                    }
+                    mcpProcess = createMakeTodoWithQuestionProcess(robotId, sessionId,userRequest, todoItem, cmdDescList, cmdList, useMemory);
+                } else {
+                    mcpProcess = createMakeTodoProcess(robotId, sessionId, userRequest, cmdDescList, cmdList, useMemory);
                 }
-                mcpProcess = createMakeTodoWithQuestionProcess(robotId, sessionId, todoItem, cmdDescList, cmdList, useMemory);
             } else if (userRequest.startsWith("#make-question#")) {
                 mcpProcess = createMakeQuestionProcess(robotId, sessionId, userRequest, cmdDescList, cmdList, useMemory);
             } else if (userRequest.equals("#process-todo#")) {
@@ -306,7 +310,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         String projectFilePath = "./project.md";
         CmdInvokeResponse<CmdResponseContent> cmdResp = CmdSender.INSTANCE
                 .send("readFile", sessionId, new String[]{
-                        String.format("{'path':'%s'}", projectFilePath), ""});
+                        String.format("{'path':'%s'}", projectFilePath), "", sessionId});
 
         Map<String, String> resultMap = cmdResp.getData().getResultMap();
         if (resultMap.get("result").contains("文件不存在")) {
@@ -322,7 +326,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         try {
             // 执行命令
             CmdInvokeResponse<CmdResponseContent> cmdResp = CmdSender.INSTANCE
-                    .send("queryLastProcessDir", sessionId, new String[]{"{}"});
+                    .send("queryLastProcessDir", sessionId, new String[]{"{}", sessionId});
             Map<String, String> resultMap = cmdResp.getData().getResultMap();
             String processId = resultMap.get("result");
             String existFiles = resultMap.get("existFiles");
@@ -344,7 +348,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             // 执行命令
             cmdResp = CmdSender.INSTANCE
                     .send("readFile", sessionId, new String[]{
-                            String.format("{'path':'%s','onlyReturnContent':'true'}", "./.process/" + processId + "/request.txt"), processId});
+                            String.format("{'path':'%s','onlyReturnContent':'true'}", "./.process/" + processId + "/request.txt"), processId, sessionId});
             resultMap = cmdResp.getData().getResultMap();
             if (resultMap.get("result").contains("文件不存在")) {
                 return null;
@@ -361,7 +365,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         try {
             // 执行命令
             CmdInvokeResponse<CmdResponseContent> cmdResp = CmdSender.INSTANCE
-                    .send("systemSettings", sessionId, new String[]{"{}"});
+                    .send("systemSettings", sessionId, new String[]{"{}", sessionId});
             Map<String, String> resultMap = cmdResp.getData().getResultMap();
             return resultMap.get("result");
         } catch (Exception e) {
@@ -433,15 +437,16 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         );
     }
 
-    private McpProcess createMakeTodoWithQuestionProcess(String robotId, String sessionId, McpProcessDirItem todoItem,
+    private McpProcess createMakeTodoWithQuestionProcess(String robotId, String sessionId, String userRequest, McpProcessDirItem todoItem,
                                                            List<String> cmdDescList, List<String> cmdList, boolean useMemory) {
+        boolean keepStreamMessage = userRequest.startsWith("#plan-and-process#");
         return new McpProcess(
                 McpProcess.ProcessType.TODO_WITH_QUESTION,
                 "TODO-"+ System.currentTimeMillis() % 1000 + IdUtils.getRandomString(5),
                 robotId,
                 sessionId,
                 Lists.newArrayList(), todoItem.getUserRequest(), cmdDescList, cmdList,
-                false, false,
+                false, keepStreamMessage,
                 chatGptSolution, kvUtils, messageSolution,
                 0,0,0,
                 Lists.newArrayList(),
@@ -539,7 +544,7 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         CmdDescription setting = CmdDescription.builder()
                 .cmdName("#settings#")
                 .cmdDesc("用户设置")
-                .executeScript(String.format("popupAndSendCmd('#settings#','%s')", Base64Util.encodeBase64(userSetting)))
+                .executeScript(String.format("popupAndSendCmd('#settings#','%s','用户设置')", Base64Util.encodeBase64(userSetting)))
                 .build();
 
 
@@ -574,22 +579,19 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         CmdDescription todo = CmdDescription.builder()
                 .cmdName("#make-todo#")
                 .cmdDesc("生成计划")
-                .executeScript(String.format("popupAndSendCmd('#make-todo#','%s')",
-                        Base64Util.encodeBase64("{输入需求}")))
+                .executeScript("popupAndSendCmd('#make-todo#','','生成计划')")
                 .build();
 
         CmdDescription planAndProcess = CmdDescription.builder()
                 .cmdName("#plan-and-process#")
                 .cmdDesc("计划并执行")
-                .executeScript(String.format("popupAndSendCmd('#plan-and-process#','%s')",
-                        Base64Util.encodeBase64("{输入需求}")))
+                .executeScript("popupAndSendCmd('#plan-and-process#','','计划并执行')")
                 .build();
 
         CmdDescription question = CmdDescription.builder()
                 .cmdName("#make-question#")
-                .cmdDesc("生成问题")
-                .executeScript(String.format("popupAndSendCmd('#make-question#','%s')",
-                        Base64Util.encodeBase64("{输入需求}")))
+                .cmdDesc("生成提案")
+                .executeScript("popupAndSendCmd('#make-question#','','生成提案')")
                 .build();
 
         CmdDescription processTodo = null;
@@ -610,18 +612,11 @@ public class McpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                         .cmdDesc("打开计划")
                         .executeScript("sendMessageInner('#open-todo#')")
                         .build();
-            } else if (todoItem.matchQuestionDir()) {
-                todoWithQuestion = CmdDescription.builder()
-                        .cmdName("#make-todo-with-question#")
-                        .cmdDesc("根据问题生成计划")
-                        .executeScript("sendMessageInner('#make-todo-with-question#')")
-                        .build();
-
             }
             if (StringUtils.isNotBlank(todoItem.getQuestionPath())) {
                 openQuestion = CmdDescription.builder()
                         .cmdName("#open-question#")
-                        .cmdDesc("打开问题")
+                        .cmdDesc("打开提案")
                         .executeScript("sendMessageInner('#open-question#')")
                         .build();
             }
