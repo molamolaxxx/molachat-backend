@@ -259,7 +259,7 @@ public class McpProcess  {
             }
         }
         if (CollectionUtils.isNotEmpty(nextCmdList)) {
-            executeCmd(nextCmdList, targets, errorRepeatCnt);
+            executeCmd(nextCmdList, targets, errorRepeatCnt, null);
         }
         while (!terminate) {
             String request = buildRequest();
@@ -304,11 +304,19 @@ public class McpProcess  {
             log.info("提取备注列表: {}", targets);
 
             // 执行命令
-            executeCmd(nextCmdList, targets, errorRepeatCnt);
+            executeCmd(nextCmdList, targets, errorRepeatCnt, parseNextSummary(result.toString()));
         }
     }
 
-    private void executeCmd(List<String> nextCmdList, List<String> targets, AtomicInteger errorRepeatCnt) {
+    private void executeCmd(List<String> nextCmdList, List<String> targets, AtomicInteger errorRepeatCnt, String summary) {
+        if (nextCmdList.contains("无指令")) {
+            Set<String> historyCmdSet = cmdHistory.stream().map(CmdHistoryItem::getCmdAndParam)
+                    .collect(Collectors.toSet());
+            if (nextCmdList.stream().filter(e -> !historyCmdSet.contains(e)).count() > 1) {
+                nextCmdList = nextCmdList.stream().filter(e -> !Objects.equals(e, "无指令"))
+                        .collect(Collectors.toList());
+            }
+        }
         Map<String, String> cmd2TargetDesc = Maps.newHashMap();
         for (int i = 0; i < nextCmdList.size(); i++) {
             if (i < targets.size()) {
@@ -336,6 +344,10 @@ public class McpProcess  {
                         processBeforeSend(targetDesc, -1),
                         ""
                 ));
+                if (StringUtils.isNotBlank(summary)) {
+                    sendNotify("\n### 4、执行总结：\n");
+                    sendNotify(summary);
+                }
                 terminate(null);
                 break;
             }
@@ -472,9 +484,21 @@ public class McpProcess  {
         return target;
     }
 
+    public static String parseNextSummary(String gptResult) {
+        // 使用正则表达式匹配两个#之间的命令块
+        Pattern blockPattern = Pattern.compile("#summary#(.*?)#(?:summary)#", Pattern.DOTALL);
+        Matcher blockMatcher = blockPattern.matcher(gptResult);
+        while (blockMatcher.find()) {
+            return blockMatcher.group(1).trim();
+        }
+        return "";
+    }
+
     public boolean processStream(String part, StringBuilder result, UsedToken usedToken, String input, List<String> messageBuffer) {
         // 内容
         String content = ChatGptSolution.parseStreamContent(part, "content");
+        Set<String> historyCmdSet = cmdHistory.stream().map(CmdHistoryItem::getCmdAndParam)
+                .collect(Collectors.toSet());
         if (content != null) {
             messageBuffer.add(content);
             result.append(content);
@@ -488,9 +512,21 @@ public class McpProcess  {
                             .filter(e -> e.contains("readFile {") || e.contains("treeFile {")
                                     || e.contains("executeBash {") || e.contains("executePowerShell {") )
                             .collect(Collectors.toList());
-                    Set<String> historyCmdSet = cmdHistory.stream().map(CmdHistoryItem::getCmdAndParam)
-                            .collect(Collectors.toSet());
                     if (readCmd.stream().anyMatch(e -> !historyCmdSet.contains(e))) {
+                        // 发送流式消息
+                        sendStreamMessage(String.join("", messageBuffer));
+                        messageBuffer.clear();
+                        usedToken.usedInputToken = estimateTokens(input);
+                        usedToken.usedOutputToken = estimateTokens(result.toString());
+                        sendStreamMessage("(存在未执行读取命令，系统拦截修改指令)");
+                        return false;
+                    }
+                }
+
+                // 无指令必须单独执行
+                if (currentResult.contains("#start#无指令")) {
+                    List<String> currentCmdList = parseNextCmd(currentResult);
+                    if (currentCmdList.stream().filter(e -> !historyCmdSet.contains(e)).count()  > 1) {
                         // 发送流式消息
                         sendStreamMessage(String.join("", messageBuffer));
                         messageBuffer.clear();
