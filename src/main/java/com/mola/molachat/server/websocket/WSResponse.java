@@ -51,6 +51,10 @@ public class WSResponse<T> implements Serializable {
         return new WSResponse<>(WSResponseCode.HEART_BEAT, msg, data);
     }
 
+    public static <T> WSResponse<T> cmdConfirm(String msg, T data){
+        return new WSResponse<>(WSResponseCode.CMD_CONFIRM, msg, data);
+    }
+
     private WSResponse(Integer code, String msg, T data){
         this.msg = msg;
         this.code = code;

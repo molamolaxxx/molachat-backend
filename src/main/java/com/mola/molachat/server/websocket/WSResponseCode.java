@@ -42,4 +42,9 @@ public class WSResponseCode {
      * ws心跳返回
      */
     public static final int HEART_BEAT = 277;
+
+    /**
+     * 命令二次确认弹窗
+     */
+    public static final int CMD_CONFIRM = 488;
 }

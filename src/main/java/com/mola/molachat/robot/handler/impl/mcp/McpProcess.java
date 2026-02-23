@@ -9,11 +9,17 @@ import com.google.common.collect.Sets;
 import com.mola.cmd.proxy.client.consumer.CmdSender;
 import com.mola.cmd.proxy.client.resp.CmdInvokeResponse;
 import com.mola.cmd.proxy.client.resp.CmdResponseContent;
+import com.mola.molachat.chatter.model.Chatter;
+import com.mola.molachat.common.MyApplicationContextAware;
 import com.mola.molachat.common.utils.Base64Util;
 import com.mola.molachat.common.utils.KvUtils;
 import com.mola.molachat.robot.constant.CmdProxyConstant;
 import com.mola.molachat.robot.solution.ChatGptSolution;
+import com.mola.molachat.server.service.ServerService;
+import com.mola.molachat.server.websocket.WSResponse;
+import com.mola.molachat.session.data.SessionFactoryInterface;
 import com.mola.molachat.session.model.Message;
+import com.mola.molachat.session.model.Session;
 import com.mola.molachat.session.model.StreamMessage;
 import com.mola.molachat.session.solution.MessageSolution;
 import lombok.AllArgsConstructor;
@@ -377,6 +383,53 @@ public class McpProcess  {
                 }
             } else {
                 errorRepeatCnt.set(0);
+            }
+
+            // 危险命令二次确认检查
+            DangerousCmdChecker.CheckResult dangerousCheck = DangerousCmdChecker.check(
+                    entry.getKey(), entry.getValue()[0]);
+            if (dangerousCheck != null) {
+                String confirmId = UUID.randomUUID().toString();
+                CmdConfirmRequest confirmRequest = new CmdConfirmRequest(
+                        confirmId,
+                        entry.getKey(),
+                        entry.getValue()[0],
+                        dangerousCheck.getMatchedCommand(),
+                        dangerousCheck.getDescription(),
+                        sessionId
+                );
+                // 推送确认弹窗给前端
+                try {
+                    ServerService serverService = MyApplicationContextAware.getApplicationContext().getBean(ServerService.class);
+                    Session session = MyApplicationContextAware.getApplicationContext().getBean(SessionFactoryInterface.class)
+                                    .selectById(sessionId);
+                    if (session != null) {
+                        for (Chatter chatter : session.getChatterSet()) {
+                            if (!Objects.equals(chatter.getId(), robotId)) {
+                                serverService.sendResponse(chatter.getId(),
+                                        WSResponse.cmdConfirm(
+                                                "命令需要确认", confirmRequest));
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("推送命令确认弹窗失败", e);
+                }
+
+                // 阻塞等待用户确认，超时120秒
+                boolean confirmed = CmdConfirmManager.INSTANCE.waitForConfirm(confirmId, 120);
+                if (!confirmed) {
+                    // 用户拒绝或超时
+                    sendNotify(String.format("|  %s  |  %s  |  %s  |  %s  |  %s |\n",
+                            processBeforeSend(entry.getKey(), -1),
+                            processBeforeSend(entry.getValue()[0], 32),
+                            "用户禁止此脚本的执行，请勿再次执行",
+                            processBeforeSend(targetDesc, -1),
+                            ""
+                    ));
+                    cmdHistory.add(new CmdHistoryItem(nextCmd, "用户禁止此脚本的执行，请勿再次执行", targetDesc, headerMessage, false, false));
+                    continue;
+                }
             }
 
             // 执行命令

@@ -9,6 +9,7 @@ $(document).ready(function () {
     const HEART_BEAT = 276;
     const VIDEO_REQUEST = 378;
     const VIDEO_RESPONSE = 379;
+    const CMD_CONFIRM = 488;
 
     //唯一用户标识
     var chatterId;
@@ -409,6 +410,9 @@ $(document).ready(function () {
             } else if (result.code == VIDEO_RESPONSE) {
                 // 视频消息返回
                 receiveVideoResponse(result.data)
+            } else if (result.code == CMD_CONFIRM) {
+                // 命令二次确认弹窗
+                showCmdConfirmDialog(result.data)
             }
             // console.info(result);
         };
@@ -431,6 +435,71 @@ $(document).ready(function () {
             console.info(ev);
 
         }
+    }
+
+    /**
+     * 命令二次确认弹窗
+     */
+    showCmdConfirmDialog = function (data) {
+        var cmdName = data.cmdName || "未知命令";
+        var cmdParam = data.cmdParam || "";
+        var matchedCommand = data.matchedCommand || "";
+        var description = data.description || "";
+        var confirmId = data.confirmId || "";
+
+        // 截断过长的参数显示
+        var displayParam = cmdParam.length > 200 ? cmdParam.substring(0, 200) + "..." : cmdParam;
+
+        swal({
+            title: "⚠️ 危险命令确认",
+            text: "命令: " + cmdName + "\n"
+                + "危险操作: " + matchedCommand + "\n"
+                + "说明: " + description + "\n"
+                + "参数: " + displayParam,
+            icon: "warning",
+            buttons: {
+                cancel: {
+                    text: "拒绝",
+                    value: false,
+                    visible: true,
+                    closeModal: true
+                },
+                confirm: {
+                    text: "执行",
+                    value: true,
+                    visible: true,
+                    closeModal: true
+                }
+            },
+            dangerMode: true,
+            closeOnClickOutside: false,
+            closeOnEsc: false
+        }).then(function (confirmed) {
+            $.ajax({
+                url: getPrefix() + "/chat/cmd/confirm",
+                type: "post",
+                xhrFields: {
+                    withCredentials: true
+                },
+                crossDomain: true,
+                dataType: "json",
+                data: {
+                    "confirmId": confirmId,
+                    "confirmed": confirmed === true
+                },
+                success: function (result) {
+                    if (confirmed) {
+                        showToast("已确认执行命令", 1000);
+                    } else {
+                        showToast("已拒绝执行命令", 1000);
+                    }
+                },
+                error: function (result) {
+                    console.log("命令确认请求失败", result);
+                    showToast("命令确认请求失败", 1000);
+                }
+            });
+        });
     }
 
     // 获取签名
