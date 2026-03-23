@@ -8,7 +8,7 @@ package com.mola.molachat.robot.constant;
  **/
 public class CmdProxyConstant {
 
-    public static final String CHAT_GPT = "chatgpt";
+    public static final String ACP = "acp";
 
     public static final String IMAGE_GENERATE = "imageGenerate";
 

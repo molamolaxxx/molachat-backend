@@ -73,10 +73,15 @@ public class SessionFactory implements SessionFactoryInterface {
                     , "集合中小于两个chatter，无法创建session");
         }
 
-        //sessionID为聊天室包含所有聊天者的id，第一个为创建者
+        //sessionID为聊天室包含所有聊天者的id，按字典序排序保证确定性
+        List<String> chatterIds = new ArrayList<>();
+        for (Chatter chatter : chatterSet) {
+            chatterIds.add(chatter.getId());
+        }
+        Collections.sort(chatterIds);
         StringBuffer sessionId = new StringBuffer();
-        for (Chatter chatter : chatterSet){
-            sessionId.append(chatter.getId());
+        for (String id : chatterIds) {
+            sessionId.append(id);
         }
 
         //1.创建session

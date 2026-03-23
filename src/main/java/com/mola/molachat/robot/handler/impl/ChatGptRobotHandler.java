@@ -18,7 +18,6 @@ import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.robot.model.CmdDescription;
 import com.mola.molachat.robot.model.InvokeLimiter;
 import com.mola.molachat.robot.solution.ChatGptSolution;
-import com.mola.molachat.robot.solution.CmdProxyInvokeSolution;
 import com.mola.molachat.server.service.ServerService;
 import com.mola.molachat.session.dto.SessionDTO;
 import com.mola.molachat.session.model.FileMessage;
@@ -66,9 +65,6 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
 
     @Resource
     private ChatGptSolution chatGptSolution;
-
-    @Resource
-    private CmdProxyInvokeSolution cmdProxyInvokeSolution;
 
     @Resource
     private KvUtils kvUtils;
@@ -306,8 +302,10 @@ public class ChatGptRobotHandler implements IRobotEventHandler<MessageReceiveEve
         SessionDTO session = sessionService.findSession(sessionId);
         Assert.notNull(session, "session is null in getPrompt，" + sessionId);
 
-        messageInput.add(getLine("system",
-                kvUtils.getStringOrDefault("modelUserConfig_" + sessionId, "")));
+        String systemConfig = kvUtils.getStringOrDefault("modelUserConfig_" + sessionId, "");
+        if (StringUtils.isNotBlank(systemConfig)) {
+            messageInput.add(getLine("system", systemConfig));
+        }
 
         List<Message> messageList = session.getMessageList();
         if (CollectionUtils.isEmpty(messageList)) {

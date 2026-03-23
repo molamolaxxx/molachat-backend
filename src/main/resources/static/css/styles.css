@@ -936,3 +936,22 @@ svg {
     opacity: 1;
     background: #e0e0e0;
 }
+
+
+details.tool-call { background:#f4f5f7; border:1px solid #ddd; border-radius:6px; margin-top:5px; }
+details.tool-call>summary { padding:12px 8px; cursor:pointer; font-size:14px; color:#333; list-style:none; user-select:none; display:flex; align-items:center; gap:6px; }
+details.tool-call>summary::-webkit-details-marker { display:none; }
+details.tool-call>summary::before { content:'▶'; font-size:9px; color:#999; transition:transform .2s; display:inline-block; }
+details.tool-call[open]>summary::before { transform:rotate(90deg); }
+details.tool-call>summary:hover { background:#eaecf0; }
+.tool-call-body { padding:0 8px 4px; }
+.tool-call-body>p { margin:0 !important; padding:0 !important; line-height:0 !important; font-size:0 !important; }
+details.tool-detail { background:#f4f5f7; border:1px solid #e0e2e6; border-radius:4px; margin:10px 10px; }
+details.tool-detail>summary { padding:8px 8px; cursor:pointer; font-size:12px; color:#555; list-style:none; user-select:none; }
+details.tool-detail>summary::-webkit-details-marker { display:none; }
+details.tool-detail>summary::before { content:'▶'; font-size:8px; color:#aaa; transition:transform .2s; display:inline-block; margin-right:4px; }
+details.tool-detail[open]>summary::before { transform:rotate(90deg); }
+details.tool-detail>summary:hover { background:#eaecf0; }
+details.tool-detail>p { margin:0 !important; padding:0 !important; line-height:0 !important; font-size:0 !important; }
+details.tool-detail pre { margin:0 !important; border-radius:0 0 4px 4px !important; background:#f4f5f7 !important; border:none !important; padding:4px 8px !important; }
+details.tool-detail pre code { background:transparent !important; font-size:12px !important; }

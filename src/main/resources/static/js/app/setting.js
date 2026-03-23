@@ -1,5 +1,5 @@
 // app全局的一些配置
-var DEFAULT_HOST = "molaspace.xyz"
+var DEFAULT_HOST = "106.54.193.10"
 var DEFAULT_LOCAL_HOST = "127.0.0.1"
 var DEFAULT_PORT = "8550"
 

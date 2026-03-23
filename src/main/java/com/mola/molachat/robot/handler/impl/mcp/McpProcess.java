@@ -389,6 +389,7 @@ public class McpProcess  {
             DangerousCmdChecker.CheckResult dangerousCheck = DangerousCmdChecker.check(
                     entry.getKey(), entry.getValue()[0]);
             if (dangerousCheck != null) {
+                log.info("危险命令二次确认检查结果:{}", dangerousCheck);
                 String confirmId = UUID.randomUUID().toString();
                 CmdConfirmRequest confirmRequest = new CmdConfirmRequest(
                         confirmId,
@@ -462,21 +463,38 @@ public class McpProcess  {
         }
     }
 
-    private String processBeforeSend(String input, int width) {
+    private static String processBeforeSend(String input, int width) {
         if (input.length() > 2048) {
             input = input.substring(0, 2048) + ".....";
         }
         if (input.length() > 256) {
             String summary = input.substring(0, 256);
             String detail = input.substring(256);
+            // 对 details 内部内容额外转义 markdown 语法字符，防止与外层 md 表格冲突导致 summary 标签失效
             return String.format("<details><summary>%s</summary>%s</details>",
-                    replaceToken(splitLineByBr(summary, width)), replaceToken(detail));
+                    escapeMdInHtmlBlock(replaceToken(splitLineByBr(summary, width))),
+                    escapeMdInHtmlBlock(replaceToken(detail)));
         } else {
             return replaceToken(splitLineByBr(input, width));
         }
     }
 
-    private String splitLineByBr(String input, int width) {
+    /**
+     * 转义 HTML 块内的 markdown 语法字符，防止 md 渲染器将其解析为 markdown 结构
+     * 主要处理：# 标题、* 加粗/斜体、[ ] 链接、- 列表 等
+     */
+    private static String escapeMdInHtmlBlock(String input) {
+        return input
+                .replace("#", "&#35;")
+                .replace("*", "&#42;")
+                .replace("[", "&#91;")
+                .replace("]", "&#93;")
+                .replace("_", "&#95;")
+                .replace("~", "&#126;")
+                .replace("-", "&#45;");
+    }
+
+    private static String splitLineByBr(String input, int width) {
         if (width < 0) {
             return input;
         }
@@ -498,7 +516,7 @@ public class McpProcess  {
         return result.toString();
     }
 
-    private String replaceToken(String input) {
+    private static String replaceToken(String input) {
         return input
                 .replace("<", "＜")
                 .replace(">", "＞")
@@ -558,7 +576,8 @@ public class McpProcess  {
             if (messageBuffer.size() >= 5) {
                 // 判断是否包含修改语句
                 String currentResult = result.toString();
-                if (currentResult.contains("createFile {") || currentResult.contains("modifyFile {")) {
+                if (currentResult.contains("createFile {") || currentResult.contains("modifyFile {")
+                        || currentResult.contains("executeBash {") || currentResult.contains("executePowerShell {")) {
                     List<String> currentCmdList = parseNextCmd(currentResult);
                     // 如果当前已经包含了未执行过的读语句，那么则直接执行，防止读无效
                     List<String> readCmd = currentCmdList.stream()

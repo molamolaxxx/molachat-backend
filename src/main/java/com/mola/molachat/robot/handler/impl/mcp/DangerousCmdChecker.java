@@ -1,5 +1,7 @@
 package com.mola.molachat.robot.handler.impl.mcp;
 
+import lombok.Data;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -81,7 +83,6 @@ public class DangerousCmdChecker {
 
         // 定时任务
         DANGEROUS_COMMANDS.put("crontab ", "编辑定时任务");
-        DANGEROUS_COMMANDS.put("at ", "设置一次性定时任务");
 
         // 用户管理
         DANGEROUS_COMMANDS.put("useradd ", "添加系统用户");
@@ -151,6 +152,7 @@ public class DangerousCmdChecker {
         return null;
     }
 
+    @Data
     public static class CheckResult {
         private final String matchedCommand;
         private final String description;
@@ -158,14 +160,6 @@ public class DangerousCmdChecker {
         public CheckResult(String matchedCommand, String description) {
             this.matchedCommand = matchedCommand;
             this.description = description;
-        }
-
-        public String getMatchedCommand() {
-            return matchedCommand;
-        }
-
-        public String getDescription() {
-            return description;
         }
     }
 }

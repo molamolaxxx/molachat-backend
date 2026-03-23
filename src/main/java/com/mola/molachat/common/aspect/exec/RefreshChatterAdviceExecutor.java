@@ -11,6 +11,7 @@ import com.mola.molachat.server.service.ServerService;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
@@ -73,7 +74,17 @@ public class RefreshChatterAdviceExecutor implements AnnotationAdviceExecutor {
                 // 公共群组，全部输出
                 if (StringUtils.isEmpty(chatter.getCurrentGroup()) ||
                         GroupFactory.COMMON_GROUP_ID.equals(chatter.getCurrentGroup())) {
-                    server.getSession().sendToClient(WSResponse.list("ok", chatterList));
+                    // 按visibleChatterIds过滤：如果机器人设置了可见用户列表，只有列表中的用户能看到
+                    String viewerId = server.getChatterId();
+                    List<ChatterDTO> filteredList = chatterList.stream()
+                            .filter(dto -> {
+                                if (CollectionUtils.isEmpty(dto.getVisibleChatterIds())) {
+                                    return true;
+                                }
+                                return dto.getVisibleChatterIds().contains(viewerId);
+                            })
+                            .collect(Collectors.toList());
+                    server.getSession().sendToClient(WSResponse.list("ok", filteredList));
                 }
             }
         }

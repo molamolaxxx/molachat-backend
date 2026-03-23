@@ -2,6 +2,7 @@ package com.mola.molachat.chatter.model;
 
 import lombok.Data;
 
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -26,4 +27,14 @@ public class RobotChatter extends Chatter {
      * 处理线的bean名称，用于区分不同功能的机器人
      */
     private String eventBusBeanName;
+
+    /**
+     * 机器人所属组，如 "acp"、"mcp" 等
+     */
+    private String robotGroup;
+
+    /**
+     * 可见用户id列表，为空则所有人可见
+     */
+    private Set<String> visibleChatterIds;
 }

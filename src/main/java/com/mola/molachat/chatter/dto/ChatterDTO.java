@@ -4,6 +4,7 @@ import com.mola.molachat.chatter.enums.ChatterTagEnum;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -100,5 +101,15 @@ public class ChatterDTO {
      * 唯一appkey，用于外部api调用
      */
     private String appKey;
+
+    /**
+     * 机器人所属组
+     */
+    private String robotGroup;
+
+    /**
+     * 可见用户id列表
+     */
+    private Set<String> visibleChatterIds;
 
 }

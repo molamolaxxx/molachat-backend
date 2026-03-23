@@ -39,9 +39,6 @@ public class ChatGptSolution {
     private final Map<String, GptInvokeFuture> gptInvokeFutureMap = Maps.newConcurrentMap();
 
     @Resource
-    private CmdProxyInvokeSolution cmdProxyInvokeSolution;
-
-    @Resource
     private ChatterService chatterService;
 
     @Resource
