@@ -47,6 +47,8 @@ import java.util.stream.Collectors;
 @Data
 public class McpProcess  {
 
+    private static final int MAX_DETAIL_LENGTH = 2048;
+
     /**
      * 可使用的命令列表
      */
@@ -265,7 +267,7 @@ public class McpProcess  {
             }
         }
         if (CollectionUtils.isNotEmpty(nextCmdList)) {
-            executeCmd(nextCmdList, targets, errorRepeatCnt, null);
+            executeCmd(nextCmdList, targets, errorRepeatCnt);
         }
         while (!terminate) {
             String request = buildRequest();
@@ -280,21 +282,27 @@ public class McpProcess  {
             }
             StringBuilder result = new StringBuilder();
 
-            sendNotify("#### 模型输出\n```\n");
             Map<String, Object> streamOptions = Maps.newHashMap();
             streamOptions.put("include_usage", true);
 
             UsedToken usedToken = new UsedToken();
             List<String> messageBuffer = Lists.newLinkedList();
+            boolean[] streamHeaderSent = {false};
 
             String modelName = chatGptSolution.findModelName(sessionId, "chatGpt");
             chatGptSolution.invoke(request, null, true, streamOptions,
-                    part -> processStream(part, result, usedToken, request, messageBuffer),
+                    part -> processStream(part, result, usedToken, request, messageBuffer, streamHeaderSent),
                     kvUtils.getDoubleOrDefault("mcpTemperature-" + modelName, 0.01), sessionId);
             if (messageBuffer.size() > 0) {
+                if (!streamHeaderSent[0]) {
+                    sendStreamMessage("<details class=\"tool-call\" open><summary>🤖 模型输出</summary>\n<div class=\"tool-call-body\">\n<pre><code>");
+                    streamHeaderSent[0] = true;
+                }
                 sendStreamMessage(String.join("", messageBuffer));
             }
-            sendStreamMessage("\n```");
+            if (streamHeaderSent[0]) {
+                sendStreamMessage("</code></pre>\n</div></details>\n");
+            }
             this.usedOutputToken += usedToken.usedOutputToken;
             this.usedInputToken += usedToken.usedInputToken;
             this.totalCachedTokens += usedToken.totalCachedTokens;
@@ -310,11 +318,11 @@ public class McpProcess  {
             log.info("提取备注列表: {}", targets);
 
             // 执行命令
-            executeCmd(nextCmdList, targets, errorRepeatCnt, parseNextSummary(result.toString()));
+            executeCmd(nextCmdList, targets, errorRepeatCnt);
         }
     }
 
-    private void executeCmd(List<String> nextCmdList, List<String> targets, AtomicInteger errorRepeatCnt, String summary) {
+    private void executeCmd(List<String> nextCmdList, List<String> targets, AtomicInteger errorRepeatCnt) {
         if (nextCmdList.contains("无指令")) {
             Set<String> historyCmdSet = cmdHistory.stream().map(CmdHistoryItem::getCmdAndParam)
                     .collect(Collectors.toSet());
@@ -334,8 +342,6 @@ public class McpProcess  {
             return;
         }
 
-        sendNotify("\n#### 命令执行\n| 命令 | 参数 | 结果 | 目的 | 备注 |\n| ---- | ---- | ---- | ---- | --- |\n");
-
         for (String nextCmd : nextCmdList) {
             if (terminate) {
                 break;
@@ -343,17 +349,7 @@ public class McpProcess  {
 
             String targetDesc = cmd2TargetDesc.getOrDefault(nextCmd, "无");
             if (Objects.equals(nextCmd, "无指令")) {
-                sendNotify(String.format("|  %s  |  %s  |  %s  |  %s  |  %s |\n",
-                        "无指令",
-                        "",
-                        "流程结束",
-                        processBeforeSend(targetDesc, -1),
-                        ""
-                ));
-                if (StringUtils.isNotBlank(summary)) {
-                    sendNotify("\n### 4、执行总结：\n");
-                    sendNotify(summary);
-                }
+                sendNotify(buildCmdDetailCard("无指令", "", "流程结束", targetDesc, ""));
                 terminate(null);
                 break;
             }
@@ -421,11 +417,11 @@ public class McpProcess  {
                 boolean confirmed = CmdConfirmManager.INSTANCE.waitForConfirm(confirmId, 120);
                 if (!confirmed) {
                     // 用户拒绝或超时
-                    sendNotify(String.format("|  %s  |  %s  |  %s  |  %s  |  %s |\n",
-                            processBeforeSend(entry.getKey(), -1),
-                            processBeforeSend(entry.getValue()[0], 32),
+                    sendNotify(buildCmdDetailCard(
+                            entry.getKey(),
+                            entry.getValue()[0],
                             "用户禁止此脚本的执行，请勿再次执行",
-                            processBeforeSend(targetDesc, -1),
+                            targetDesc,
                             ""
                     ));
                     cmdHistory.add(new CmdHistoryItem(nextCmd, "用户禁止此脚本的执行，请勿再次执行", targetDesc, headerMessage, false, false));
@@ -452,12 +448,12 @@ public class McpProcess  {
             }
 
             // 发送控制台
-            sendNotify(String.format("|  %s  |  %s  |  %s  |  %s  |  %s |\n",
-                    processBeforeSend(entry.getKey(), -1),
-                    processBeforeSend(entry.getValue()[0], 32),
-                    processBeforeSend(cmdResult, -1),
-                    processBeforeSend(targetDesc, -1),
-                    processBeforeSend(remark, -1)
+            sendNotify(buildCmdDetailCard(
+                    entry.getKey(),
+                    entry.getValue()[0],
+                    cmdResult,
+                    targetDesc,
+                    remark
             ));
             cmdHistory.add(new CmdHistoryItem(nextCmd, cmdResult, targetDesc, headerMessage, false, false));
         }
@@ -477,6 +473,64 @@ public class McpProcess  {
         } else {
             return replaceToken(splitLineByBr(input, width));
         }
+    }
+
+    /**
+     * 构建命令执行结果的折叠卡片
+     */
+    private String buildCmdDetailCard(String cmdName, String cmdParam, String cmdResult, String targetDesc, String remark) {
+        StringBuilder sb = new StringBuilder();
+
+        String statusEmoji = "命令执行异常".equals(cmdResult) || "用户禁止此脚本的执行，请勿再次执行".equals(cmdResult) ? "❌" : "✅";
+        String title = cmdName;
+        if (StringUtils.isNotBlank(targetDesc) && !"无".equals(targetDesc)) {
+            title += " - " + targetDesc;
+        }
+        if (StringUtils.isNotBlank(remark)) {
+            title += " (" + remark + ")";
+        }
+
+        String inputBlock = "";
+        if (StringUtils.isNotBlank(cmdParam)) {
+            String inputDisplay = cmdParam;
+            if (inputDisplay.length() > MAX_DETAIL_LENGTH) {
+                inputDisplay = inputDisplay.substring(0, MAX_DETAIL_LENGTH) + "\n...";
+            }
+            inputBlock = "<details class=\"tool-detail\" open><summary>📥 输入参数</summary>\n\n```json\n"
+                    + inputDisplay + "\n```\n\n</details>";
+        }
+
+        String outputBlock = "";
+        if (StringUtils.isNotBlank(cmdResult)) {
+            String outputDisplay = cmdResult;
+            if (outputDisplay.length() > MAX_DETAIL_LENGTH) {
+                outputDisplay = outputDisplay.substring(0, MAX_DETAIL_LENGTH) + "\n...";
+            }
+            outputBlock = "<details class=\"tool-detail\" open><summary>📤 输出结果</summary>\n\n```\n"
+                    + outputDisplay + "\n```\n\n</details>";
+        }
+
+        sb.append("<details class=\"tool-call\">");
+        sb.append("<summary>🛠️ ").append(statusEmoji).append(" ").append(title).append("</summary>");
+        sb.append("<div class=\"tool-call-body\">\n\n");
+        sb.append(inputBlock);
+        sb.append(outputBlock);
+        sb.append("\n\n</div></details>\n");
+
+        return sb.toString();
+    }
+
+    /**
+     * 转义 HTML 特殊字符，用于 pre/code 块内的内容安全输出
+     */
+    private static String escapeHtml(String input) {
+        if (input == null) {
+            return "";
+        }
+        return input
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
     }
 
     /**
@@ -565,15 +619,20 @@ public class McpProcess  {
         return "";
     }
 
-    public boolean processStream(String part, StringBuilder result, UsedToken usedToken, String input, List<String> messageBuffer) {
+    public boolean processStream(String part, StringBuilder result, UsedToken usedToken, String input, List<String> messageBuffer, boolean[] streamHeaderSent) {
         // 内容
         String content = ChatGptSolution.parseStreamContent(part, "content");
         Set<String> historyCmdSet = cmdHistory.stream().map(CmdHistoryItem::getCmdAndParam)
                 .collect(Collectors.toSet());
         if (content != null) {
-            messageBuffer.add(content);
+            messageBuffer.add(escapeHtml(content));
             result.append(content);
             if (messageBuffer.size() >= 5) {
+                // 首次有内容时，先发送折叠卡片开头
+                if (!streamHeaderSent[0]) {
+                    sendStreamMessage("<details class=\"tool-call\" open><summary>🤖 模型输出</summary>\n<div class=\"tool-call-body\">\n<pre><code>");
+                    streamHeaderSent[0] = true;
+                }
                 // 判断是否包含修改语句
                 String currentResult = result.toString();
                 if (currentResult.contains("createFile {") || currentResult.contains("modifyFile {")

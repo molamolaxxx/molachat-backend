@@ -395,9 +395,13 @@ $(document).ready(function () {
         sendMessageInner(content)
     })
 
-    // 支持 Enter 触发发送，Shift+Enter 触发换行
+    // 支持 Enter 触发发送，Shift+Enter 触发换行（手机端回车始终换行）
     $chatEditor.on('keydown', function (e) {
         if (e.keyCode === 13) {
+            if (window.innerWidth <= 600) {
+                // 手机端回车不发送，允许默认换行行为
+                return;
+            }
             if (e.shiftKey) {
                 // Shift+Enter 允许默认换行行为
             } else {

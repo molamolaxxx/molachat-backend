@@ -5,15 +5,26 @@ import com.google.common.collect.Lists;
 import com.mola.cmd.proxy.client.consumer.CmdSender;
 import com.mola.cmd.proxy.client.resp.CmdInvokeResponse;
 import com.mola.cmd.proxy.client.resp.CmdResponseContent;
+import com.mola.molachat.common.config.SelfConfig;
 import com.mola.molachat.common.event.action.BaseAction;
+import com.mola.molachat.common.utils.Base64Util;
+import com.mola.molachat.common.utils.FileUtils;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.robot.model.CmdDescription;
+import com.mola.molachat.session.dto.SessionDTO;
+import com.mola.molachat.session.model.FileMessage;
+import com.mola.molachat.session.model.Message;
+import com.mola.molachat.session.service.SessionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
+import javax.annotation.Resource;
+import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +41,12 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
     private static final String CMD_ACP_CANCEL = "#acp-cancel#";
     private static final String CMD_ACP_CLEAR = "#acp-clear#";
+
+    @Resource
+    private SessionService sessionService;
+
+    @Resource
+    private SelfConfig selfConfig;
 
     @Override
     public BaseAction handler(MessageReceiveEvent messageReceiveEvent) {
@@ -53,9 +70,15 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         }
 
         try {
-            Map<String, String> paramMap = new HashMap<>();
+            // 收集当前消息之前连续的图片文件消息的base64
+            List<String> images = collectRecentImageBase64(sessionId, messageReceiveEvent);
+
+            Map<String, Object> paramMap = new HashMap<>();
             paramMap.put("groupId", sessionId);
             paramMap.put("message", userMessage);
+            if (!CollectionUtils.isEmpty(images)) {
+                paramMap.put("images", images);
+            }
             String paramJson = JSON.toJSONString(paramMap);
 
             CmdInvokeResponse<CmdResponseContent> response = CmdSender.INSTANCE
@@ -68,6 +91,77 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             log.error("AcpExecHandler 发送消息失败, sessionId={}", sessionId, e);
             return MessageSendAction.withResp("ACP消息发送失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 从当前会话中收集当前消息之前、连续的、当前用户发送的图片文件消息，读取base64
+     */
+    private List<String> collectRecentImageBase64(String sessionId, MessageReceiveEvent event) {
+        List<String> images = new ArrayList<>();
+        try {
+            SessionDTO session = sessionService.findSession(sessionId);
+            if (session == null) {
+                return images;
+            }
+            List<Message> messageList = session.getMessageList();
+            if (CollectionUtils.isEmpty(messageList) || messageList.size() <= 1) {
+                return images;
+            }
+            String currentChatterId = event.getMessage().getChatterId();
+            String robotChatterId = event.getRobotChatter().getId();
+
+            // 从倒数第二条消息开始向前遍历（最后一条是当前消息），收集连续的FileMessage
+            List<FileMessage> consecutiveFileMessages = new ArrayList<>();
+            for (int i = messageList.size() - 2; i >= 0; i--) {
+                Message msg = messageList.get(i);
+                // 必须是当前用户发送的，非机器人发送
+                if (!currentChatterId.equals(msg.getChatterId()) || robotChatterId.equals(msg.getChatterId())) {
+                    break;
+                }
+                if (!(msg instanceof FileMessage)) {
+                    break;
+                }
+                consecutiveFileMessages.add((FileMessage) msg);
+            }
+
+            // 反转为时间正序
+            for (int i = consecutiveFileMessages.size() - 1; i >= 0; i--) {
+                FileMessage fm = consecutiveFileMessages.get(i);
+                if (!FileUtils.isImage(fm.getFileName())) {
+                    continue;
+                }
+                String filePath = resolveFilePath(fm);
+                if (filePath == null) {
+                    continue;
+                }
+                File file = new File(filePath);
+                if (!file.exists()) {
+                    continue;
+                }
+                byte[] imgData = FileUtils.readFileByBytes(filePath);
+                String base64 = Base64Util.encode(imgData);
+                images.add(base64);
+            }
+        } catch (Exception e) {
+            log.error("AcpExecHandler collectRecentImageBase64 异常, sessionId={}", sessionId, e);
+        }
+        return images;
+    }
+
+    /**
+     * 根据FileMessage的url解析实际磁盘路径
+     */
+    private String resolveFilePath(FileMessage fm) {
+        String url = fm.getUrl();
+        if (url == null) {
+            return null;
+        }
+        // files/xxx -> uploadFilePath/xxx (使用fetchRealStoredFileName)
+        String storedName = fm.fetchRealStoredFileName(false);
+        if (storedName == null) {
+            return null;
+        }
+        return selfConfig.getUploadFilePath() + File.separator + storedName;
     }
 
     /**

@@ -9,6 +9,7 @@ import com.mola.molachat.robot.constant.CmdProxyConstant;
 import com.mola.molachat.session.service.SessionService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -78,21 +79,21 @@ public class AcpRobotSyncSolution {
         for (AcpRobotParam param : robotParams) {
             String robotId = buildRobotId(param.getName());
             if (!existingIds.contains(robotId)) {
-                createAcpRobot(robotId, param.getName(), param.getSignature(), visibleChatterIds);
+                createAcpRobot(robotId, param.getName(), param.getSignature(), param.avatar, visibleChatterIds);
             }
         }
 
         log.info("ACP机器人同步完成, targetIds={}, visibleChatterIds={}", targetRobotIds, visibleChatterIds);
     }
 
-    private void createAcpRobot(String robotId, String name, String signature, Set<String> visibleChatterIds) {
+    private void createAcpRobot(String robotId, String name, String signature, String avatar, Set<String> visibleChatterIds) {
         RobotChatter robot = new RobotChatter();
         robot.setId(robotId);
         robot.setName(name);
         robot.setSignature(signature != null ? signature : "Agent Context Protocol");
         robot.setStatus(ChatterStatusEnum.ONLINE.getCode());
         robot.setTag(ChatterTagEnum.ROBOT.getCode());
-        robot.setImgUrl("img/kiro.png");
+        robot.setImgUrl(StringUtils.defaultIfBlank(avatar, "img/kiro.png"));
         robot.setIp("127.0.0.1");
         robot.setAppKey(robotId);
         robot.setEventBusBeanName("acpEventBus");
@@ -134,5 +135,6 @@ public class AcpRobotSyncSolution {
     public static class AcpRobotParam {
         private String name;
         private String signature;
+        private String avatar;
     }
 }
