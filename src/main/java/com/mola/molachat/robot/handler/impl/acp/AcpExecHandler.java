@@ -41,6 +41,7 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
     private static final String CMD_ACP_CANCEL = "#acp-cancel#";
     private static final String CMD_ACP_CLEAR = "#acp-clear#";
+    private static final String CMD_ACP_DREAM = "#acp-dream#";
 
     @Resource
     private SessionService sessionService;
@@ -61,6 +62,11 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         // 处理清除会话命令
         if (CMD_ACP_CLEAR.equals(userMessage)) {
             return invokeAcpCmd("acpClearContext", sessionId);
+        }
+
+        // 处理记忆整理命令
+        if (CMD_ACP_DREAM.equals(userMessage)) {
+            return invokeAcpCmd("acpMemoryDream", sessionId);
         }
 
         // 默认：向ACP发送消息，先检查状态
@@ -234,6 +240,12 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                         .cmdName(CMD_ACP_CLEAR)
                         .cmdDesc("清除ACP上下文")
                         .executeScript("sendMessageInner('" + CMD_ACP_CLEAR + "')")
+                        .build());
+                // 展示记忆整理命令
+                resultList.add(CmdDescription.builder()
+                        .cmdName(CMD_ACP_DREAM)
+                        .cmdDesc("触发记忆整理（Memory Dream）")
+                        .executeScript("sendMessageInner('" + CMD_ACP_DREAM + "')")
                         .build());
             }
         } catch (Exception e) {

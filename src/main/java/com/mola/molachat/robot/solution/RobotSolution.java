@@ -1,8 +1,11 @@
 package com.mola.molachat.robot.solution;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.common.utils.MapUtils;
 import com.mola.cmd.proxy.client.consumer.CmdSender;
+import com.mola.cmd.proxy.client.resp.CmdInvokeResponse;
+import com.mola.cmd.proxy.client.resp.CmdResponseContent;
 import com.mola.molachat.chatter.data.ChatterFactoryInterface;
 import com.mola.molachat.chatter.dto.ChatterDTO;
 import com.mola.molachat.chatter.enums.ChatterStatusEnum;
@@ -31,6 +34,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -148,6 +152,49 @@ public class RobotSolution implements InitializingBean {
         msg.setSessionId(session.getSessionId());
         // 2、向session发送消息
         messageSolution.insertMessage(session.getSessionId(), msg);
+    }
+
+    /**
+     * 获取ACP上下文用量百分比，非ACP robot返回null
+     */
+    public Double fetchContextUsage(String sessionId) {
+        log.info("fetchContextUsage start, sessionId={}", sessionId);
+        SessionDTO session = sessionService.findSession(sessionId);
+        if (session == null) {
+            log.warn("fetchContextUsage session not found, sessionId={}", sessionId);
+            return null;
+        }
+        RobotChatter robot = null;
+        for (Chatter chatter : session.getChatterSet()) {
+            Chatter real = chatterFactory.select(chatter.getId());
+            if (real instanceof RobotChatter) {
+                robot = (RobotChatter) real;
+                break;
+            }
+        }
+        if (robot == null || !"acp".equals(robot.getRobotGroup())) {
+            log.info("fetchContextUsage skip, robot={}, robotGroup={}, sessionId={}",
+                    robot, robot != null ? robot.getRobotGroup() : "null", sessionId);
+            return null;
+        }
+        try {
+            Map<String, String> paramMap = new HashMap<>();
+            paramMap.put("groupId", sessionId);
+            String paramJson = JSONObject.toJSONString(paramMap);
+            CmdInvokeResponse<CmdResponseContent> response = CmdSender.INSTANCE
+                    .send("acpGetContextUsage", sessionId, new String[]{paramJson});
+            log.info("fetchContextUsage response, sessionId={}, response={}", sessionId, JSON.toJSON(response));
+            if (response != null && response.getData() != null) {
+                String result = response.getData().getResultMap().get("result");
+                if (result != null) {
+                    double pct = Double.parseDouble(result);
+                    return pct >= 0 ? pct : null;
+                }
+            }
+        } catch (Exception e) {
+            log.error("fetchContextUsage 获取上下文用量失败, sessionId={}", sessionId, e);
+        }
+        return null;
     }
 
     public String fetchCmdMarkdown(String robotId, String sessionId) {

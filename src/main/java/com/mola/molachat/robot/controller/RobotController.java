@@ -98,4 +98,14 @@ public class RobotController {
             return ServerResponse.createByErrorMessage(e.getMessage());
         }
     }
+
+    @GetMapping("/context-usage/{sessionId}")
+    public ServerResponse<Double> fetchContextUsage(@PathVariable("sessionId") String sessionId) {
+        try {
+            return ServerResponse.createBySuccess(robotSolution.fetchContextUsage(sessionId));
+        } catch (Exception e) {
+            log.error("fetchContextUsage error", e);
+            return ServerResponse.createByErrorMessage(e.getMessage());
+        }
+    }
 }

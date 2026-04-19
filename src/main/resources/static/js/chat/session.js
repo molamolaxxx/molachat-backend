@@ -29,6 +29,14 @@ $(document).ready(function () {
     queryStreamDom = function(sessionId) {
         return streamMessageMap.get(sessionId)
     }
+    clearStreamMessageMap = function() {
+        streamMessageMap.forEach((dom, key) => {
+            if (dom && dom.remove) {
+                $(dom).remove()
+            }
+        })
+        streamMessageMap.clear()
+    }
 
     // 检测viewContent的滚动
     $messageViewContentScroll.scroll(function() {

@@ -377,6 +377,7 @@ $(document).ready(function () {
         if (socket) {
             socket.close()
         }
+        clearStreamMessageMap()
         socket = new WebSocket(getSocketPrefix() + "/chat/server/" + chatterId + "," + getDeviceId());
         socket.onopen = function (ev) {
             console.info("socket已经打开");

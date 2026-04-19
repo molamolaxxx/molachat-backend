@@ -29,7 +29,6 @@ import org.springframework.util.CollectionUtils;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -169,16 +168,8 @@ public class MessageSolution {
                 if (!CollectionUtils.isEmpty(servers)) {
                     for (ChatServer server : servers) {
                         SessionWrapper sw = server.getSession();
-                        Set<SessionWrapper> initedSession = messageConnect.getInitedSessions();
-                        if (initedSession.contains(sw)) {
-                            sw.sendToClient(WSResponse.steamMessage(
-                                    "send stream content!", streamMessage));
-                        } else {
-                            StreamMessage firstSendMessage = messageConnect.getFirstSendMessage();
-                            firstSendMessage.setContent(messageConnect.getMessageContent().toString());
-                            initedSession.add(sw);
-                            sw.sendToClient(WSResponse.steamMessage("send stream content!", firstSendMessage));
-                        }
+                        sw.sendToClient(WSResponse.steamMessage(
+                                "send stream content!", streamMessage));
                     }
                 }
             } catch (Exception e) {
@@ -192,6 +183,36 @@ public class MessageSolution {
             BeanUtils.copyProperties(streamMessage, message);
             message.setContent(messageConnect.getMessageContent().toString());
             sessionFactory.insertMessage(session.getSessionId(), message);
+        }
+    }
+
+    /**
+     * 重连后立即推送正在进行的流式消息全量内容
+     */
+    public void pushPendingStreamMessages(String chatterId, SessionWrapper sessionWrapper) {
+        for (StreamMessageConnect connect : streamMessageConnectPool) {
+            Session session = sessionFactory.selectById(connect.getSessionId());
+            if (session == null) {
+                continue;
+            }
+            boolean isReceiver = session.getChatterSet().stream()
+                    .anyMatch(c -> Objects.equals(c.getId(), chatterId) && !Objects.equals(c.getId(), connect.getSenderId()));
+            if (!isReceiver) {
+                continue;
+            }
+            StreamMessage firstSendMessage = connect.getFirstSendMessage();
+            StreamMessage snapshot = new StreamMessage();
+            BeanUtils.copyProperties(firstSendMessage, snapshot);
+            snapshot.setContent(connect.getMessageContent().toString());
+            snapshot.setStreamId(connect.getStreamId());
+            snapshot.setId(connect.getStreamId());
+            snapshot.setEnd(false);
+            try {
+                connect.getInitedSessions().add(sessionWrapper);
+                sessionWrapper.sendToClient(WSResponse.steamMessage("send stream content!", snapshot));
+            } catch (Exception e) {
+                log.warn("pushPendingStreamMessages failed, chatterId = {}", chatterId, e);
+            }
         }
     }
 

@@ -939,7 +939,7 @@ svg {
 
 
 details.tool-call { background:#f4f5f7; border:1px solid #ddd; border-radius:6px; margin-top:5px; }
-details.tool-call>summary { padding:12px 8px; cursor:pointer; font-size:14px; color:#333; list-style:none; user-select:none; display:flex; align-items:center; gap:6px; }
+details.tool-call>summary { overflow:hidden; padding:12px 8px; cursor:pointer; font-size:14px; color:#333; list-style:none; user-select:none; display:flex; align-items:center; gap:6px; }
 details.tool-call>summary::-webkit-details-marker { display:none; }
 details.tool-call>summary::before { content:'▶'; font-size:9px; color:#999; transition:transform .2s; display:inline-block; }
 details.tool-call[open]>summary::before { transform:rotate(90deg); }

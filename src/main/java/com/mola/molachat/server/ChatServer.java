@@ -12,6 +12,7 @@ import com.mola.molachat.server.websocket.Action;
 import com.mola.molachat.server.websocket.WSResponse;
 import com.mola.molachat.session.enums.VideoStateEnum;
 import com.mola.molachat.session.model.Message;
+import com.mola.molachat.session.solution.MessageSolution;
 import com.mola.molachat.session.solution.VideoSessionSolution;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +52,9 @@ public class ChatServer {
 
     @Resource
     private ActionStrategyContext actionStrategy;
+
+    @Resource
+    private MessageSolution messageSolution;
 
     /**
      * 不同ws对应的session包装器（策略）
@@ -104,6 +108,8 @@ public class ChatServer {
             Message message = queue.poll(100, TimeUnit.MILLISECONDS);
             this.session.sendToClient(WSResponse.message("send content!", message));
         }
+        //3.推送正在进行的流式消息
+        messageSolution.pushPendingStreamMessages(chatterId, this.session);
         connectClientCount.getAndIncrement();
     }
 
