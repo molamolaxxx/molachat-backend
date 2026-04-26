@@ -17,14 +17,18 @@ import com.mola.molachat.robot.model.CmdDescription;
 import com.mola.molachat.session.dto.SessionDTO;
 import com.mola.molachat.session.model.FileMessage;
 import com.mola.molachat.session.model.Message;
+import com.mola.molachat.session.model.StreamMessage;
 import com.mola.molachat.session.service.SessionService;
+import com.mola.molachat.session.solution.MessageSolution;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,14 +44,19 @@ import java.util.Map;
 public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, BaseAction> {
 
     private static final String CMD_ACP_CANCEL = "#acp-cancel#";
-    private static final String CMD_ACP_CLEAR = "#acp-clear#";
+    private static final String CMD_NEW_SESSION = "#new-session#";
     private static final String CMD_ACP_DREAM = "#acp-dream#";
+    private static final String CMD_LIST_SESSIONS = "#list-sessions#";
+    private static final String CMD_RESTORE_SESSION = "#restore-session#";
 
     @Resource
     private SessionService sessionService;
 
     @Resource
     private SelfConfig selfConfig;
+
+    @Resource
+    private MessageSolution messageSolution;
 
     @Override
     public BaseAction handler(MessageReceiveEvent messageReceiveEvent) {
@@ -60,13 +69,24 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         }
 
         // 处理清除会话命令
-        if (CMD_ACP_CLEAR.equals(userMessage)) {
-            return invokeAcpCmd("acpClearContext", sessionId);
+        if (CMD_NEW_SESSION.equals(userMessage)) {
+            return invokeAcpCmd("acpNewSession", sessionId);
         }
 
         // 处理记忆整理命令
         if (CMD_ACP_DREAM.equals(userMessage)) {
             return invokeAcpCmd("acpMemoryDream", sessionId);
+        }
+
+        // 处理获取会话列表命令
+        if (CMD_LIST_SESSIONS.equals(userMessage)) {
+            return invokeListSessions(messageReceiveEvent);
+        }
+
+        // 处理恢复会话命令，格式: #restore-session# <sessionId>
+        if (userMessage.startsWith(CMD_RESTORE_SESSION)) {
+            String targetSessionId = userMessage.substring(CMD_RESTORE_SESSION.length()).trim();
+            return invokeRestoreSession(sessionId, targetSessionId);
         }
 
         // 默认：向ACP发送消息，先检查状态
@@ -76,14 +96,14 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         }
 
         try {
-            // 收集当前消息之前连续的图片文件消息的base64
-            List<String> images = collectRecentImageBase64(sessionId, messageReceiveEvent);
+            // 收集当前消息之前连续的文件消息，每个文件以文件名->base64的形式存储
+            List<Map<String, String>> files = collectRecentFileBase64(sessionId, messageReceiveEvent);
 
             Map<String, Object> paramMap = new HashMap<>();
             paramMap.put("groupId", sessionId);
             paramMap.put("message", userMessage);
-            if (!CollectionUtils.isEmpty(images)) {
-                paramMap.put("images", images);
+            if (!CollectionUtils.isEmpty(files)) {
+                paramMap.put("files", files);
             }
             String paramJson = JSON.toJSONString(paramMap);
 
@@ -100,18 +120,19 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
     }
 
     /**
-     * 从当前会话中收集当前消息之前、连续的、当前用户发送的图片文件消息，读取base64
+     * 从当前会话中收集当前消息之前、连续的、当前用户发送的文件消息，读取base64
+     * @return List<Map<String, String>>，每个Map中key为文件名，value为文件的base64
      */
-    private List<String> collectRecentImageBase64(String sessionId, MessageReceiveEvent event) {
-        List<String> images = new ArrayList<>();
+    private List<Map<String, String>> collectRecentFileBase64(String sessionId, MessageReceiveEvent event) {
+        List<Map<String, String>> files = new ArrayList<>();
         try {
             SessionDTO session = sessionService.findSession(sessionId);
             if (session == null) {
-                return images;
+                return files;
             }
             List<Message> messageList = session.getMessageList();
             if (CollectionUtils.isEmpty(messageList) || messageList.size() <= 1) {
-                return images;
+                return files;
             }
             String currentChatterId = event.getMessage().getChatterId();
             String robotChatterId = event.getRobotChatter().getId();
@@ -133,9 +154,6 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             // 反转为时间正序
             for (int i = consecutiveFileMessages.size() - 1; i >= 0; i--) {
                 FileMessage fm = consecutiveFileMessages.get(i);
-                if (!FileUtils.isImage(fm.getFileName())) {
-                    continue;
-                }
                 String filePath = resolveFilePath(fm);
                 if (filePath == null) {
                     continue;
@@ -144,14 +162,16 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                 if (!file.exists()) {
                     continue;
                 }
-                byte[] imgData = FileUtils.readFileByBytes(filePath);
-                String base64 = Base64Util.encode(imgData);
-                images.add(base64);
+                byte[] fileData = FileUtils.readFileByBytes(filePath);
+                String base64 = Base64Util.encode(fileData);
+                Map<String, String> fileEntry = new HashMap<>();
+                fileEntry.put(fm.getFileName(), base64);
+                files.add(fileEntry);
             }
         } catch (Exception e) {
-            log.error("AcpExecHandler collectRecentImageBase64 异常, sessionId={}", sessionId, e);
+            log.error("AcpExecHandler collectRecentFileBase64 异常, sessionId={}", sessionId, e);
         }
-        return images;
+        return files;
     }
 
     /**
@@ -189,6 +209,80 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         } catch (Exception e) {
             log.error("AcpExecHandler {} 执行失败, sessionId={}", cmdName, sessionId, e);
             return MessageSendAction.withResp(cmdName + " 执行失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取ACP会话列表，通过流式消息+openViewModal自动弹出模态框展示
+     */
+    private BaseAction invokeListSessions(MessageReceiveEvent event) {
+        String sessionId = event.getSessionId();
+        try {
+            Map<String, Object> paramMap = new HashMap<>();
+            paramMap.put("groupId", sessionId);
+            String paramJson = JSON.toJSONString(paramMap);
+
+            CmdInvokeResponse<CmdResponseContent> response = CmdSender.INSTANCE
+                    .send("acpListSessions", sessionId, new String[]{paramJson});
+            if (response == null || response.getData() == null) {
+                return MessageSendAction.withResp("获取会话列表失败：响应为空");
+            }
+            String result = response.getData().getResultMap().get("result");
+            List<Map> sessions = JSON.parseArray(result, Map.class);
+            if (CollectionUtils.isEmpty(sessions)) {
+                return MessageSendAction.withResp("暂无历史会话");
+            }
+            StringBuilder table = new StringBuilder();
+            table.append("| 会话预览 | 最后修改 | 操作 |\n");
+            table.append("| ----- | ----- | ---- |\n");
+            for (Map session : sessions) {
+                String sid = String.valueOf(session.get("sessionId"));
+                String preview = String.valueOf(session.get("preview"));
+                String lastModified = String.valueOf(session.get("lastModified"));
+                boolean current = Boolean.TRUE.equals(session.get("current"));
+                String button = current
+                        ? "<button class=\"blue-ring-button\" style=\"opacity:0.5\" onClick=\"showToast('当前正在使用的会话',1000)\">恢复</button>"
+                        : String.format("<button class=\"blue-ring-button\" onClick=\"sendMessageInner('%s %s');$('#message-view-modal').modal('close')\">恢复</button>",
+                                CMD_RESTORE_SESSION, sid);
+                table.append(String.format("| %s | %s | %s |\n", preview, lastModified, button));
+            }
+            // 通过流式消息发送，自动弹出模态框
+            StreamMessage msg = new StreamMessage();
+            msg.setContent(table.toString());
+            msg.setChatterId(event.getRobotChatter().getId());
+            msg.setSessionId(sessionId);
+            msg.setCreateTime(new Date());
+            msg.setOpenViewModal(true);
+            msg.setEnd(true);
+            messageSolution.sendStreamMessage(sessionId, msg);
+            return MessageSendAction.skip();
+        } catch (Exception e) {
+            log.error("AcpExecHandler 获取会话列表失败, sessionId={}", sessionId, e);
+            return MessageSendAction.withResp("获取会话列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 恢复指定ACP会话
+     */
+    private BaseAction invokeRestoreSession(String sessionId, String targetSessionId) {
+        try {
+            Map<String, String> paramMap = new HashMap<>();
+            paramMap.put("groupId", sessionId);
+            paramMap.put("sessionId", targetSessionId);
+            String paramJson = JSON.toJSONString(paramMap);
+
+            CmdInvokeResponse<CmdResponseContent> response = CmdSender.INSTANCE
+                    .send("acpRestoreSession", sessionId, new String[]{paramJson});
+            if (response == null || response.getData() == null) {
+                return MessageSendAction.withResp("恢复会话失败：响应为空");
+            }
+            String result = response.getData().getResultMap().get("result");
+            // 有值说明失败，返回错误信息；无值说明成功，cmd-proxy会异步发送流式消息
+            return StringUtils.isNotBlank(result) ? MessageSendAction.withResp(result) : MessageSendAction.skip();
+        } catch (Exception e) {
+            log.error("AcpExecHandler 恢复会话失败, sessionId={}, targetSessionId={}", sessionId, targetSessionId, e);
+            return MessageSendAction.withResp("恢复会话失败: " + e.getMessage());
         }
     }
     /**
@@ -237,15 +331,21 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             } else if ("READY".equals(status)){
                 // 非BUSY状态展示清除会话命令
                 resultList.add(CmdDescription.builder()
-                        .cmdName(CMD_ACP_CLEAR)
-                        .cmdDesc("清除ACP上下文")
-                        .executeScript("sendMessageInner('" + CMD_ACP_CLEAR + "')")
+                        .cmdName(CMD_NEW_SESSION)
+                        .cmdDesc("开启新会话")
+                        .executeScript("sendMessageInner('" + CMD_NEW_SESSION + "')")
                         .build());
                 // 展示记忆整理命令
                 resultList.add(CmdDescription.builder()
                         .cmdName(CMD_ACP_DREAM)
-                        .cmdDesc("触发记忆整理（Memory Dream）")
+                        .cmdDesc("触发记忆整理")
                         .executeScript("sendMessageInner('" + CMD_ACP_DREAM + "')")
+                        .build());
+                // 展示会话列表命令
+                resultList.add(CmdDescription.builder()
+                        .cmdName(CMD_LIST_SESSIONS)
+                        .cmdDesc("查看历史会话")
+                        .executeScript("sendMessageInner('" + CMD_LIST_SESSIONS + "')")
                         .build());
             }
         } catch (Exception e) {
