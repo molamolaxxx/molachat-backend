@@ -64,8 +64,8 @@ $(document).ready(function () {
 
     function selectMessageDom(message, isMain) {
         var dom;
-        if (message.content) {
-            // 如果是群聊message
+        if (message.content || !message.url) {
+            // 有内容，或者既没内容也没url（不是文件）
             if (message.common) {
                 dom = commonMessageDom(message, isMain, getChatterMap().get(message.chatterId));
             }
@@ -74,7 +74,7 @@ $(document).ready(function () {
                 dom = messageDom(message, isMain);
             }
         } else {
-            // 如果是群聊message
+            // 没有content但有url，才是文件
             if (message.common) {
                 dom = commonFileDom(message, isMain, isMain, "ready", "/chat/" + message.url, "/chat/" + message.snapshotUrl, getChatterMap().get(message.chatterId));
             }

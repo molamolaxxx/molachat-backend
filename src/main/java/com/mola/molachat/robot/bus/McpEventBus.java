@@ -1,6 +1,7 @@
 package com.mola.molachat.robot.bus;
 
 import com.mola.molachat.robot.handler.IRobotEventHandler;
+import com.mola.molachat.robot.handler.impl.cmd.ChatterIdCmdHandler;
 import com.mola.molachat.robot.handler.impl.cmd.GroupFetchCmdHandler;
 import com.mola.molachat.robot.handler.impl.mcp.McpExecHandler;
 import org.springframework.stereotype.Component;
@@ -24,7 +25,10 @@ public class McpEventBus extends RobotEventBus {
     @Resource
     private GroupFetchCmdHandler groupFetchCmdHandler;
 
+    @Resource
+    private ChatterIdCmdHandler chatterIdCmdHandler;
+
     protected List<IRobotEventHandler> getRobotEventHandlers() {
-        return Arrays.asList(groupFetchCmdHandler, mcpExecHandler);
+        return Arrays.asList(groupFetchCmdHandler, chatterIdCmdHandler, mcpExecHandler);
     }
 }

@@ -382,6 +382,7 @@ $(document).ready(function () {
         socket.onopen = function (ev) {
             console.info("socket已经打开");
             console.info(ev);
+            socketErrorTimes = 0;
         };
 
         socket.onmessage = function (ev) {
@@ -397,6 +398,16 @@ $(document).ready(function () {
                     }
                 )
             } else if (result.code == CREATE_SESSION) {
+                var currentChatter = getActiveChatter();
+                if (currentChatter) {
+                    var chatterSet = result.data.chatterSet || [];
+                    var hasCurrentChatter = chatterSet.some(function(c) { return c.id === currentChatter.id; });
+                    // 群聊时activeChatter是temp-chatter，不在chatterSet中，用sessionId兜底
+                    var isGroupMatch = currentChatter.id === "temp-chatter" && result.data.sessionId === "common-session";
+                    if (!hasCurrentChatter && !isGroupMatch) {
+                        return;
+                    }
+                }
                 //新建session
                 createSession(result.data);
             } else if (result.code == RECEIVE_MESSAGE) {
@@ -536,6 +547,20 @@ $(document).ready(function () {
                         localStorage.setItem("token", result.data.token)
                     }
                     notRepeatToast("服务器连接成功，欢迎回来", 1000)
+                    // 重连后主动请求当前session最新状态
+                    var currentActiveChatter = getActiveChatter();
+                    if (currentActiveChatter) {
+                        setTimeout(function () {
+                            var socket = getSocket();
+                            if (socket && socket.readyState === WebSocket.OPEN) {
+                                var action = new Object();
+                                action.code = 220;
+                                action.msg = "ok";
+                                action.data = getChatterId() + ";" + currentActiveChatter.id;
+                                socket.send(JSON.stringify(action));
+                            }
+                        }, 500)
+                    }
                     if (onSuccess) {
                         onSuccess()
                     }

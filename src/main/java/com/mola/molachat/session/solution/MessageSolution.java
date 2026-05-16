@@ -17,10 +17,12 @@ import com.mola.molachat.server.service.ServerService;
 import com.mola.molachat.server.session.SessionWrapper;
 import com.mola.molachat.server.websocket.WSResponse;
 import com.mola.molachat.session.data.SessionFactoryInterface;
+import com.mola.molachat.session.dto.SessionDTO;
 import com.mola.molachat.session.model.Message;
 import com.mola.molachat.session.model.Session;
 import com.mola.molachat.session.model.StreamMessage;
 import com.mola.molachat.session.model.StreamMessageConnect;
+import com.mola.molachat.session.service.SessionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
@@ -59,6 +61,9 @@ public class MessageSolution {
 
     @Resource
     private GroupService groupService;
+
+    @Resource
+    private SessionService sessionService;
 
     private List<StreamMessageConnect> streamMessageConnectPool = Lists.newCopyOnWriteArrayList();
 
@@ -183,6 +188,28 @@ public class MessageSolution {
             BeanUtils.copyProperties(streamMessage, message);
             message.setContent(messageConnect.getMessageContent().toString());
             sessionFactory.insertMessage(session.getSessionId(), message);
+
+            // 流式消息完成后，通知接收方刷新session
+            for (String chatterId : session.getChatterSet().stream().map(Chatter::getId).collect(Collectors.toList())) {
+                if (Objects.equals(chatterId, messageConnect.getSenderId())) {
+                    continue;
+                }
+                List<ChatServer> servers = serverService.selectByChatterId(chatterId);
+                if (!CollectionUtils.isEmpty(servers)) {
+                    // 推送 CREATE_SESSION 让前端重新渲染完整消息列表
+                    SessionDTO sessionDTO = sessionService.findSession(session.getSessionId());
+                    for (ChatServer server : servers) {
+                        try {
+                            server.getSession().sendToClient(WSResponse.createSession("ok", sessionDTO));
+                        } catch (Exception e) {
+                            log.warn("push createSession after stream end failed, chatterId = {}", chatterId, e);
+                        }
+                    }
+                } else {
+                    // 离线，放入队列
+                    chatterService.offerMessageIntoQueue(message, chatterId);
+                }
+            }
         }
     }
 
