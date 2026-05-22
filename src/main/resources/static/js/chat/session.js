@@ -161,6 +161,15 @@ $(document).ready(function () {
 
         // 如果存在stream消息，也要添加到messageBox中
         var streamMessageDom = streamMessageMap.get(activeSession.sessionId)
+        if (!streamMessageDom) {
+            // 检查是否有非活跃期间缓存的流式消息
+            var cachedMsg = streamMessageMap.get("cache_" + activeSession.sessionId)
+            if (cachedMsg) {
+                streamMessageMap.delete("cache_" + activeSession.sessionId)
+                streamMessageDom = messageDom(cachedMsg, false)
+                streamMessageMap.set(activeSession.sessionId, streamMessageDom)
+            }
+        }
         if (streamMessageDom) {
             $messageBox.append(streamMessageDom);
             $(streamMessageDom.mainDocChild).on('click', () => {

@@ -16,6 +16,7 @@ import org.springframework.util.CollectionUtils;
 import javax.annotation.Resource;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -71,15 +72,16 @@ public class AcpRobotSyncSolution {
             }
         }
 
-        // 4. 创建不存在的机器人
-        Set<String> existingIds = existingAcpRobots.stream()
-                .map(RobotChatter::getId)
-                .collect(Collectors.toSet());
+        // 4. 创建不存在的机器人，更新已存在机器人的可变字段
+        Map<String, RobotChatter> existingRobotMap = existingAcpRobots.stream()
+                .collect(Collectors.toMap(RobotChatter::getId, r -> r));
 
         for (AcpRobotParam param : robotParams) {
             String robotId = buildRobotId(param.getName());
-            if (!existingIds.contains(robotId)) {
+            if (!existingRobotMap.containsKey(robotId)) {
                 createAcpRobot(robotId, param.getName(), param.getSignature(), param.avatar, visibleChatterIds);
+            } else {
+                updateAcpRobotIfChanged(existingRobotMap.get(robotId), param);
             }
         }
 
@@ -101,6 +103,27 @@ public class AcpRobotSyncSolution {
         robot.setVisibleChatterIds(visibleChatterIds);
         chatterFactory.create(robot);
         log.info("创建ACP机器人: id={}, name={}", robotId, name);
+    }
+
+    /**
+     * 比较已有robot的avatar和signature，有变化则更新并持久化
+     */
+    private void updateAcpRobotIfChanged(RobotChatter existing, AcpRobotParam param) {
+        boolean changed = false;
+        String newAvatar = StringUtils.defaultIfBlank(param.getAvatar(), "img/kiro.png");
+        if (!StringUtils.equals(existing.getImgUrl(), newAvatar)) {
+            existing.setImgUrl(newAvatar);
+            changed = true;
+        }
+        String newSignature = param.getSignature() != null ? param.getSignature() : "Agent Context Protocol";
+        if (!StringUtils.equals(existing.getSignature(), newSignature)) {
+            existing.setSignature(newSignature);
+            changed = true;
+        }
+        if (changed) {
+            chatterFactory.update(existing);
+            log.info("更新ACP机器人: id={}, imgUrl={}, signature={}", existing.getId(), newAvatar, newSignature);
+        }
     }
 
     private void deleteRobotAndSessions(RobotChatter robot) {

@@ -162,8 +162,8 @@ addPageLock = function () {
         localStorage.setItem("pageLock", lock)
         return true
     }
-    // 存在不属于当前页面的锁，且心跳时间小于两分钟（足够新鲜＋再给我两分钟）
-    if (curLock && curLock !== lock && heartBeat && Date.now() - heartBeat < 300 * 1000) {
+    // 存在不属于当前页面的锁，且心跳时间小于10秒（心跳间隔1秒，10秒足够判定页面是否存活）
+    if (curLock && curLock !== lock && heartBeat && Date.now() - heartBeat < 10 * 1000) {
         swal("sorry", "请确保相同浏览器只开一个应用", "info")
         return false
     }
