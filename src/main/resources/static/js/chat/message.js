@@ -12,7 +12,7 @@ $(document).ready(function () {
     const originalCodes = [];
     marked.setOptions({
         highlight: function (code, lang) {
-            const res = hljs.highlightAuto(code + (window.innerWidth <= 600 ? "\n " : ""))
+            const res = hljs.highlightAuto(code + (getInnerWidth() <= 600 ? "\n " : ""))
             // code 参数即为原始代码内容
             originalCodes.push(code);
             return res.value;
@@ -22,13 +22,13 @@ $(document).ready(function () {
 
     // dom初始化位置
     $viewModal.css("max-width", 1000)
-    if (window.innerWidth > 1000) {
-        $viewModal.css("left", (window.innerWidth - $viewModal.innerWidth()) / 2)
+    if (getInnerWidth() > 1000) {
+        $viewModal.css("left", (getInnerWidth() - $viewModal.innerWidth()) / 2)
     }
 
     addResizeEventListener(function () {
-        if (window.innerWidth > 1000) {
-            $viewModal.css("left", (window.innerWidth - $viewModal.innerWidth()) / 2)
+        if (getInnerWidth() > 1000) {
+            $viewModal.css("left", (getInnerWidth() - $viewModal.innerWidth()) / 2)
         } else {
             $viewModal.css("left", 0)
         }
@@ -319,13 +319,13 @@ $(document).ready(function () {
 
     // dom初始化位置
     $editModal.css("max-width", 800)
-    if (window.innerWidth > 800) {
-        $editModal.css("left", (window.innerWidth - $editModal.innerWidth()) / 2)
+    if (getInnerWidth() > 800) {
+        $editModal.css("left", (getInnerWidth() - $editModal.innerWidth()) / 2)
     }
 
     addResizeEventListener(function () {
-        if (window.innerWidth > 800) {
-            $editModal.css("left", (window.innerWidth - $editModal.innerWidth()) / 2)
+        if (getInnerWidth() > 800) {
+            $editModal.css("left", (getInnerWidth() - $editModal.innerWidth()) / 2)
         } else {
             $editModal.css("left", 0)
         }
@@ -398,7 +398,7 @@ $(document).ready(function () {
     // 支持 Enter 触发发送，Shift+Enter 触发换行（手机端回车始终换行）
     $chatEditor.on('keydown', function (e) {
         if (e.keyCode === 13) {
-            if (window.innerWidth <= 600) {
+            if (getInnerWidth() <= 600) {
                 // 手机端回车不发送，允许默认换行行为
                 return;
             }

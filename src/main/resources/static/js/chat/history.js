@@ -3,12 +3,12 @@ $(document).ready(function() {
     var $historyModal = $('#history-user-modal')
     // dom初始化位置
     $historyModal.css("max-width",600)
-    if (window.innerWidth > 600) {
-        $historyModal.css("left",(window.innerWidth - $historyModal.innerWidth())/2)
+    if (getInnerWidth() > 600) {
+        $historyModal.css("left",(getInnerWidth() - $historyModal.innerWidth())/2)
     }
     addResizeEventListener(function() {
-        if (window.innerWidth > 600) {
-            $historyModal.css("left",(window.innerWidth - $historyModal.innerWidth())/2)
+        if (getInnerWidth() > 600) {
+            $historyModal.css("left",(getInnerWidth() - $historyModal.innerWidth())/2)
         } else {
             $historyModal.css("left",0)
         }

@@ -955,3 +955,30 @@ details.tool-detail>summary:hover { background:#eaecf0; }
 details.tool-detail>p { margin:0 !important; padding:0 !important; line-height:0 !important; font-size:0 !important; }
 details.tool-detail pre { margin:0 !important; border-radius:0 0 4px 4px !important; background:#f4f5f7 !important; border:none !important; padding:4px 8px !important; }
 details.tool-detail pre code { background:transparent !important; font-size:12px !important; }
+
+/* 自定义全屏图片预览 */
+.img-preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    zoom: 1 !important;
+}
+.img-preview-overlay:active {
+    cursor: grabbing;
+}
+.img-preview-overlay img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: auto;
+}

@@ -90,7 +90,7 @@ $(document).ready(function () {
 
     popLoginForm = function () {
         setTimeout(function () {
-            if (window.innerWidth > 1000) {
+            if (getInnerWidth() > 1000) {
                 // 弹窗变成显示状态
                 // $user_info.css({"display":""})
                 // $('.collapsible-header').click();

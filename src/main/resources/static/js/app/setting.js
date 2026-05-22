@@ -170,3 +170,15 @@ addPageLock = function () {
     localStorage.setItem("pageLock", lock)
     return true
 }
+
+
+getInnerWidth = function() {
+    return window.innerWidth / parseFloat(document.body.style.zoom || 1)
+}
+
+// 动态设置body zoom
+function applyZoom() {
+    var zoom = Math.min(window.innerHeight, window.innerWidth) / 636
+    document.body.style.zoom = Math.max(zoom, 1)
+}
+applyZoom()

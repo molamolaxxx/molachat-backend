@@ -71,12 +71,12 @@ $(document).ready(function () {
 
     // 手机终端下，需要缩小化展示状态
     needToShowStatusSmaller = function() {
-        return isOutside && window.innerWidth < 800
+        return isOutside && getInnerWidth() < 800
     }
 
     var min_Width = 800
     windowFilter = function(e1, e2) {
-        if (window.innerWidth >= min_Width && e1) {
+        if (getInnerWidth() >= min_Width && e1) {
             e1()
         } else if (e2) {
             e2()
@@ -85,7 +85,7 @@ $(document).ready(function () {
 
     addResizeEventListener(function() {
         if (isOutside) {
-            if (window.innerWidth >= min_Width) {
+            if (getInnerWidth() >= min_Width) {
                 $sidebar.removeClass("sidebar-outside-mobile")
                 $(".search").css("display", "")
                 $(".contact__status").removeClass("mobile")
@@ -102,7 +102,7 @@ $(document).ready(function () {
     $("#tool-contacts").on('click', function() {
         if (isOutside) {
             hideUserBar()
-            if (window.innerWidth < 1000) {
+            if (getInnerWidth() < 1000) {
             setTimeout(function() {
                 $demo.animate({ left: "50%" },200);
                 },200)
@@ -110,7 +110,7 @@ $(document).ready(function () {
             
         } else {
             showUserBar()
-            if (window.innerWidth < 1000) {
+            if (getInnerWidth() < 1000) {
                 setTimeout(function() {
                         $demo.animate({ left: "52%" },200);
                 },200)

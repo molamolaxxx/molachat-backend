@@ -109,19 +109,19 @@ $(document).ready(function () {
     });
     // dom初始化位置
     $modal.css("max-width", 800)
-    if (window.innerWidth > 800) {
-        $modal.css("left", (window.innerWidth - $modal.innerWidth()) / 2)
+    if (getInnerWidth() > 800) {
+        $modal.css("left", (getInnerWidth() - $modal.innerWidth()) / 2)
     }
     $off.css("left", ($modal.innerWidth() - 56) / 2)
 
     addResizeEventListener(function () {
 
-        if (window.innerWidth > 800) {
-            $modal.css("left", (window.innerWidth - 800) / 2)
+        if (getInnerWidth() > 800) {
+            $modal.css("left", (getInnerWidth() - 800) / 2)
             $off.css("left", ($modal.innerWidth - 56) / 2)
         } else {
             $modal.css("left", 0)
-            $off.css("left", (window.innerWidth - 56) / 2)
+            $off.css("left", (getInnerWidth() - 56) / 2)
         }
     })
 

@@ -5,13 +5,13 @@ $(document).ready(function() {
 
     // dom初始化位置
     $viewModal.css("max-width", 1000)
-    if (window.innerWidth > 1000) {
-        $viewModal.css("left", (window.innerWidth - $viewModal.innerWidth()) / 2)
+    if (getInnerWidth() > 1000) {
+        $viewModal.css("left", (getInnerWidth() - $viewModal.innerWidth()) / 2)
     }
 
     addResizeEventListener(function () {
-        if (window.innerWidth > 1000) {
-            $viewModal.css("left", (window.innerWidth - $viewModal.innerWidth()) / 2)
+        if (getInnerWidth() > 1000) {
+            $viewModal.css("left", (getInnerWidth() - $viewModal.innerWidth()) / 2)
         } else {
             $viewModal.css("left", 0)
         }

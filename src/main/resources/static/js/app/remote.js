@@ -3,12 +3,12 @@ $(document).ready(function() {
     var $serverModal = $('#change-server-modal')
     // dom初始化位置
     $serverModal.css("max-width",600)
-    if (window.innerWidth > 600) {
-        $serverModal.css("left",(window.innerWidth - $serverModal.innerWidth())/2)
+    if (getInnerWidth() > 600) {
+        $serverModal.css("left",(getInnerWidth() - $serverModal.innerWidth())/2)
     }
     addResizeEventListener(function() {
-        if (window.innerWidth > 600) {
-            $serverModal.css("left",(window.innerWidth - $serverModal.innerWidth())/2)
+        if (getInnerWidth() > 600) {
+            $serverModal.css("left",(getInnerWidth() - $serverModal.innerWidth())/2)
         } else {
             $serverModal.css("left",0)
         }

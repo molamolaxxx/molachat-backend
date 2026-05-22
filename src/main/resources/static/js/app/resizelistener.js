@@ -6,6 +6,8 @@ $(document).ready(function() {
     }
 
     window.onresize = function() {
+        // 窗口大小变化时重新计算zoom
+        applyZoom()
         eventList.forEach(func => {
             func()
         });

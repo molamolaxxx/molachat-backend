@@ -18,7 +18,7 @@ function changeName() {
         },
     }).then((value) => {
         //删去原有的名片窗口,前提是手机窗口
-        // if (window.innerWidth <= 600) {
+        // if (getInnerWidth() <= 600) {
         //     $(".gray").click();
         // }
 
@@ -109,7 +109,7 @@ function changeSign() {
         },
     }).then((value) => {
         //删去原有的名片窗口,前提是手机窗口
-        // if (window.innerWidth <= 600) {
+        // if (getInnerWidth() <= 600) {
         //     $(".gray").click();
         // }
 
@@ -164,7 +164,7 @@ function changeSign() {
 }
 
 
-if (window.innerWidth <= 1000) {
+if (getInnerWidth() <= 1000) {
     $(".demo").on("click", function () {
         //如果名片打开，则关闭
         if ($(".collapsible-header.active")[0] != null) {

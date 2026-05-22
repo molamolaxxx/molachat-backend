@@ -179,9 +179,10 @@ $(document).ready(function () {
     }
 
     function moveImage(that) {
-        var $img = $(that).find(".contact__photo"),
-            top = $img.offset().top - $demo.offset().top,
-            left = $img.offset().left - $demo.offset().left,
+        var zoom = parseFloat(document.body.style.zoom || 1),
+            $img = $(that).find(".contact__photo"),
+            top = ($img.offset().top - $demo.offset().top) / zoom,
+            left = ($img.offset().left - $demo.offset().left) / zoom,
             $clone = $img.clone().addClass("cloned");
 
         $clone.css({
@@ -301,7 +302,7 @@ $(document).ready(function () {
         $("#multichat").css("display", "none");
         $("#settingsRemote").css("display", "none");
         $("#history").css("display", "none");
-        if (window.innerWidth <= 1000) {
+        if (getInnerWidth() <= 1000) {
             $menu.css("display", "none");
             setTimeout(function () {
                 $demo.animate({
@@ -348,7 +349,7 @@ $(document).ready(function () {
         $("#multichat").css("display", "");
         $("#settingsRemote").css("display", "");
         $("#history").css("display", "");
-        if (window.innerWidth <= 1000) {
+        if (getInnerWidth() <= 1000) {
             setTimeout(function () {
                 $menu.animate({
                     opacity: 1
@@ -367,18 +368,18 @@ $(document).ready(function () {
     var $account_box = $("#account_box")
     userInfoUIAdjust = function () {
         //定位用户框
-        if (window.innerWidth <= 1000) {
+        if (getInnerWidth() <= 1000) {
             $user_info.css("opacity", "0");
             $user_info.css("width", "80%");
             $user_info.css("display", "none");
             $(".collapsible-body").css("background", "#f0f8ff");
-            var marginRight = window.innerWidth * 0.2 / 2;
+            var marginRight = getInnerWidth() * 0.2 / 2;
         } else {
             $user_info.css("opacity", "0");
             $user_info.css("width", "25%");
             $user_info.css("z-index", "1");
             $(".collapsible-body").css("background", "rgba(0, 0, 0, 0)")
-            var marginRight = ((window.innerWidth - 420) / 2 - window.innerWidth / 4) / 2
+            var marginRight = ((getInnerWidth() - 420) / 2 - getInnerWidth() / 4) / 2
         }
         $account_box.css("display", "");
         $("#insert_emoticon").css("display", "none");
@@ -390,7 +391,7 @@ $(document).ready(function () {
 
     var $html = $("html")
     let funcRemSizeChange = function () {
-        if (window.innerWidth <= 600) {
+        if (getInnerWidth() <= 600) {
             $html.css("font-size", "68%")
         } else {
             $html.css("font-size", "74%")
@@ -483,7 +484,7 @@ $(document).ready(function () {
             }
         }).then((value) => {
             //删去原有的名片窗口,前提是手机窗口
-            if (window.innerWidth <= 600) {
+            if (getInnerWidth() <= 600) {
                 $(".gray").click();
             }
             if (null == value) {

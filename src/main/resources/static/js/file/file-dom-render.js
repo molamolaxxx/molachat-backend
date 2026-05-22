@@ -264,8 +264,6 @@ $(document).ready(function () {
         // 被销毁时触发的回调函数
         console.log("materialbox-overlay 被销毁了");
         if (holder[0].style.display !== "none") {
-            // body缩放，为了适配图片缩放
-            // document.body.style.zoom=1.1
             holder.css("display", "none")
         }
     });
@@ -273,8 +271,6 @@ $(document).ready(function () {
     var func = function () {
         $("#materialbox-overlay").unbind("click")
         if (holder[0].style.display !== "none") {
-            // body缩放，为了适配图片缩放
-            // document.body.style.zoom=1.1
             holder.css("display", "none")
         } else {
             holder.css("display", "")
@@ -284,18 +280,127 @@ $(document).ready(function () {
     }
     holder.on('click', func);
 
+    // 自定义全屏图片预览（替代 materialboxed，兼容 zoom）
     syncToHolder = function (url) {
-        console.log(open)
-        holder[0].src = url
-        // // body缩放，为了适配图片缩放
-        // document.body.style.zoom=1
-        holder[0].click()
-        if (open) {
-            $("#materialbox-overlay").on('click', () => {
-                console.log("materialbox-overlay")
-                holder[0].click()
-            })
+        var overlay = document.createElement('div')
+        overlay.className = 'img-preview-overlay'
+        var img = document.createElement('img')
+        img.src = url
+
+        var scale = 1, translateX = 0, translateY = 0
+        var isDragging = false, dragMoved = false, startX, startY, lastX = 0, lastY = 0
+
+        function updateTransform(animate) {
+            if (animate) {
+                img.style.transition = 'transform 0.25s ease'
+            } else {
+                img.style.transition = 'none'
+            }
+            img.style.transform = 'translate(' + translateX + 'px, ' + translateY + 'px) scale(' + scale + ')'
         }
+
+        // 滚轮缩放
+        overlay.addEventListener('wheel', function (e) {
+            e.preventDefault()
+            var delta = e.deltaY > 0 ? -0.2 : 0.2
+            var newScale = Math.min(Math.max(scale + delta, 0.5), 5)
+            // 如果缩回1以下，重置位置
+            if (newScale <= 1) {
+                newScale = 1
+                translateX = 0
+                translateY = 0
+                lastX = 0
+                lastY = 0
+            }
+            scale = newScale
+            updateTransform(true)
+        }, { passive: false })
+
+        // 双指缩放（移动端）
+        var lastPinchDist = 0
+        overlay.addEventListener('touchstart', function (e) {
+            if (e.touches.length === 2) {
+                lastPinchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                )
+            } else if (e.touches.length === 1) {
+                isDragging = true
+                dragMoved = false
+                startX = e.touches[0].clientX - lastX
+                startY = e.touches[0].clientY - lastY
+            }
+        })
+        overlay.addEventListener('touchmove', function (e) {
+            if (e.touches.length === 2) {
+                e.preventDefault()
+                var dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                )
+                if (lastPinchDist > 0) {
+                    var delta = (dist - lastPinchDist) * 0.01
+                    scale = Math.min(Math.max(scale + delta, 0.5), 5)
+                    if (scale <= 1) {
+                        scale = 1
+                        translateX = 0
+                        translateY = 0
+                        lastX = 0
+                        lastY = 0
+                    }
+                    updateTransform(false)
+                }
+                lastPinchDist = dist
+            } else if (e.touches.length === 1 && isDragging && scale > 1) {
+                dragMoved = true
+                translateX = e.touches[0].clientX - startX
+                translateY = e.touches[0].clientY - startY
+                updateTransform(false)
+                e.preventDefault()
+            }
+        }, { passive: false })
+        overlay.addEventListener('touchend', function (e) {
+            if (e.touches.length < 2) {
+                lastPinchDist = 0
+            }
+            if (e.touches.length === 0) {
+                isDragging = false
+                lastX = translateX
+                lastY = translateY
+            }
+        })
+
+        // 鼠标拖动
+        overlay.addEventListener('mousedown', function (e) {
+            if (scale <= 1) return
+            isDragging = true
+            dragMoved = false
+            startX = e.clientX - lastX
+            startY = e.clientY - lastY
+            e.preventDefault()
+        })
+        overlay.addEventListener('mousemove', function (e) {
+            if (!isDragging) return
+            dragMoved = true
+            translateX = e.clientX - startX
+            translateY = e.clientY - startY
+            updateTransform(false)
+        })
+        overlay.addEventListener('mouseup', function () {
+            isDragging = false
+            lastX = translateX
+            lastY = translateY
+        })
+
+        // 点击关闭（图片外区域，或未放大时点击图片）
+        overlay.addEventListener('click', function (e) {
+            if (e.target !== img || scale <= 1) {
+                document.documentElement.removeChild(overlay)
+            }
+        })
+
+        overlay.appendChild(img)
+        document.documentElement.appendChild(overlay)
     }
 
 
