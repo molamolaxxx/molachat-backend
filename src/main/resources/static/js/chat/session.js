@@ -26,6 +26,8 @@ $(document).ready(function () {
 
     // 流map
     var streamMessageMap = new Map()
+    // 正在streaming的chatterId集合
+    var streamingChatterIds = new Set()
     queryStreamDom = function(sessionId) {
         return streamMessageMap.get(sessionId)
     }
@@ -37,6 +39,25 @@ $(document).ready(function () {
         })
         streamMessageMap.clear()
     }
+    // initChatter重建DOM后调用，重新补上呼吸灯
+    reapplyStreamingIndicator = function() {
+        streamingChatterIds.forEach(function(chatterId) {
+            var idx = getIndexByChatterId(chatterId)
+            if (idx != null) {
+                $($(".contact")[idx]).find(".contact__status").addClass("streaming")
+            }
+        })
+    }
+
+    // 检测聊天容器的滚动，用户向上滑动时中断自动滚底
+    $messageBox.addEventListener('scroll', function() {
+        if (this.scrollTop + this.clientHeight >= this.scrollHeight - 20) {
+            this.interruptAutoScroll = false
+        } else if (this.scrollTop < (this.lastScrollTop || 0)) {
+            this.interruptAutoScroll = true
+        }
+        this.lastScrollTop = this.scrollTop
+    })
 
     // 检测viewContent的滚动
     $messageViewContentScroll.scroll(function() {
@@ -167,6 +188,26 @@ $(document).ready(function () {
             if (cachedMsg) {
                 streamMessageMap.delete("cache_" + activeSession.sessionId)
                 streamMessageDom = messageDom(cachedMsg, false)
+                // 添加 loading 指示器（初始隐藏，停顿超1s后显示）
+                var loadingEl = document.createElement("div")
+                loadingEl.className = "stream-loading"
+                loadingEl.style.display = "none"
+                var loadingImg = document.createElement("img")
+                loadingImg.src = getActiveChatter().imgUrl
+                loadingImg.className = "stream-loading-avatar"
+                loadingEl.appendChild(loadingImg)
+                var loadingDots = document.createElement("span")
+                loadingDots.className = "loading-dots"
+                loadingDots.innerHTML = '<span>.</span><span>.</span><span>.</span>'
+                loadingEl.appendChild(loadingDots)
+                streamMessageDom.appendChild(loadingEl)
+                streamMessageDom.loadingEl = loadingEl
+                streamMessageDom.streamLoadingTimer = setTimeout(() => {
+                    loadingEl.style.display = "flex"
+                    if (!$messageBox.interruptAutoScroll) {
+                        scrollToChatContainerBottom(100)
+                    }
+                }, 1000)
                 streamMessageMap.set(activeSession.sessionId, streamMessageDom)
             }
         }
@@ -215,6 +256,23 @@ $(document).ready(function () {
         var dom = streamMessageMap.get(message.sessionId)
         const end = message.end
 
+        // 呼吸灯：stream开始时亮起
+        if (!end && !dom && !streamMessageMap.get("cache_" + message.sessionId)) {
+            streamingChatterIds.add(message.chatterId)
+            var idx = getIndexByChatterId(message.chatterId)
+            if (idx != null) {
+                $($(".contact")[idx]).find(".contact__status").addClass("streaming")
+            }
+        }
+        // 呼吸灯：stream结束时熄灭
+        if (end) {
+            streamingChatterIds.delete(message.chatterId)
+            var idx = getIndexByChatterId(message.chatterId)
+            if (idx != null) {
+                $($(".contact")[idx]).find(".contact__status").removeClass("streaming")
+            }
+        }
+
         //如果是当前session
         if (activeChatter && message.chatterId == activeChatter.id && activeSession.scrollComplete) {
             // 通过map，找到dom，并将文案append到对应的dom上
@@ -226,6 +284,26 @@ $(document).ready(function () {
                     message = cachedMsg
                 }
                 dom = messageDom(message, false)
+                // 添加 loading 指示器（初始隐藏，停顿超1s后显示）
+                var loadingEl = document.createElement("div")
+                loadingEl.className = "stream-loading"
+                loadingEl.style.display = "none"
+                var loadingImg = document.createElement("img")
+                loadingImg.src = getActiveChatter().imgUrl
+                loadingImg.className = "stream-loading-avatar"
+                loadingEl.appendChild(loadingImg)
+                var loadingDots = document.createElement("span")
+                loadingDots.className = "loading-dots"
+                loadingDots.innerHTML = '<span>.</span><span>.</span><span>.</span>'
+                loadingEl.appendChild(loadingDots)
+                dom.appendChild(loadingEl)
+                dom.loadingEl = loadingEl
+                dom.streamLoadingTimer = setTimeout(() => {
+                    loadingEl.style.display = "flex"
+                    if (!$messageBox.interruptAutoScroll) {
+                        scrollToChatContainerBottom(100)
+                    }
+                }, 1000)
                 $(dom.mainDocChild).on('click', () => {
                     $viewContent[0].triggerMessageId = dom.messageId
                     buildHighlightContent(dom.mainDocChild.fullText)
@@ -244,6 +322,17 @@ $(document).ready(function () {
                     streamMessageMap.delete("cache_" + message.sessionId)
                     message.content = cachedMsg.content + message.content
                 }
+                // 收到内容，隐藏loading并重置计时器
+                if (dom.loadingEl) {
+                    dom.loadingEl.style.display = "none"
+                    clearTimeout(dom.streamLoadingTimer)
+                    dom.streamLoadingTimer = setTimeout(() => {
+                        dom.loadingEl.style.display = "flex"
+                        if (!$messageBox.interruptAutoScroll) {
+                            scrollToChatContainerBottom(100)
+                        }
+                    }, 1000)
+                }
                 dom.mainDocChild.fullText = dom.mainDocChild.fullText + message.content
                 dom.mainDocChild.innerText = dom.mainDocChild.innerText + message.content
                 sliceInterrupt(dom.mainDocChild)
@@ -260,16 +349,26 @@ $(document).ready(function () {
                         scrollToMessageViewBottom(200, interrupt)
                     }
                 }
-                if (activeSession.scrollComplete) {
+                if (activeSession.scrollComplete && !$messageBox.interruptAutoScroll) {
                     scrollToChatContainerBottom(100)
                 }
             }
 
             if (end) {
+                if (dom.loadingEl) {
+                    $(dom.loadingEl).remove()
+                    dom.loadingEl = null
+                }
+                if (dom.streamLoadingTimer) {
+                    clearTimeout(dom.streamLoadingTimer)
+                    dom.streamLoadingTimer = null
+                }
                 buildHighlightContent(dom.mainDocChild.fullText)
                 streamMessageMap.delete(message.sessionId)
                 streamMessageMap.delete("cache_" + message.sessionId)
-                scrollToChatContainerBottom(100)
+                if (!$messageBox.interruptAutoScroll) {
+                    scrollToChatContainerBottom(100)
+                }
                 // 判断是不是当前页
                 if (!isCurrentPage) {
                     document.getElementsByTagName("title")[0].innerText = "molachat(当前有未读消息)";

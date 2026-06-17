@@ -264,7 +264,7 @@ body {
 
 .contact__status {
     position: absolute;
-    top: 2rem;
+    top: 2.1rem;
     right: 1.5rem;
     width: 8px;
     height: 8px;
@@ -284,6 +284,17 @@ body {
 .contact__status.online {
     opacity: 1;
     border: 5px solid #50b7f1;
+}
+
+.contact__status.streaming {
+    opacity: 1;
+    border: 5px solid #4caf50;
+    animation: breathe 1.5s ease-in-out infinite;
+}
+
+@keyframes breathe {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
 }
 
 .contact__status.mobile {
@@ -981,4 +992,34 @@ details.tool-detail pre code { background:transparent !important; font-size:12px
     user-select: none;
     -webkit-user-drag: none;
     pointer-events: auto;
+}
+
+.stream-loading {
+    padding: 6px 0;
+    display: flex;
+    align-items: center;
+    clear: both;
+}
+.stream-loading-avatar {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+}
+.loading-dots {
+    margin-left: 0.8rem;
+}
+.loading-dots span {
+    animation: dotPulse 1.4s infinite;
+    opacity: 0.2;
+    font-weight: bold;
+    font-size: 28px;
+    color: #666;
+    line-height: 1;
+    padding-left: 0.2rem;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotPulse {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 1; }
 }

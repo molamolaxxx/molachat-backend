@@ -44,6 +44,7 @@ import java.util.Map;
 public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, BaseAction> {
 
     private static final String CMD_ACP_CANCEL = "#acp-cancel#";
+    private static final String CMD_ACP_FORCE_STOP = "#stop-stream#";
     private static final String CMD_NEW_SESSION = "#new-session#";
     private static final String CMD_ACP_DREAM = "#acp-dream#";
     private static final String CMD_LIST_SESSIONS = "#list-sessions#";
@@ -66,6 +67,15 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         // 处理取消prompt命令
         if (CMD_ACP_CANCEL.equals(userMessage)) {
             return invokeAcpCmd("acpCancelPrompt", sessionId);
+        }
+
+        // 强制终止本地流式输出
+        if (CMD_ACP_FORCE_STOP.equals(userMessage)) {
+            String robotId = messageReceiveEvent.getRobotChatter().getId();
+            boolean stopped = messageSolution.forceStopStream(robotId, sessionId);
+            return stopped
+                    ? MessageSendAction.skip()
+                    : MessageSendAction.withResp("当前没有进行中的流式输出");
         }
 
         // 处理清除会话命令
@@ -346,6 +356,14 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
                         .cmdName(CMD_LIST_SESSIONS)
                         .cmdDesc("查看历史会话")
                         .executeScript("sendMessageInner('" + CMD_LIST_SESSIONS + "')")
+                        .build());
+            }
+            // 当前robot会话有进行中的流式输出时展示停止按钮
+            if (messageSolution.findStreamConnect(robotId, sessionId) != null) {
+                resultList.add(CmdDescription.builder()
+                        .cmdName(CMD_ACP_FORCE_STOP)
+                        .cmdDesc("停止输出")
+                        .executeScript("sendMessageInner('" + CMD_ACP_FORCE_STOP + "')")
                         .build());
             }
         } catch (Exception e) {

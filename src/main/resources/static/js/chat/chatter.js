@@ -197,6 +197,7 @@ $(document).ready(function () {
         console.log(indexMap);
         //添加点击监听器
         addSessionListener(chatterListData);
+        reapplyStreamingIndicator();
     }
 
     getChatterList = function () {

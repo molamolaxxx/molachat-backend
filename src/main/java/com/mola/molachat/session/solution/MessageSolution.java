@@ -268,4 +268,55 @@ public class MessageSolution {
         return true;
     }
 
+    /**
+     * 强制终止流式消息，不检查线程，向前端发送end信号
+     */
+    public boolean forceStopStream(String senderId, String sessionId) {
+        Session session = sessionFactory.selectById(sessionId);
+        if (session == null) {
+            return false;
+        }
+
+        StreamMessageConnect streamConnect = findStreamConnect(senderId, sessionId);
+        if (streamConnect == null) {
+            return false;
+        }
+
+        streamConnect.setClosed(true);
+        streamMessageConnectPool.remove(streamConnect);
+
+        // 持久化已有内容
+        Message message = new Message();
+        BeanUtils.copyProperties(streamConnect.getFirstSendMessage(), message);
+        message.setContent(streamConnect.getMessageContent().toString());
+        message.setId(streamConnect.getStreamId());
+        sessionFactory.insertMessage(session.getSessionId(), message);
+
+        // 向前端发送 end 信号
+        StreamMessage endMsg = new StreamMessage();
+        endMsg.setStreamId(streamConnect.getStreamId());
+        endMsg.setId(streamConnect.getStreamId());
+        endMsg.setChatterId(senderId);
+        endMsg.setSessionId(sessionId);
+        endMsg.setContent("");
+        endMsg.setEnd(true);
+        for (String chatterId : session.getChatterSet().stream()
+                .map(Chatter::getId).collect(Collectors.toList())) {
+            if (Objects.equals(chatterId, senderId)) {
+                continue;
+            }
+            try {
+                List<ChatServer> servers = serverService.selectByChatterId(chatterId);
+                if (!CollectionUtils.isEmpty(servers)) {
+                    for (ChatServer server : servers) {
+                        server.getSession().sendToClient(WSResponse.steamMessage("force stop", endMsg));
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("forceStopStream send end signal failed, chatterId = {}", chatterId, e);
+            }
+        }
+        return true;
+    }
+
 }
