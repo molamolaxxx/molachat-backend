@@ -38,6 +38,7 @@ $(document).ready(function () {
             }
         })
         streamMessageMap.clear()
+        streamingChatterIds.clear()
     }
     // initChatter重建DOM后调用，重新补上呼吸灯
     reapplyStreamingIndicator = function() {

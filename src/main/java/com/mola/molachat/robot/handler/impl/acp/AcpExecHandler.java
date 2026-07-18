@@ -5,10 +5,7 @@ import com.google.common.collect.Lists;
 import com.mola.cmd.proxy.client.consumer.CmdSender;
 import com.mola.cmd.proxy.client.resp.CmdInvokeResponse;
 import com.mola.cmd.proxy.client.resp.CmdResponseContent;
-import com.mola.molachat.common.config.SelfConfig;
 import com.mola.molachat.common.event.action.BaseAction;
-import com.mola.molachat.common.utils.Base64Util;
-import com.mola.molachat.common.utils.FileUtils;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
@@ -26,7 +23,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -54,10 +50,9 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
     private SessionService sessionService;
 
     @Resource
-    private SelfConfig selfConfig;
-
-    @Resource
     private MessageSolution messageSolution;
+
+    private static final String FILE_DOWNLOAD_BASE_URL = "https://106.54.193.10:8550/chat/files/";
 
     @Override
     public BaseAction handler(MessageReceiveEvent messageReceiveEvent) {
@@ -106,8 +101,8 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         }
 
         try {
-            // 收集当前消息之前连续的文件消息，每个文件以文件名->base64的形式存储
-            List<Map<String, String>> files = collectRecentFileBase64(sessionId, messageReceiveEvent);
+            // 收集当前消息之前连续的文件消息，每个文件以文件名->下载URL的形式存储
+            List<Map<String, String>> files = collectRecentFileUrls(sessionId, messageReceiveEvent);
 
             Map<String, Object> paramMap = new HashMap<>();
             paramMap.put("groupId", sessionId);
@@ -130,10 +125,10 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
     }
 
     /**
-     * 从当前会话中收集当前消息之前、连续的、当前用户发送的文件消息，读取base64
-     * @return List<Map<String, String>>，每个Map中key为文件名，value为文件的base64
+     * 从当前会话中收集当前消息之前、连续的、当前用户发送的文件消息，返回文件下载URL
+     * @return List<Map<String, String>>，每个Map中key为文件名，value为文件的下载URL
      */
-    private List<Map<String, String>> collectRecentFileBase64(String sessionId, MessageReceiveEvent event) {
+    private List<Map<String, String>> collectRecentFileUrls(String sessionId, MessageReceiveEvent event) {
         List<Map<String, String>> files = new ArrayList<>();
         try {
             SessionDTO session = sessionService.findSession(sessionId);
@@ -164,41 +159,21 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             // 反转为时间正序
             for (int i = consecutiveFileMessages.size() - 1; i >= 0; i--) {
                 FileMessage fm = consecutiveFileMessages.get(i);
-                String filePath = resolveFilePath(fm);
-                if (filePath == null) {
+                String storedName = fm.fetchRealStoredFileName(false);
+                if (storedName == null) {
                     continue;
                 }
-                File file = new File(filePath);
-                if (!file.exists()) {
-                    continue;
-                }
-                byte[] fileData = FileUtils.readFileByBytes(filePath);
-                String base64 = Base64Util.encode(fileData);
+                String downloadUrl = FILE_DOWNLOAD_BASE_URL + storedName;
                 Map<String, String> fileEntry = new HashMap<>();
-                fileEntry.put(fm.getFileName(), base64);
+                fileEntry.put(fm.getFileName(), downloadUrl);
                 files.add(fileEntry);
             }
         } catch (Exception e) {
-            log.error("AcpExecHandler collectRecentFileBase64 异常, sessionId={}", sessionId, e);
+            log.error("AcpExecHandler collectRecentFileUrls 异常, sessionId={}", sessionId, e);
         }
         return files;
     }
 
-    /**
-     * 根据FileMessage的url解析实际磁盘路径
-     */
-    private String resolveFilePath(FileMessage fm) {
-        String url = fm.getUrl();
-        if (url == null) {
-            return null;
-        }
-        // files/xxx -> uploadFilePath/xxx (使用fetchRealStoredFileName)
-        String storedName = fm.fetchRealStoredFileName(false);
-        if (storedName == null) {
-            return null;
-        }
-        return selfConfig.getUploadFilePath() + File.separator + storedName;
-    }
 
     /**
      * 调用ACP远程命令（仅需groupId参数）
