@@ -247,6 +247,11 @@ $(document).ready(function () {
             showToast("输入不能为空", 1000)
             return;
         }
+
+        if (isSessionLoading()) {
+            showToast("会话加载中，请稍候", 1000)
+            return;
+        }
         
         if (queryStreamDom(getActiveSessionId())) {
             showToast("当前状态无法发送新消息，请先终止当前会话", 1000)
@@ -413,6 +418,12 @@ $(document).ready(function () {
     });
 
     sendMessageInner = function (content) {
+        // 编辑器等其他发送入口也必须避免使用上一个 sessionId。
+        if (isSessionLoading()) {
+            showToast("会话加载中，请稍候", 1000)
+            return
+        }
+
         //显示在屏幕上，滚动
         addMessage($chatMsg, content, true);
 

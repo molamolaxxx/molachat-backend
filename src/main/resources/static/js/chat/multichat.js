@@ -87,6 +87,7 @@ $(document).ready(function () {
             isTemp: true
         };
         setActiveChatter(activeChatter);
+        beginSessionLoading(activeChatter.id)
         // 设置签名
         var sign = cutStrByByte(activeChatter.signature, 28);
         $(".chat__status").text(sign);

@@ -19,6 +19,51 @@ $(document).ready(function () {
     // 聊天框dom
     var $messageBox = $(".chat__messages")[0]
 
+    // session 切换等待态。序号用于废弃频繁切换产生的旧定时器。
+    var $sessionLoadingOverlay = $(".session-loading-overlay")
+    var sessionLoadingTimer = null
+    var sessionLoadingSequence = 0
+    var pendingSessionChatterId = null
+
+    beginSessionLoading = function (chatterId) {
+        if (!chatterId) {
+            return
+        }
+
+        var keepVisible = $sessionLoadingOverlay.hasClass("active")
+        clearTimeout(sessionLoadingTimer)
+        sessionLoadingSequence++
+        var currentSequence = sessionLoadingSequence
+        pendingSessionChatterId = chatterId
+        $(".chat__messages").addClass("session-switching")
+
+        // 已经进入慢加载状态时，连续切换保持蒙层，避免旧消息闪现。
+        if (keepVisible) {
+            return
+        }
+
+        sessionLoadingTimer = setTimeout(function () {
+            if (currentSequence !== sessionLoadingSequence ||
+                !activeChatter || activeChatter.id !== pendingSessionChatterId) {
+                return
+            }
+            $sessionLoadingOverlay.addClass("active").attr("aria-hidden", "false")
+        }, 1000)
+    }
+
+    finishSessionLoading = function () {
+        clearTimeout(sessionLoadingTimer)
+        sessionLoadingTimer = null
+        sessionLoadingSequence++
+        pendingSessionChatterId = null
+        $sessionLoadingOverlay.removeClass("active").attr("aria-hidden", "true")
+        $(".chat__messages").removeClass("session-switching")
+    }
+
+    isSessionLoading = function () {
+        return pendingSessionChatterId !== null
+    }
+
     // 消息模态框
     var $viewContent = $("#viewContent")
     var $messageViewModel = $("#message-view-modal")
@@ -120,6 +165,7 @@ $(document).ready(function () {
                 //获取当前chatter
                 activeChatter = chatterListData[this.index];
                 console.log("activeChatter", activeChatter);
+                beginSessionLoading(activeChatter.id)
                 // 设置签名
                 var sign = cutStrByByte(activeChatter.signature, 28);
                 $(".chat__status").text(sign);
@@ -155,6 +201,7 @@ $(document).ready(function () {
         }
         activeChatter = null;
         activeSession = null;
+        finishSessionLoading()
     });
 
     //创建session,socket回调
@@ -236,6 +283,8 @@ $(document).ready(function () {
             };
         }
 
+        // 新 session 的消息 DOM 就绪后再淡入，避免切换瞬间的生硬替换。
+        finishSessionLoading()
         scrollToChatContainerBottom(isSideBarOutside() ? 100 : 1000)
         timeoutId = setTimeout(() => {
             if (activeSession) {

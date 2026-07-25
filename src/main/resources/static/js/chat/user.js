@@ -399,14 +399,16 @@ $(document).ready(function () {
                 )
             } else if (result.code == CREATE_SESSION) {
                 var currentChatter = getActiveChatter();
-                if (currentChatter) {
-                    var chatterSet = result.data.chatterSet || [];
-                    var hasCurrentChatter = chatterSet.some(function(c) { return c.id === currentChatter.id; });
-                    // 群聊时activeChatter是temp-chatter，不在chatterSet中，用sessionId兜底
-                    var isGroupMatch = currentChatter.id === "temp-chatter" && result.data.sessionId === "common-session";
-                    if (!hasCurrentChatter && !isGroupMatch) {
-                        return;
-                    }
+                // 用户已返回列表，或回包属于之前点击的联系人时，不回写消息区。
+                if (!currentChatter) {
+                    return;
+                }
+                var chatterSet = result.data.chatterSet || [];
+                var hasCurrentChatter = chatterSet.some(function(c) { return c.id === currentChatter.id; });
+                // 群聊时activeChatter是temp-chatter，不在chatterSet中，用sessionId兜底
+                var isGroupMatch = currentChatter.id === "temp-chatter" && result.data.sessionId === "common-session";
+                if (!hasCurrentChatter && !isGroupMatch) {
+                    return;
                 }
                 //新建session
                 createSession(result.data);

@@ -19,6 +19,10 @@ $(document).ready(function () {
         if (file == null) {
             return;
         }
+        if (isSessionLoading()) {
+            showToast("会话加载中，请稍候", 1000)
+            return;
+        }
         var form = new FormData();
         var url = getPrefix() + "/chat/files/upload";
         var xhr = new XMLHttpRequest();
