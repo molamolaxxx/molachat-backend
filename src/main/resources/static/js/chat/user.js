@@ -20,7 +20,11 @@ $(document).ready(function () {
         if (localStorage.getItem("chatterName") != null) {
             return localStorage.getItem("chatterName");
         }
+        return randomChatterName();
+    }
 
+    //生成一个随机昵称，不读取本地缓存
+    randomChatterName = function () {
         var str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         var namePrefixList = ["星巴克", "米奇", "米妮", "四月春风", "博丽灵梦",
             "大灰狼", "神里凌华", "乌鸦哥", "甘雨", "jojo",
@@ -36,6 +40,11 @@ $(document).ready(function () {
         }
         console.log(name)
         return name;
+    }
+
+    //生成一个随机的本地头像链接
+    randomChatterImg = function () {
+        return "img/header/" + (Math.ceil(Math.random() * 1000000000) % 15 + 1) + ".jpeg"
     }
     //唯一用户昵称
     var chatterName = createChatterName();
@@ -308,6 +317,81 @@ $(document).ready(function () {
         return btoa(chatterId + ";" + token)
     }
 
+    /**
+     * 将一条secret加入本地历史登录记录
+     */
+    addHistorySecret = function (secret) {
+        const secretHistoryStr = localStorage.getItem("secretHistory")
+        var set = new Set()
+        if (!isEmpty(secretHistoryStr)) {
+            set = new Set(Array.from(JSON.parse(secretHistoryStr)))
+        }
+        set.add(secret)
+        localStorage.setItem("secretHistory", JSON.stringify(Array.from(set)))
+    }
+
+    /**
+     * 从本地历史登录记录中移除指定chatter，仅影响当前设备缓存
+     */
+    removeHistorySecret = function (targetChatterId) {
+        const secretHistoryStr = localStorage.getItem("secretHistory")
+        if (isEmpty(secretHistoryStr)) {
+            return
+        }
+        const newList = Array.from(JSON.parse(secretHistoryStr)).filter(e => {
+            const decodedData = atob(e)
+            if (isEmpty(decodedData)) {
+                return false
+            }
+            let arr = decodedData.split(";")
+            return arr.length !== 2 || arr[0] !== targetChatterId
+        })
+        localStorage.setItem("secretHistory", JSON.stringify(newList))
+    }
+
+    /**
+     * 创建一个全新的用户，并立即切换过去
+     * 不传preId，由服务端生成新的chatterId，因此不会影响当前用户
+     */
+    createAndSwitchChatter = function (name, imgUrl, onError) {
+        $.ajax({
+            url: getPrefix() + "/chat/chatter",
+            dataType: "json",
+            type: "post",
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
+            data: {
+                "chatterName": name,
+                "signature": "点击修改签名",
+                "imgUrl": imgUrl
+            },
+            success: function (result) {
+                const newSecret = btoa(result.data.id + ";" + result.data.token)
+                // 新用户自身也要写入历史，切换过去后才能在列表中看到
+                addHistorySecret(newSecret)
+                showToast("用户[" + name + "]创建成功", 1000)
+                changeChatter(newSecret)
+            },
+            error: function (result) {
+                var msg = "创建用户失败"
+                if (result && result.responseText) {
+                    try {
+                        const exception = JSON.parse(result.responseText)
+                        msg = exception.msg ? exception.msg : (exception.message ? exception.message : msg)
+                    } catch (e) {
+                        console.log(e)
+                    }
+                }
+                showToast(msg, 1500)
+                if (onError) {
+                    onError(msg)
+                }
+            }
+        })
+    }
+
     //创建用户信息，获取chatterId
     createChatter = function () {
         $.ajax({
@@ -349,6 +433,9 @@ $(document).ready(function () {
                         token = result.data.token
                         localStorage.setItem("token", result.data.token)
                         localStorage.setItem("preId", chatterId)
+                        if (typeof updateProfileChatterId === "function") {
+                            updateProfileChatterId(chatterId)
+                        }
                         //链接到ws服务器
                         linkToServer();
                         swal("Welcome!", "已成功创建chatter!", "success");
@@ -698,7 +785,7 @@ $(document).ready(function () {
 
     setChatterSign = function (sign) {
         chatterSign = sign;
-        $(".collapsible-body").find('p')[1].innerHTML = "<a class='material-icons' style='font-size: 14px;color: #716060;' href='javascript:changeSign();'>create</a>&nbsp;" + chatterSign;
+        $("#profile-signature").text(chatterSign).attr("title", chatterSign);
         setNavSign(sign)
         localStorage.setItem("sign", sign);
     }
@@ -709,9 +796,7 @@ $(document).ready(function () {
 
     setChatterName = function (name) {
         chatterName = name;
-        let shortenName = shortenString(name, 20)
-        console.log(shortenName)
-        $(".collapsible-body").find('p')[0].innerHTML = "<i class='material-icons' style='font-size: 16px;color: #716060;vertical-align: middle;'>account_box</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + shortenName + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class='material-icons' style='font-size: 16px;color: #716060;vertical-align: middle;' href='javascript:changeName();'>create</a>";
+        $("#profile-name").text(name).attr("title", name);
         setNavName(name)
         localStorage.setItem("chatterName", name);
     }

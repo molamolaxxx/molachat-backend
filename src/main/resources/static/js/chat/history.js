@@ -18,24 +18,37 @@ $(document).ready(function() {
     var $historyList = $(".history-list")[0]
     var $changeUserBtn = $("#changeUserBtn")
     var $copyBtn = $("#copyBtn")
+    var $addUserBtn = $("#addUserBtn")
 
     var globalHistoryUsers = []
+
+    var renderHistoryList = function(historyUsers) {
+        globalHistoryUsers = historyUsers ? historyUsers : []
+        while($historyList.firstChild) {
+            $historyList.removeChild($historyList.firstChild)
+        }
+        globalHistoryUsers.forEach((user, idx) => {
+            $historyList.append(historyChatterDom(user.id, user.name, user.imgUrl, idx))
+        });
+    }
+
+    var refreshHistoryList = function() {
+        getHistoryChatters(
+            renderHistoryList,
+            function() {
+                renderHistoryList([])
+            }
+        )
+    }
+
     openModal = function() {
         getHistoryChatters(
             function(historyUsers) {
-                globalHistoryUsers = historyUsers
-                while($historyList.firstChild) {
-                    $historyList.removeChild($historyList.firstChild)
-                }
-                historyUsers.forEach((user, idx) => {
-                    $historyList.append(historyChatterDom(user.id, user.name, user.imgUrl,idx))
-                });
+                renderHistoryList(historyUsers)
                 $historyModal.modal("open")
             },
             function() {
-                while($historyList.firstChild) {
-                    $historyList.removeChild($historyList.firstChild)
-                }
+                renderHistoryList([])
                 $historyModal.modal("open")
             }
         )
@@ -88,6 +101,13 @@ $(document).ready(function() {
             $(statusDoc).addClass("contact__status");
             $(statusDoc).addClass("online");
             mainDoc.append(statusDoc);
+        } else {
+            // 非当前用户，允许从本机缓存中删除
+            var deleteDoc = document.createElement("span");
+            $(deleteDoc).addClass("history_user_delete");
+            deleteDoc.innerHTML = '<i class="material-icons" style="font-size: 18px;">delete</i>'
+            deleteDoc.idx = idx
+            mainDoc.append(deleteDoc);
         }
         mainDoc.idx = idx
         return mainDoc;
@@ -129,4 +149,183 @@ $(document).ready(function() {
             }
         })
     })
+
+    // 删除历史用户，仅清除本机缓存
+    $(document).on("click", ".history_user_delete", function(e) {
+        e.stopPropagation();
+        const userInfo = globalHistoryUsers[this.idx];
+        if (!userInfo) {
+            return
+        }
+        if (userInfo.id === getChatterId()) {
+            showToast("无法删除当前用户", 1000)
+            return
+        }
+        swal({
+            title: "删除历史用户",
+            text: "是否删除用户[" + userInfo.name + "]?\n仅清除本机的登录记录，不会影响服务端数据",
+            icon: "warning",
+            buttons: {
+                cancel: "取消",
+                confirm: {
+                    text: "确认",
+                    value: "delete",
+                    className: "swal_delete"
+                }
+            }
+        }).then((value) => {
+            if (value) {
+                removeHistorySecret(userInfo.id)
+                showToast("删除成功", 1000)
+                refreshHistoryList()
+            }
+        });
+    })
+
+    // 新增用户
+    $addUserBtn.on('click', function() {
+        if (getEngines().videoEngine.isOpen()) {
+            showToast("您正在通话中，无法新增用户", 1000)
+            return
+        }
+        if (window.uploadLock) {
+            showToast("文件正在上传，无法新增用户", 1000)
+            return
+        }
+        $historyModal.modal('close')
+        popAddUserForm(randomChatterName(), randomChatterImg())
+    })
+
+    /**
+     * 新增用户的确认弹窗
+     * @param {*} defaultName 默认昵称
+     * @param {*} defaultImg 默认头像
+     */
+    var popAddUserForm = function(defaultName, defaultImg) {
+        var wrapper = document.createElement("div");
+        $(wrapper).addClass("add-user-card");
+
+        var coverDoc = document.createElement("div");
+        $(coverDoc).addClass("add-user-card__cover");
+        coverDoc.innerHTML = [
+            '<span class="add-user-card__eyebrow">MOLA CHAT</span>',
+            '<h3>创建新身份</h3>',
+            '<p>创建后将自动保存到历史用户</p>'
+        ].join("");
+        wrapper.append(coverDoc);
+
+        var bodyDoc = document.createElement("div");
+        $(bodyDoc).addClass("add-user-card__body");
+
+        // 头像：点击整个头像区域均可随机更换
+        var imgDoc = document.createElement("img");
+        imgDoc.src = defaultImg;
+        imgDoc.alt = "新用户头像";
+        var imgLink = document.createElement("a");
+        imgLink.href = "javascript:;";
+        imgLink.setAttribute("aria-label", "随机更换头像");
+        imgLink.setAttribute("data-hint", "点击随机更换");
+        $(imgLink).addClass("add-user-card__avatar");
+        imgLink.append(imgDoc);
+        var avatarBadge = document.createElement("span");
+        $(avatarBadge).addClass("add-user-card__avatar-edit");
+        avatarBadge.innerHTML = '<i class="material-icons" aria-hidden="true">photo_camera</i>';
+        imgLink.append(avatarBadge);
+        bodyDoc.append(imgLink);
+
+        // 昵称字段
+        var nameInput = document.createElement("input");
+        $(nameInput).addClass("browser-default").addClass("add-user-input").addClass("add-user-name");
+        nameInput.id = "add-user-name";
+        nameInput.type = "text";
+        nameInput.placeholder = "请输入昵称";
+        nameInput.value = defaultName;
+        var nameField = document.createElement("div");
+        $(nameField).addClass("add-user-field");
+        nameField.innerHTML = [
+            '<i class="material-icons add-user-field__icon" aria-hidden="true">person_outline</i>',
+            '<label class="add-user-field__content" for="add-user-name">',
+            '<span>昵称</span>',
+            '</label>'
+        ].join("");
+        nameField.querySelector("label").append(nameInput);
+        bodyDoc.append(nameField);
+
+        // 头像链接字段
+        var imgInput = document.createElement("input");
+        $(imgInput).addClass("browser-default").addClass("add-user-input").addClass("add-user-img");
+        imgInput.id = "add-user-img";
+        imgInput.type = "text";
+        imgInput.placeholder = "请输入头像链接";
+        imgInput.value = defaultImg;
+        var imgField = document.createElement("div");
+        $(imgField).addClass("add-user-field");
+        imgField.innerHTML = [
+            '<i class="material-icons add-user-field__icon" aria-hidden="true">link</i>',
+            '<label class="add-user-field__content" for="add-user-img">',
+            '<span>头像链接</span>',
+            '</label>'
+        ].join("");
+        imgField.querySelector("label").append(imgInput);
+
+        var randomButton = document.createElement("button");
+        randomButton.type = "button";
+        randomButton.setAttribute("aria-label", "随机更换头像");
+        randomButton.title = "随机更换头像";
+        $(randomButton).addClass("add-user-card__random");
+        randomButton.innerHTML = '<i class="material-icons" aria-hidden="true">refresh</i>';
+        imgField.append(randomButton);
+        bodyDoc.append(imgField);
+
+        var hintDoc = document.createElement("p");
+        $(hintDoc).addClass("add-user-card__hint");
+        hintDoc.innerHTML = [
+            '<i class="material-icons" aria-hidden="true">info_outline</i>',
+            '<span>新身份会独立生成 Chatter ID，并保存在当前设备中</span>'
+        ].join("");
+        bodyDoc.append(hintDoc);
+        wrapper.append(bodyDoc);
+
+        var randomizeAvatar = function() {
+            imgInput.value = randomChatterImg()
+            imgDoc.src = imgInput.value
+        }
+        $(imgLink).on("click", randomizeAvatar)
+        $(randomButton).on("click", randomizeAvatar)
+        $(imgInput).on("change", function() {
+            imgDoc.src = imgInput.value
+        })
+
+        swal({
+            className: "add-user-modal",
+            content: wrapper,
+            buttons: {
+                cancel: "取消",
+                confirm: {
+                    text: "创建并切换",
+                    value: "create"
+                }
+            }
+        }).then((value) => {
+            if (!value) {
+                return
+            }
+            const name = nameInput.value.trim()
+            const imgUrl = imgInput.value.trim()
+            if (isEmpty(name)) {
+                showToast("昵称不能为空", 1000)
+                popAddUserForm(defaultName, imgUrl)
+                return
+            }
+            if (isEmpty(imgUrl)) {
+                showToast("头像链接不能为空", 1000)
+                popAddUserForm(name, defaultImg)
+                return
+            }
+            createAndSwitchChatter(name, imgUrl, function() {
+                // 创建失败时保留已填内容，方便修改后重试
+                popAddUserForm(name, imgUrl)
+            })
+        })
+    }
 })

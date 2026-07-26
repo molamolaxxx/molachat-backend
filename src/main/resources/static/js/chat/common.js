@@ -83,11 +83,33 @@ function copyText(text) {
         }
         return
     }
-    navigator.clipboard.writeText(text).then(function () {
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function () {
+            showToast("已复制到剪切板", 1000)
+        }, function () {
+            copyTextFallback(text)
+        });
+        return
+    }
+    copyTextFallback(text)
+}
+
+function copyTextFallback(text) {
+    var input = document.createElement("textarea")
+    input.value = text
+    input.setAttribute("readonly", "")
+    input.style.position = "fixed"
+    input.style.opacity = "0"
+    document.body.appendChild(input)
+    input.select()
+    input.setSelectionRange(0, input.value.length)
+    try {
+        document.execCommand("copy")
         showToast("已复制到剪切板", 1000)
-    }, function (err) {
-        showToast("复制到剪切板失败, " + err, 1000)
-    });
+    } catch (error) {
+        showToast("复制失败，请长按 Chatter ID 手动复制", 1500)
+    }
+    document.body.removeChild(input)
 }
 
 
@@ -165,10 +187,13 @@ function changeSign() {
 
 
 if (getInnerWidth() <= 1000) {
-    $(".demo").on("click", function () {
+    $(".demo").on("click", function (event) {
+        if ($(event.target).closest("#tool-account").length > 0) {
+            return;
+        }
         //如果名片打开，则关闭
-        if ($(".collapsible-header.active")[0] != null) {
-            $("#account_box").click();
+        if ($(".user_info").hasClass("is-open") && typeof closeUserInfoCard === "function") {
+            closeUserInfoCard();
         }
     });
 }

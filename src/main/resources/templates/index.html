@@ -87,31 +87,56 @@
             </div>
         </div>
     </div>
-    <div class='user_info' style='display: none'>
-        <ul class="collapsible popout" data-collapsible="accordion">
-            <li>
-                <div class="collapsible-header"><i class="material-icons">loyalty</i>名片</div>
-                <div class="collapsible-body">
-                    <div class="profile">
-                        <a href="javascript:;" class="tooltipped" data-position="right" data-delay="50"
-                            data-tooltip="点击更改头像"><img src="img/mola.png" class="gravatar" alt=""></a>
-                    </div>
-                    <div class="chatter_name">
-                        <p style="padding-bottom: 1rem;font-size: 16px;text-align: center;">
-                            <i class="material-icons" style="font-size: 16px;color: #716060;">account_box</i>
-                            &nbsp;&nbsp;&nbsp;&nbsp;翻车鱼
-                            <i class="material-icons" style="font-size: 16px;color: #716060;">create</i>
-                        </p>
-                    </div>
-                    <div class="sign">
-                        <p style="padding-bottom: 2rem;padding-left: 1.4rem;color: #5f5858; text-align: center;">
-                            <i class="material-icons" style="font-size: 14px;color: #716060;">create</i>
-                            点击修改签名
-                        </p>
-                    </div>
+    <div class="user_info" style="display: none" role="dialog" aria-modal="false"
+        aria-labelledby="profile-card-title" aria-hidden="true">
+        <section class="profile-card">
+            <div class="profile-card__cover">
+                <div class="profile-card__heading">
+                    <span class="profile-card__eyebrow">MOLA CHAT</span>
+                    <h2 id="profile-card-title">个人名片</h2>
                 </div>
-            </li>
-        </ul>
+                <button class="profile-card__close" type="button" aria-label="关闭个人名片">
+                    <i class="material-icons" aria-hidden="true">close</i>
+                </button>
+            </div>
+
+            <div class="profile-card__body">
+                <a href="javascript:;" class="profile-card__avatar" data-hint="点击更改头像" aria-label="更改头像">
+                    <img src="img/mola.png" class="gravatar" alt="我的头像">
+                    <span class="profile-card__avatar-edit"><i class="material-icons"
+                            aria-hidden="true">photo_camera</i></span>
+                </a>
+
+                <div class="profile-card__name-row">
+                    <h3 id="profile-name" class="profile-card__name" title="翻车鱼">翻车鱼</h3>
+                    <button class="profile-card__edit" type="button" onclick="changeName()" aria-label="修改昵称">
+                        <i class="material-icons" aria-hidden="true">edit</i>
+                    </button>
+                </div>
+
+                <div class="profile-card__signature-row">
+                    <p id="profile-signature" class="profile-card__signature">点击修改签名</p>
+                    <button class="profile-card__edit" type="button" onclick="changeSign()" aria-label="修改签名">
+                        <i class="material-icons" aria-hidden="true">edit</i>
+                    </button>
+                </div>
+
+                <div class="profile-card__identity">
+                    <div class="profile-card__identity-copy">
+                        <span class="profile-card__label">CHATTER ID</span>
+                        <code id="profile-chatter-id" title="正在获取">正在获取</code>
+                    </div>
+                    <button id="profile-copy-id" class="profile-card__copy" type="button" aria-label="复制 Chatter ID">
+                        <i class="material-icons" aria-hidden="true">content_copy</i>
+                        <span>复制</span>
+                    </button>
+                </div>
+                <p class="profile-card__hint">
+                    <i class="material-icons" aria-hidden="true">verified_user</i>
+                    这是你的专属身份标识，可用于机器人与外部服务配置
+                </p>
+            </div>
+        </section>
     </div>
 
 
@@ -211,6 +236,8 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
             </div>
             <div class="modal-footer">
                 <button id="changeUserBtn" class=" modal-action modal-close waves-effect waves-green btn blue">输入序列</a>
+                    <button id="addUserBtn" style="margin: 6px;"
+                        class=" modal-action waves-effect waves-green btn-flat">新增用户</button>
                     <button id="copyBtn" style="margin: 6px;"
                         class=" modal-action waves-effect waves-green btn-flat">复制序列</a>
             </div>

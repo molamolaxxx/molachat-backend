@@ -367,26 +367,10 @@ $(document).ready(function () {
     var $user_info = $(".user_info")
     var $account_box = $("#account_box")
     userInfoUIAdjust = function () {
-        //定位用户框
-        if (getInnerWidth() <= 1000) {
-            $user_info.css("opacity", "0");
-            $user_info.css("width", "80%");
-            $user_info.css("display", "none");
-            $(".collapsible-body").css("background", "#f0f8ff");
-            var marginRight = getInnerWidth() * 0.2 / 2;
-        } else {
-            $user_info.css("opacity", "0");
-            $user_info.css("width", "25%");
-            $user_info.css("z-index", "1");
-            $(".collapsible-body").css("background", "rgba(0, 0, 0, 0)")
-            var marginRight = ((getInnerWidth() - 420) / 2 - getInnerWidth() / 4) / 2
-        }
         $account_box.css("display", "");
         $("#insert_emoticon").css("display", "none");
         $("#file_copy").css("display", "none");
         $("#video").css("display", "none");
-        $user_info.css("right", marginRight)
-
     }
 
     var $html = $("html")
@@ -414,38 +398,62 @@ $(document).ready(function () {
         funcRemSizeChange()
     });
 
-    var openFlag = false;
-    let func = function () {
+    var userInfoCloseTimer = null;
 
-        if (openFlag) {
-            if (!($(".collapsible-header.active")[0] == null)) {
-                $('.collapsible-header').click();
-            }
-            setTimeout(function () {
-                $(".user_info").animate({
-                    opacity: 0
-                }, function () {
-                    $(".user_info").css("display", "none");
-                });
-            }, 100);
-
-        } else {
-            if ($(".collapsible-header.active")[0] == null) {
-                setTimeout(function () {
-                    $('.collapsible-header').click();
-                }, 200);
-            }
-            $(".user_info").css("display", "");
-            $(".user_info").animate({
-                opacity: 1
-            });
-        }
-        openFlag = !openFlag;
+    updateProfileChatterId = function (id) {
+        var currentId = id || (typeof getChatterId === "function" ? getChatterId() : null)
+            || localStorage.getItem("preId");
+        var displayId = currentId || "正在获取";
+        $("#profile-chatter-id").text(displayId).attr("title", displayId);
+        $("#profile-copy-id").prop("disabled", !currentId);
     }
 
+    openUserInfoCard = function () {
+        if (userInfoCloseTimer) {
+            clearTimeout(userInfoCloseTimer);
+            userInfoCloseTimer = null;
+        }
+        updateProfileChatterId();
+        $user_info.css("display", "block").attr("aria-hidden", "false");
+        requestAnimationFrame(function () {
+            $user_info.addClass("is-open");
+        });
+    }
+
+    closeUserInfoCard = function () {
+        $user_info.removeClass("is-open").attr("aria-hidden", "true");
+        userInfoCloseTimer = setTimeout(function () {
+            if (!$user_info.hasClass("is-open")) {
+                $user_info.css("display", "none");
+            }
+        }, 190);
+    }
+
+    let func = function () {
+        if ($user_info.hasClass("is-open")) {
+            closeUserInfoCard();
+        } else {
+            openUserInfoCard();
+        }
+    }
 
     $("#account_box").on("click", func);
     $("#tool-account").on("click", func);
+    $(".profile-card__close").on("click", closeUserInfoCard);
+    $("#profile-copy-id").on("click", function () {
+        var currentId = (typeof getChatterId === "function" ? getChatterId() : null)
+            || localStorage.getItem("preId");
+        if (!currentId) {
+            showToast("Chatter ID 正在获取，请稍后重试", 1200);
+            return;
+        }
+        copyText(currentId);
+    });
+    $(document).on("keydown", function (event) {
+        if (event.key === "Escape" && $user_info.hasClass("is-open")) {
+            closeUserInfoCard();
+        }
+    });
 
     var timeoutId = null
     $(".chat__messages").on("scroll", function () {
@@ -458,7 +466,7 @@ $(document).ready(function () {
         }
     });
 
-    $(".gravatar").on("click", function () {
+    $(".profile-card__avatar").on("click", function () {
         console.log("click image");
         swal({
             content: {

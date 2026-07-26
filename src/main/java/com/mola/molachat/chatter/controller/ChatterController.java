@@ -293,7 +293,7 @@ public class ChatterController {
         for (Chatter chatter : session.getChatterSet()) {
             ChatterDTO cur = chatterService.selectById(chatter.getId());
             if (null == cur) {
-                cur = (ChatterDTO) BeanUtilsPlug.copyPropertiesReturnTarget(chatter, new ChatterDTO());
+                continue;
             }
             result.add(cur);
         }
