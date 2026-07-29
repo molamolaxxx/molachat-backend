@@ -1031,6 +1031,188 @@ svg {
     padding: 2px;
 }
 
+/* 切换用户确认弹窗：与个人名片和新增用户保持一致 */
+.swal-modal.switch-user-modal {
+    width: min(29rem, calc(100vw - 3.2rem));
+    overflow: hidden;
+    border-radius: 1.6rem;
+    box-shadow: 0 1.8rem 5rem rgba(33, 46, 70, 0.28);
+}
+
+.switch-user-modal .swal-content {
+    margin: 0;
+    padding: 0;
+}
+
+.switch-user-card {
+    color: #2b3040;
+    font-family: "Open Sans", Helvetica, Arial, sans-serif;
+    text-align: left;
+}
+
+.switch-user-card__cover {
+    height: 8rem;
+    padding: 1.45rem 1.8rem;
+    color: #ffffff;
+    background:
+        radial-gradient(circle at 82% 15%, rgba(255, 255, 255, 0.26) 0, rgba(255, 255, 255, 0) 30%),
+        linear-gradient(135deg, #53688f 0%, #7788ad 52%, #9ca9c5 100%);
+}
+
+.switch-user-card__eyebrow {
+    display: block;
+    max-width: calc(100% - 8.2rem);
+    margin-left: 8.2rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    opacity: 0.76;
+}
+
+.switch-user-card__cover h3 {
+    max-width: calc(100% - 8.2rem);
+    margin: 0 0 0 8.2rem;
+    color: inherit;
+    font-size: 1.55rem;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.switch-user-card__cover p {
+    margin: 0.35rem 0 0 8.2rem;
+    color: rgba(255, 255, 255, 0.76);
+    font-size: 0.88rem;
+}
+
+.switch-user-card__body {
+    position: relative;
+    min-height: 13.2rem;
+    padding: 4rem 1.8rem 1.2rem;
+    background: #ffffff;
+}
+
+.switch-user-card__avatar {
+    position: absolute;
+    top: -3.8rem;
+    left: 1.8rem;
+    display: block;
+    width: 6.8rem;
+    height: 6.8rem;
+    border: 0.38rem solid #ffffff;
+    border-radius: 50%;
+    background: #eef1f6;
+    box-shadow: 0 0.8rem 2rem rgba(43, 48, 64, 0.18);
+    object-fit: cover;
+}
+
+.switch-user-card__label {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #8b93a5;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+}
+
+.switch-user-card__name {
+    margin: 0;
+    overflow: hidden;
+    color: #272c3a;
+    font-size: 1.55rem;
+    font-weight: 650;
+    line-height: 1.45;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.switch-user-card__confirm {
+    margin: 0.45rem 0 0;
+    color: #747b8b;
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+.switch-user-card__hint {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 1rem 0 0;
+    padding: 0.8rem 0.9rem;
+    border-radius: 0.9rem;
+    color: #77819a;
+    background: #f3f5f9;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.switch-user-card__hint .material-icons {
+    color: #687b9f;
+    font-size: 1.35rem;
+}
+
+.switch-user-modal .swal-footer {
+    margin: 0;
+    padding: 1rem 1.8rem 1.4rem;
+    border-top: 1px solid #edf0f5;
+    text-align: right;
+}
+
+.switch-user-modal .swal-button {
+    min-width: 6.8rem;
+    border-radius: 0.85rem;
+    box-shadow: none;
+    font-size: 1rem;
+}
+
+.switch-user-modal .swal-button--cancel {
+    color: #687187;
+    background: #eef1f6;
+}
+
+.switch-user-modal .swal-button--confirm {
+    background: #566b95;
+}
+
+.switch-user-modal .swal-button--confirm:hover,
+.switch-user-modal .swal-button--confirm:focus {
+    background: #465b86;
+    box-shadow: none;
+}
+
+@media (max-width: 480px) {
+    .switch-user-card__cover {
+        height: 7.7rem;
+        padding: 1.4rem;
+    }
+
+    .switch-user-card__body {
+        padding: 3.9rem 1.4rem 1rem;
+    }
+
+    .switch-user-card__avatar {
+        left: 1.4rem;
+        width: 6.5rem;
+        height: 6.5rem;
+    }
+
+    .switch-user-modal .swal-footer {
+        display: flex;
+        gap: 0.7rem;
+        padding: 0.9rem 1.4rem 1.2rem;
+    }
+
+    .switch-user-modal .swal-button-container {
+        flex: 1;
+        margin: 0;
+    }
+
+    .switch-user-modal .swal-button {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
 /* 新增用户弹窗：与个人名片保持一致，沿用 SweetAlert 原有定位 */
 .swal-modal.add-user-modal {
     width: min(29rem, calc(100vw - 3.2rem));

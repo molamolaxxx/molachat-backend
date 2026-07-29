@@ -293,7 +293,9 @@ public class ChatterController {
         for (Chatter chatter : session.getChatterSet()) {
             ChatterDTO cur = chatterService.selectById(chatter.getId());
             if (null == cur) {
-                continue;
+                // chatter已被清理，用群聊session中保留的快照兜底，
+                // 否则前端渲染这些历史消息时拿不到昵称和头像
+                cur = (ChatterDTO) BeanUtilsPlug.copyPropertiesReturnTarget(chatter, new ChatterDTO());
             }
             result.add(cur);
         }

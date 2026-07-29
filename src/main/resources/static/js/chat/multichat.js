@@ -133,8 +133,9 @@ $(document).ready(function () {
             $(mainDocChild).addClass("chat__message notMine");
 
         } else {
-            commonName.innerText = chatter.name
-            imgDoc.src = chatter.imgUrl;
+            // chatter可能已被清理，兜底避免单条脏数据打断整个会话渲染
+            commonName.innerText = chatter && chatter.name ? chatter.name : "已退出用户"
+            imgDoc.src = chatter && chatter.imgUrl ? chatter.imgUrl : "img/404.jpeg";
             $(imgDoc).addClass("contact__photo");
             $(imgDoc).css('float', 'left');
             $(imgDoc).css('display', 'inline');

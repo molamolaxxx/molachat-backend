@@ -46,6 +46,16 @@ $(document).ready(function () {
     randomChatterImg = function () {
         return "img/header/" + (Math.ceil(Math.random() * 1000000000) % 15 + 1) + ".jpeg"
     }
+
+    //昵称冲突时使用的随机后缀
+    randomNameSuffix = function () {
+        var str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var suffix = "";
+        for (var i = 0; i < 5; i++) {
+            suffix += str[Math.round(Math.random() * 61)]
+        }
+        return suffix;
+    }
     //唯一用户昵称
     var chatterName = createChatterName();
     // 用户签名
@@ -55,6 +65,8 @@ $(document).ready(function () {
 
     //flags
     var isLogin = false;
+    // 切换用户前的身份，切换失败时用于回滚
+    var lastValidIdentity = null;
 
     //socket链接
     var socket;
@@ -117,7 +129,7 @@ $(document).ready(function () {
         }, 500);
     }
 
-    recoverChatter = function () {
+    recoverChatter = function (onSuccess) {
         initChatterMap()
         addSpinner("app_content", true)
         // 先检测有没有残留的chatterId
@@ -158,6 +170,9 @@ $(document).ready(function () {
                     }
                     notRepeatToast("服务器连接成功，欢迎回来", 1000)
                     removeSpinner()
+                    if (onSuccess) {
+                        onSuccess()
+                    }
 
                 } else {
                     swal("error", "id不一致，重连失败", "error")
@@ -173,11 +188,14 @@ $(document).ready(function () {
                     swal("sorry", "抱歉，会话人数已达上限", "warning")
                     return
                 }
-                if (localStorage.getItem("preId")) {
-                    createChatter()
-                } else {
-                    createChatter()
+                // 切换历史用户失败：目标chatter在服务端已不存在。
+                // 此时本机昵称还是切换前那个用户的，直接createChatter会撞名甚至丢失身份，
+                // 所以清掉失效记录、回到切换前的身份，让用户自己重新选一个
+                if (window.changeUserLock) {
+                    onChangeChatterFail(preId)
+                    return
                 }
+                createChatter()
 
             },
             complete: function (xhr, status) {
@@ -191,6 +209,35 @@ $(document).ready(function () {
                 }
             }
         });
+    }
+
+    /**
+     * 切换历史用户失败：目标chatter在服务端已不存在
+     * 清掉本机的失效记录并回滚到切换前的身份，再让用户从历史用户弹窗里重新选择
+     * @param {*} invalidChatterId 已失效的chatterId
+     */
+    onChangeChatterFail = function (invalidChatterId) {
+        window.changeUserLock = false
+        removeSpinner()
+        removeHistorySecret(invalidChatterId)
+        const canRollback = !isNull(lastValidIdentity)
+        if (canRollback) {
+            localStorage.setItem("preId", lastValidIdentity.preId)
+            setToken(lastValidIdentity.token)
+        }
+        swal("切换失败", "该历史用户已不存在，已从本机记录中移除，请重新选择", "warning")
+            .then(() => {
+                if (canRollback) {
+                    // 先恢复原来的身份，再弹出历史用户列表
+                    recoverChatter(function () {
+                        if (typeof openModal === "function") {
+                            openModal()
+                        }
+                    })
+                } else if (typeof openModal === "function") {
+                    openModal()
+                }
+            })
     }
 
     /**
@@ -238,6 +285,10 @@ $(document).ready(function () {
             set.add(localSecret)
             localStorage.setItem("secretHistory", JSON.stringify(Array.from(set)))
         }
+        // 记录切换前的身份，切换失败时用于回滚
+        lastValidIdentity = (!isNull(localPreId) && !isNull(localToken))
+            ? { preId: localPreId, token: localToken }
+            : null
         // 锁。防止在换用户期间发生心跳，导致id、token不一致的情况
         window.changeUserLock = true
         // 赋值
@@ -294,17 +345,28 @@ $(document).ready(function () {
                 chatterIdList: JSON.stringify(chatterIdList)
             },
             success: function (result) {
-                const historyUsers = result.data
+                const historyUsers = result.data || []
                 const newBase64List = []
                 for (let index = 0; index < historyUsers.length; index++) {
                     const element = historyUsers[index];
-                    element.base64 = base64List[index]
+                    // 服务端会跳过已不存在的chatter，返回列表存在空洞，只能按id匹配secret，按下标会错位
+                    element.base64 = base64List.find(e => {
+                        const decodedData = atob(e)
+                        if (isEmpty(decodedData)) {
+                            return false
+                        }
+                        const arr = decodedData.split(";")
+                        return arr.length === 2 && arr[0] === element.id
+                    })
+                    if (!element.base64) {
+                        continue
+                    }
                     newBase64List.push(element.base64)
                 }
                 localStorage.setItem("secretHistory", JSON.stringify(newBase64List))
                 // 渲染
                 if (renderMethod) {
-                    renderMethod(historyUsers)
+                    renderMethod(historyUsers.filter(e => e.base64))
                 }
             },
             error: function (result) {
@@ -414,45 +476,70 @@ $(document).ready(function () {
                     imgUrl = "img/header/" + rand + ".jpeg"
                     // imgUrl = "img/mola.png";
                 }
-                $.ajax({
-                    url: getPrefix() + "/chat/chatter",
-                    dataType: "json",
-                    type: "post",
-                    xhrFields: {
-                        withCredentials: true
-                    },
-                    crossDomain: true,
-                    data: {
-                        "chatterName": chatterName,
-                        "signature": chatterSign,
-                        "imgUrl": imgUrl,
-                        "preId": localStorage.getItem("preId")
-                    },
-                    success: function (result) {
-                        chatterId = result.data.id
-                        token = result.data.token
-                        localStorage.setItem("token", result.data.token)
-                        localStorage.setItem("preId", chatterId)
-                        if (typeof updateProfileChatterId === "function") {
-                            updateProfileChatterId(chatterId)
-                        }
-                        //链接到ws服务器
-                        linkToServer();
-                        swal("Welcome!", "已成功创建chatter!", "success");
-                        removeSpinner()
-                        if (!$("#sidebar").hasClass("active")) {
-                            window.openSideBar()
-                        }
-                    },
-                    error: function (result) {
-                        console.log(result.responseText);
-                        var exception = JSON.parse(result.responseText);
-                        swal("error", "创建chatter失败,请刷新重试，原因是" + (exception.msg ? exception.msg : exception.message), "error")
-                    }
-                });
+                postCreateChatter(chatterName, imgUrl, true)
             }
         });
 
+    }
+
+    /**
+     * 提交创建chatter请求
+     * 服务端要求昵称全局唯一，而createChatter是先删旧chatter再建新chatter，
+     * 一旦创建失败本机身份就彻底丢失，所以重名时自动加随机后缀重试一次
+     * @param {*} name 昵称
+     * @param {*} imgUrl 头像
+     * @param {*} allowRename 重名时是否允许自动改名重试
+     */
+    postCreateChatter = function (name, imgUrl, allowRename) {
+        $.ajax({
+            url: getPrefix() + "/chat/chatter",
+            dataType: "json",
+            type: "post",
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
+            data: {
+                "chatterName": name,
+                "signature": chatterSign,
+                "imgUrl": imgUrl,
+                "preId": localStorage.getItem("preId")
+            },
+            success: function (result) {
+                chatterId = result.data.id
+                token = result.data.token
+                localStorage.setItem("token", result.data.token)
+                localStorage.setItem("preId", chatterId)
+                if (name !== chatterName) {
+                    setChatterName(name)
+                }
+                if (typeof updateProfileChatterId === "function") {
+                    updateProfileChatterId(chatterId)
+                }
+                //链接到ws服务器
+                linkToServer();
+                swal("Welcome!", "已成功创建chatter!", "success");
+                removeSpinner()
+                if (!$("#sidebar").hasClass("active")) {
+                    window.openSideBar()
+                }
+            },
+            error: function (result) {
+                console.log(result.responseText);
+                var exception = {}
+                try {
+                    exception = JSON.parse(result.responseText);
+                } catch (e) {
+                    console.log(e)
+                }
+                // 101=昵称重复，说明这个昵称被别的chatter占用了，换个昵称重试，避免身份丢失
+                if (allowRename && exception.status === 101) {
+                    postCreateChatter(name + "_" + randomNameSuffix(), imgUrl, false)
+                    return
+                }
+                swal("error", "创建chatter失败,请刷新重试，原因是" + (exception.msg ? exception.msg : exception.message), "error")
+            }
+        });
     }
 
     var socketErrorTimes = 0

@@ -206,6 +206,22 @@ $(document).ready(function () {
 
     //创建session,socket回调
     createSession = function (session) {
+        try {
+            renderSession(session)
+        } finally {
+            // 渲染抛异常也必须结束等待态，避免永久卡在“会话加载中”
+            finishSessionLoading()
+        }
+        scrollToChatContainerBottom(isSideBarOutside() ? 100 : 1000)
+        timeoutId = setTimeout(() => {
+            if (activeSession) {
+                activeSession.scrollComplete = true
+            }
+        }, 1500)
+    }
+
+    // 新 session 的消息 DOM 渲染，就绪后由外层结束等待态再淡入
+    function renderSession(session) {
         activeSession = session;
         //初始化消息
         //清除dom
@@ -282,15 +298,6 @@ $(document).ready(function () {
                 $(this).removeClass("imgFileTemp")
             };
         }
-
-        // 新 session 的消息 DOM 就绪后再淡入，避免切换瞬间的生硬替换。
-        finishSessionLoading()
-        scrollToChatContainerBottom(isSideBarOutside() ? 100 : 1000)
-        timeoutId = setTimeout(() => {
-            if (activeSession) {
-                activeSession.scrollComplete = true
-            }
-        }, 1500)
     }
 
     var buildHighlightContentInterrupt = debounce(contentQuery => {

@@ -120,13 +120,78 @@ $(document).ready(function() {
             showToast("已经切换到当前用户", 1000)
             return
         }
-        swal("切换用户","是否切换到用户[" + userInfo.name + "]","info").then((change) => {
-            if (change) {
-                changeChatter(userInfo.base64)
-                $historyModal.modal('close')
-            }
-        });
+        popSwitchUserConfirm(userInfo)
     })
+
+    /**
+     * 切换历史用户的确认弹窗
+     * @param {*} userInfo 目标用户
+     */
+    var popSwitchUserConfirm = function(userInfo) {
+        var wrapper = document.createElement("div");
+        $(wrapper).addClass("switch-user-card");
+
+        var coverDoc = document.createElement("div");
+        $(coverDoc).addClass("switch-user-card__cover");
+        coverDoc.innerHTML = [
+            '<span class="switch-user-card__eyebrow">MOLA CHAT</span>',
+            '<h3>确认切换身份</h3>',
+            '<p>切换后将以该用户继续聊天</p>'
+        ].join("");
+        wrapper.append(coverDoc);
+
+        var bodyDoc = document.createElement("div");
+        $(bodyDoc).addClass("switch-user-card__body");
+
+        var avatarDoc = document.createElement("img");
+        $(avatarDoc).addClass("switch-user-card__avatar");
+        avatarDoc.src = userInfo.imgUrl;
+        avatarDoc.alt = userInfo.name + "的头像";
+        bodyDoc.append(avatarDoc);
+
+        var labelDoc = document.createElement("span");
+        $(labelDoc).addClass("switch-user-card__label");
+        labelDoc.innerText = "目标身份";
+        bodyDoc.append(labelDoc);
+
+        var nameDoc = document.createElement("h4");
+        $(nameDoc).addClass("switch-user-card__name");
+        nameDoc.innerText = userInfo.name;
+        nameDoc.title = userInfo.name;
+        bodyDoc.append(nameDoc);
+
+        var confirmDoc = document.createElement("p");
+        $(confirmDoc).addClass("switch-user-card__confirm");
+        confirmDoc.innerText = "确定切换到这个历史用户吗？";
+        bodyDoc.append(confirmDoc);
+
+        var hintDoc = document.createElement("p");
+        $(hintDoc).addClass("switch-user-card__hint");
+        hintDoc.innerHTML = [
+            '<i class="material-icons" aria-hidden="true">swap_horiz</i>',
+            '<span>确认后将使用该身份重新连接</span>'
+        ].join("");
+        bodyDoc.append(hintDoc);
+        wrapper.append(bodyDoc);
+
+        swal({
+            className: "switch-user-modal",
+            content: wrapper,
+            buttons: {
+                cancel: "取消",
+                confirm: {
+                    text: "确认切换",
+                    value: "switch"
+                }
+            }
+        }).then((value) => {
+            if (value !== "switch") {
+                return
+            }
+            changeChatter(userInfo.base64)
+            $historyModal.modal('close')
+        })
+    }
 
     // 复制序列
     $copyBtn.on('click', function() {
