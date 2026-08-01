@@ -98,24 +98,9 @@ $(document).ready(function () {
         }
     })
 
-    var isVisible = true
     $("#tool-contacts").on('click', function() {
-        if (isOutside) {
-            hideUserBar()
-            if (getInnerWidth() < 1000) {
-            setTimeout(function() {
-                $demo.animate({ left: "50%" },200);
-                },200)
-            }
-            
-        } else {
-            showUserBar()
-            if (getInnerWidth() < 1000) {
-                setTimeout(function() {
-                        $demo.animate({ left: "52%" },200);
-                },200)
-            }
-            
+        if (typeof openTeamModal === "function") {
+            openTeamModal()
         }
     })
 })

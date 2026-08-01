@@ -72,8 +72,8 @@
                         style="font-size: 18px;">account_box</i></div>
                 <div class="tool-item" id="tool-histroy"><i class="material-icons"
                         style="font-size: 18px;">recent_actors</i></div>
-                <div class="tool-item" id="tool-contacts"><i class="material-icons"
-                        style="font-size: 18px;">contacts</i></div>
+                <div class="tool-item" id="tool-contacts" title="Teams"><i class="material-icons"
+                        style="font-size: 18px;">group</i></div>
             </div>
             <div class="chat-container">
                 <span id="open-text-btn" class="open-text-btn"><i class="material-icons"
@@ -161,6 +161,10 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
             <li><a class="btn-floating waves-effect waves-light blue darken-1 tooltipped" html="true"
                     data-position="left" data-delay="50" data-tooltip="历史用户" id="history"><i
                         class="material-icons">recent_actors</i></a></li>
+            <!-- Teams -->
+            <li><a class="btn-floating waves-effect waves-light indigo lighten-1 tooltipped" html="true"
+                    data-position="left" data-delay="50" data-tooltip="Teams" id="teams"><i
+                        class="material-icons">group</i></a></li>
             <!-- 视频 -->
             <li><a class="btn-floating waves-effect waves-light blue darken-1 tooltipped" html="true"
                     data-position="left" data-delay="50" data-tooltip="视频聊天" id="video"><i
@@ -240,6 +244,32 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
                         class=" modal-action waves-effect waves-green btn-flat">新增用户</button>
                     <button id="copyBtn" style="margin: 6px;"
                         class=" modal-action waves-effect waves-green btn-flat">复制序列</a>
+            </div>
+        </div>
+    </div>
+    <!-- Teams操作模态 -->
+    <div id="teams-modal" class="modal bottom-sheet">
+        <div class="history-root teams-root">
+            <div class="modal-content">
+                <div class="teams-heading">
+                    <div>
+                        <span class="teams-eyebrow">FAST TEAM</span>
+                        <h5>Teams</h5>
+                    </div>
+                    <span id="teams-mode-badge" class="teams-mode-badge">主会话</span>
+                </div>
+                <div id="teams-runtime-notice" class="teams-runtime-notice" style="display: none;"></div>
+                <div class="teams-list"></div>
+                <div class="teams-empty" style="display: none;">还没有队伍，点击下方按钮发起 Team</div>
+            </div>
+            <div class="modal-footer teams-footer">
+                <button id="leaveTeamBtn" class="modal-action waves-effect waves-green btn-flat" disabled>
+                    切回主会话
+                </button>
+                <button id="createTeamBtn" class="modal-action waves-effect waves-light btn indigo"
+                    disabled title="Fast Team 环境未就绪">
+                    发起 Team
+                </button>
             </div>
         </div>
     </div>
@@ -395,6 +425,7 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
     <script type="text/javascript" src="js/video/rtc.js"></script>
     <script type="text/javascript" src="js/video/video.js"></script>
     <script type="text/javascript" src="js/video/handler.js"></script>
+    <script type="text/javascript" src="js/chat/team.js"></script>
     <script type="text/javascript" src="js/app/nav.js"></script>
     <script type="text/javascript" src="js/utils/spinner.js"></script>
     <script type="text/javascript" src="js/chat/history.js"></script>

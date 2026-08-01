@@ -6,6 +6,9 @@ import com.mola.cmd.proxy.client.consumer.CmdSender;
 import com.mola.cmd.proxy.client.resp.CmdInvokeResponse;
 import com.mola.cmd.proxy.client.resp.CmdResponseContent;
 import com.mola.molachat.common.event.action.BaseAction;
+import com.mola.molachat.chatter.data.ChatterFactoryInterface;
+import com.mola.molachat.chatter.model.Chatter;
+import com.mola.molachat.chatter.model.RobotChatter;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
@@ -17,6 +20,8 @@ import com.mola.molachat.session.model.Message;
 import com.mola.molachat.session.model.StreamMessage;
 import com.mola.molachat.session.service.SessionService;
 import com.mola.molachat.session.solution.MessageSolution;
+import com.mola.molachat.team.solution.TeamAcpExecSolution;
+import com.mola.molachat.team.solution.TeamRobotProjectionSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
@@ -52,10 +57,20 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
     @Resource
     private MessageSolution messageSolution;
 
+    @Resource
+    private TeamAcpExecSolution teamAcpExecSolution;
+
+    @Resource
+    private ChatterFactoryInterface chatterFactory;
+
     private static final String FILE_DOWNLOAD_BASE_URL = "https://106.54.193.10:8550/chat/files/";
 
     @Override
     public BaseAction handler(MessageReceiveEvent messageReceiveEvent) {
+        if (TeamRobotProjectionSolution.TEAM_ACP_GROUP.equals(
+                messageReceiveEvent.getRobotChatter().getRobotGroup())) {
+            return teamAcpExecSolution.handle(messageReceiveEvent);
+        }
         String sessionId = messageReceiveEvent.getSessionId();
         String userMessage = messageReceiveEvent.getMessage().getContent();
 
@@ -301,6 +316,12 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
     @Override
     public List<CmdDescription> cmdDescriptions(String robotId, String sessionId) {
+        Chatter chatter = chatterFactory.select(robotId);
+        if (chatter instanceof RobotChatter
+                && TeamRobotProjectionSolution.TEAM_ACP_GROUP.equals(
+                ((RobotChatter) chatter).getRobotGroup())) {
+            return teamAcpExecSolution.cmdDescriptions((RobotChatter) chatter, sessionId);
+        }
         List<CmdDescription> resultList = Lists.newArrayList();
         try {
             String status = getAcpStatus(sessionId);

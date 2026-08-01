@@ -84,6 +84,9 @@ $(document).ready(function () {
         })
         streamMessageMap.clear()
         streamingChatterIds.clear()
+        if (typeof refreshTeamActivityIndicators === "function") {
+            refreshTeamActivityIndicators()
+        }
     }
     // initChatter重建DOM后调用，重新补上呼吸灯
     reapplyStreamingIndicator = function() {
@@ -93,6 +96,9 @@ $(document).ready(function () {
                 $($(".contact")[idx]).find(".contact__status").addClass("streaming")
             }
         })
+    }
+    isChatterStreaming = function(chatterId) {
+        return streamingChatterIds.has(chatterId)
     }
 
     // 检测聊天容器的滚动，用户向上滑动时中断自动滚底
@@ -312,10 +318,12 @@ $(document).ready(function () {
     receiveStreamMessage = function (message) {
         var dom = streamMessageMap.get(message.sessionId)
         const end = message.end
+        var teamActivityChanged = false
 
         // 呼吸灯：stream开始时亮起
         if (!end && !dom && !streamMessageMap.get("cache_" + message.sessionId)) {
             streamingChatterIds.add(message.chatterId)
+            teamActivityChanged = true
             var idx = getIndexByChatterId(message.chatterId)
             if (idx != null) {
                 $($(".contact")[idx]).find(".contact__status").addClass("streaming")
@@ -323,11 +331,14 @@ $(document).ready(function () {
         }
         // 呼吸灯：stream结束时熄灭
         if (end) {
-            streamingChatterIds.delete(message.chatterId)
+            teamActivityChanged = streamingChatterIds.delete(message.chatterId)
             var idx = getIndexByChatterId(message.chatterId)
             if (idx != null) {
                 $($(".contact")[idx]).find(".contact__status").removeClass("streaming")
             }
+        }
+        if (teamActivityChanged && typeof refreshTeamActivityIndicators === "function") {
+            refreshTeamActivityIndicators()
         }
 
         //如果是当前session

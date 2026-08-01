@@ -112,4 +112,14 @@ public class ChatterDTO {
      */
     private Set<String> visibleChatterIds;
 
+    /**
+     * Team机器人所属队伍
+     */
+    private String teamId;
+
+    /**
+     * Team成员不可变标识
+     */
+    private String teamMemberId;
+
 }

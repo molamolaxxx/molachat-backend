@@ -111,6 +111,9 @@ $(document).ready(function () {
             $($(".contact")[idx]).find(".contact__status").removeClass("online");
             statusMap.set(chatterId, 0);
         }
+        if (isActive && typeof markTeamResultPending === "function") {
+            markTeamResultPending(chatterId)
+        }
 
         // 遍历statusMap
         var count = 0;
@@ -127,12 +130,29 @@ $(document).ready(function () {
             // 网页显示有未读消息
             document.getElementsByTagName("title")[0].innerText = "molachat" ;
         }
+        if (typeof refreshTeamActivityIndicators === "function") {
+            refreshTeamActivityIndicators()
+        }
+    }
+
+    hasUnreadMessage = function (chatterId) {
+        return statusMap.get(chatterId) === 1
     }
 
     //初始化聊天者
     initChatter = function (chatterList, selfId) {
+        var rawChatterList = chatterList
+        window.latestRawChatterList = chatterList.slice()
+        if (typeof filterChattersForActiveTeam === "function") {
+            chatterList = filterChattersForActiveTeam(chatterList, selfId)
+        }
         chatterListData = new Array();
         var newStatusMap = new Map();
+        rawChatterList.forEach(function (chatter) {
+            if (chatter.id !== selfId) {
+                newStatusMap.set(chatter.id, statusMap.get(chatter.id) === 1 ? 1 : 0)
+            }
+        })
         indexMap = new Map();
         //indexMap的index
         var index = 0;
@@ -188,7 +208,9 @@ $(document).ready(function () {
         }
         //会话失效（不包含公共会话）
         if (null != getActiveChatter() && !chatterIsActive && getActiveChatter().id !== 'temp-chatter') {
-            swal("会话已经被重置", "请重新选择会话", "warning")
+            if (!window.teamModeSwitching) {
+                swal("会话已经被重置", "请重新选择会话", "warning")
+            }
             $(".chat__back")[0].click();
         }
         //更新状态map
@@ -198,6 +220,18 @@ $(document).ready(function () {
         //添加点击监听器
         addSessionListener(chatterListData);
         reapplyStreamingIndicator();
+        if (typeof refreshTeamActivityIndicators === "function") {
+            refreshTeamActivityIndicators()
+        }
+        if (typeof onTeamChatterListRendered === "function") {
+            onTeamChatterListRendered(chatterListData)
+        }
+    }
+
+    refreshChatterForTeamMode = function () {
+        if (window.latestRawChatterList) {
+            initChatter(window.latestRawChatterList, getChatterId())
+        }
     }
 
     getChatterList = function () {

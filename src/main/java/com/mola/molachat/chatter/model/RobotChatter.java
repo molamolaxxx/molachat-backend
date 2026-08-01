@@ -37,4 +37,14 @@ public class RobotChatter extends Chatter {
      * 可见用户id列表，为空则所有人可见
      */
     private Set<String> visibleChatterIds;
+
+    /**
+     * Team机器人所属队伍，普通机器人为空
+     */
+    private String teamId;
+
+    /**
+     * Team成员不可变标识，普通机器人为空
+     */
+    private String teamMemberId;
 }

@@ -288,22 +288,6 @@ $(document).ready(function () {
         copyText(this.copyContent)
     })
 
-    // 明细模态框初始化
-    $viewModal.modal({
-        dismissible: true, // Modal can be dismissed by clicking outside of the modal
-        opacity: .2, // Opacity of modal background
-        in_duration: 300, // Transition in duration
-        out_duration: 200, // Transition out duration
-        starting_top: '4%', // Starting top style attribute
-        ending_top: '100%', // Ending top style attribute
-        ready: function (modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
-            fetchContextUsage()
-        },
-        complete: function () {
-            $('#contextUsageWrapper').hide()
-        }
-    });
-
     var $editModal = $("#message-edit-modal")
     var $openEditBtn = $("#open-text-btn")
 
@@ -445,7 +429,7 @@ $(document).ready(function () {
     fetchContextUsage = function () {
         var $wrapper = $('#contextUsageWrapper')
         var chatter = getActiveChatter()
-        if (!chatter || chatter.robotGroup !== 'acp') {
+        if (!chatter || (chatter.robotGroup !== 'acp' && chatter.robotGroup !== 'team-acp')) {
             $wrapper.hide()
             return
         } else {
@@ -453,6 +437,7 @@ $(document).ready(function () {
             var text = document.getElementById('contextUsageText')
             circle.setAttribute('stroke-dasharray', '0 100')
             circle.setAttribute('stroke', '#4caf50')
+            text.textContent = ''
             $wrapper.show()
         }
         $.ajax({
@@ -461,12 +446,11 @@ $(document).ready(function () {
             dataType: "json",
             timeout: 3000,
             success: function (result) {
-                var pct = null
-                if (!result.data && result.data !== 0) {
-                    pct = 0
-                } else {
-                    pct = Math.min(Math.round(result.data), 100)
+                if (!result || (result.data == null)) {
+                    $wrapper.hide()
+                    return
                 }
+                var pct = Math.max(0, Math.min(Math.round(result.data), 100))
                 var circle = document.getElementById('contextUsageCircle')
                 var text = document.getElementById('contextUsageText')
                 requestAnimationFrame(function () {
@@ -475,7 +459,9 @@ $(document).ready(function () {
                     text.textContent = pct + '%'
                 })
                 $wrapper.attr('title', '上下文用量: ' + pct + '%')
-                
+            },
+            error: function () {
+                $wrapper.hide()
             }
         })
     }

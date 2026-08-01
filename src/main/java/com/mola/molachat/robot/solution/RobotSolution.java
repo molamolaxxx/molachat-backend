@@ -25,6 +25,8 @@ import com.mola.molachat.session.model.FileMessage;
 import com.mola.molachat.session.model.Message;
 import com.mola.molachat.session.service.SessionService;
 import com.mola.molachat.session.solution.MessageSolution;
+import com.mola.molachat.team.solution.TeamAcpExecSolution;
+import com.mola.molachat.team.solution.TeamRobotProjectionSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -73,6 +75,9 @@ public class RobotSolution implements InitializingBean {
 
     @Resource
     private OcrSolution ocrSolution;
+
+    @Resource
+    private TeamAcpExecSolution teamAcpExecSolution;
 
     /**
      * 业务线程池
@@ -172,12 +177,20 @@ public class RobotSolution implements InitializingBean {
                 break;
             }
         }
-        if (robot == null || !"acp".equals(robot.getRobotGroup())) {
+        if (robot == null) {
             log.info("fetchContextUsage skip, robot={}, robotGroup={}, sessionId={}",
-                    robot, robot != null ? robot.getRobotGroup() : "null", sessionId);
+                    null, "null", sessionId);
             return null;
         }
         try {
+            if (TeamRobotProjectionSolution.TEAM_ACP_GROUP.equals(robot.getRobotGroup())) {
+                return teamAcpExecSolution.fetchContextUsage(robot);
+            }
+            if (!"acp".equals(robot.getRobotGroup())) {
+                log.info("fetchContextUsage skip, robot={}, robotGroup={}, sessionId={}",
+                        robot, robot.getRobotGroup(), sessionId);
+                return null;
+            }
             Map<String, String> paramMap = new HashMap<>();
             paramMap.put("groupId", sessionId);
             String paramJson = JSONObject.toJSONString(paramMap);
