@@ -8,16 +8,15 @@ import com.mola.molachat.team.dto.TeamCreateRequest;
 import com.mola.molachat.team.dto.TeamDiscoveryDTO;
 import com.mola.molachat.team.dto.TeamDTO;
 import com.mola.molachat.team.dto.TeamMemberDTO;
+import com.mola.molachat.team.dto.TeamMemberSourceDTO;
 import com.mola.molachat.robot.data.KeyValueFactoryInterface;
 import com.mola.molachat.robot.model.KeyValue;
-import com.mola.molachat.robot.solution.AcpRobotSyncSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -77,7 +76,6 @@ public class TeamGatewaySolution {
             DiscoveryRegistration registration = new DiscoveryRegistration(
                     discovery,
                     parseVisibleChatterIds(resultMap.get("visibleChatterIds")),
-                    parseRobots(resultMap.get("robots")),
                     System.currentTimeMillis());
             discoveries.put(discovery.getCmdProxyInstanceId(), registration);
             registerEventCallback(discovery);
@@ -97,6 +95,25 @@ public class TeamGatewaySolution {
         return resolveRegistration(ownerChatterId, true, false).discovery;
     }
 
+    public TeamDiscoveryDTO getPlacementCapability(String ownerChatterId) {
+        return discoveries.values().stream()
+                .filter(this::isActive)
+                .filter(registration -> registration.transportReachable)
+                .filter(registration -> registration.discovery.isBusinessCommandsReady())
+                .filter(registration -> registration.discovery.getTeamMemberSources() != null)
+                .filter(registration -> registration.visibleChatterIds.isEmpty()
+                        || registration.visibleChatterIds.contains(ownerChatterId))
+                .filter(registration -> registration.discovery.getTeamMemberSources().stream()
+                        .anyMatch(source -> source != null
+                                && ownerChatterId.equals(source.getOwnerChatterId())))
+                .sorted(Comparator.comparing(registration ->
+                        registration.discovery.getCmdProxyInstanceId()))
+                .map(registration -> registration.discovery)
+                .findFirst()
+                .orElseThrow(() -> new TeamCommandException(
+                        "TEAM_NOT_READY", "没有可用于新 placement 的 Team 来源"));
+    }
+
     public boolean isBusinessReady() {
         return discoveries.values().stream()
                 .filter(this::isActive)
@@ -104,6 +121,7 @@ public class TeamGatewaySolution {
     }
 
     public TeamDTO create(TeamCreateRequest request) {
+        DiscoveryRegistration registration = resolvePlacement(request);
         JSONObject payload = new JSONObject();
         payload.put("schemaVersion", SUPPORTED_SCHEMA_VERSION);
         payload.put("requestId", request.getRequestId());
@@ -113,17 +131,17 @@ public class TeamGatewaySolution {
         JSONArray members = new JSONArray();
         for (int index = 0; index < request.getMembers().size(); index++) {
             TeamCreateMemberRequest source = request.getMembers().get(index);
+            TeamMemberSourceDTO discovered = requireDiscoveredSource(
+                    registration, request.getChatterId(), source);
             JSONObject member = new JSONObject();
             member.put("teamMemberId", stableUuid("team-member:" + request.getRequestId()
-                    + ":" + index + ":" + source.getSourceGroupId()));
-            member.put("sourceRobotId", source.getSourceRobotId());
-            member.put("sourceGroupId", source.getSourceGroupId());
+                    + ":" + index + ":" + discovered.getSourceGroupId()));
+            member.put("sourceRobotId", discovered.getSourceRobotId());
+            member.put("sourceGroupId", discovered.getSourceGroupId());
             member.put("order", index);
             members.add(member);
         }
         payload.put("members", members);
-        DiscoveryRegistration registration = resolveRegistration(
-                request.getChatterId(), false, true);
         Map<String, String> result = invoke(registration, "acpTeamCreate", payload);
         TeamDTO team = JSON.parseObject(requiredData(result), TeamDTO.class);
         rememberTeamInstance(team, registration);
@@ -254,23 +272,110 @@ public class TeamGatewaySolution {
     }
 
     public List<TeamMemberDTO> listCandidates(String ownerChatterId) {
-        DiscoveryRegistration registration = resolveRegistration(ownerChatterId, true, true);
         List<TeamMemberDTO> candidates = new ArrayList<>();
-        for (AcpRobotSyncSolution.AcpRobotParam robot : registration.robots) {
-            if (robot == null || StringUtils.isBlank(robot.getName())) {
+        discoveries.values().stream()
+                .filter(registration -> registration.visibleChatterIds.isEmpty()
+                        || registration.visibleChatterIds.contains(ownerChatterId))
+                .sorted(Comparator.comparing(registration ->
+                        registration.discovery.getCmdProxyInstanceId()))
+                .forEach(registration -> appendCandidates(
+                        candidates, registration, ownerChatterId));
+        return candidates;
+    }
+
+    private void appendCandidates(List<TeamMemberDTO> candidates,
+                                  DiscoveryRegistration registration,
+                                  String ownerChatterId) {
+        if (registration.discovery.getTeamMemberSources() == null) {
+            TeamMemberDTO unsupported = candidateBase(registration);
+            unsupported.setDisplayName(registration.discovery.getCmdProxyInstanceId());
+            unsupported.setStatus("DISCOVERY_UNSUPPORTED");
+            unsupported.setDiscoverySupported(false);
+            unsupported.setRemark("该 cmd-proxy 不支持 Team 来源发现，请升级后重试");
+            candidates.add(unsupported);
+            return;
+        }
+        String status = candidateStatus(registration);
+        for (TeamMemberSourceDTO source : registration.discovery.getTeamMemberSources()) {
+            if (source == null || !ownerChatterId.equals(source.getOwnerChatterId())
+                    || StringUtils.isBlank(source.getSourceRobotId())
+                    || StringUtils.isBlank(source.getSourceGroupId())) {
                 continue;
             }
-            TeamMemberDTO candidate = new TeamMemberDTO();
-            candidate.setCmdProxyInstanceId(registration.discovery.getCmdProxyInstanceId());
-            candidate.setSourceRobotId(buildRobotId(robot.getName()));
-            candidate.setSourceGroupId(computeSourceGroupId(
-                    ownerChatterId, candidate.getSourceRobotId()));
-            candidate.setDisplayName(robot.getName());
-            candidate.setAvatar(StringUtils.defaultIfBlank(robot.getAvatar(), "img/kiro.png"));
-            candidate.setStatus("AVAILABLE");
+            TeamMemberDTO candidate = candidateBase(registration);
+            candidate.setOwnerChatterId(source.getOwnerChatterId());
+            candidate.setSourceRobotId(source.getSourceRobotId());
+            candidate.setSourceGroupId(source.getSourceGroupId());
+            candidate.setDisplayName(StringUtils.defaultIfBlank(
+                    source.getDisplayName(), source.getRobotName()));
+            candidate.setAvatar(StringUtils.defaultIfBlank(source.getAvatar(), "img/kiro.png"));
+            candidate.setRemark(source.getRemark());
+            candidate.setOnlyTeamMember(source.isOnlyTeamMember());
+            candidate.setDiscoverySupported(true);
+            candidate.setStatus(status);
             candidates.add(candidate);
         }
-        return candidates;
+    }
+
+    private TeamMemberDTO candidateBase(DiscoveryRegistration registration) {
+        TeamMemberDTO candidate = new TeamMemberDTO();
+        candidate.setCmdProxyInstanceId(registration.discovery.getCmdProxyInstanceId());
+        candidate.setTransportGroup(registration.discovery.getTransportGroup());
+        return candidate;
+    }
+
+    private String candidateStatus(DiscoveryRegistration registration) {
+        if (!isActive(registration)) {
+            return "DISCOVERY_STALE";
+        }
+        if (!registration.transportReachable) {
+            return "TRANSPORT_UNREACHABLE";
+        }
+        if (!registration.discovery.isBusinessCommandsReady()) {
+            return "BUSINESS_COMMANDS_NOT_READY";
+        }
+        return "AVAILABLE";
+    }
+
+    private DiscoveryRegistration resolvePlacement(TeamCreateRequest request) {
+        TeamCreateMemberRequest first = request.getMembers().get(0);
+        for (TeamCreateMemberRequest member : request.getMembers()) {
+            if (!first.getCmdProxyInstanceId().equals(member.getCmdProxyInstanceId())
+                    || !first.getTransportGroup().equals(member.getTransportGroup())) {
+                throw new TeamCommandException("MIXED_TEAM_PLACEMENT",
+                        "同一支 Team 的成员必须来自同一个 cmd-proxy 实例");
+            }
+        }
+        DiscoveryRegistration registration = discoveries.get(first.getCmdProxyInstanceId());
+        if (registration == null
+                || !first.getTransportGroup().equals(registration.discovery.getTransportGroup())
+                || !isActive(registration)
+                || !registration.transportReachable
+                || !registration.discovery.isBusinessCommandsReady()) {
+            throw new TeamCommandException("TEAM_NOT_READY", "所选 cmd-proxy placement 当前不可用");
+        }
+        if (!registration.visibleChatterIds.isEmpty()
+                && !registration.visibleChatterIds.contains(request.getChatterId())) {
+            throw new TeamCommandException("UNAUTHORIZED", "当前用户不可使用所选 cmd-proxy placement");
+        }
+        if (registration.discovery.getTeamMemberSources() == null) {
+            throw new TeamCommandException("TEAM_SOURCE_DISCOVERY_UNSUPPORTED",
+                    "所选 cmd-proxy 不支持 Team 来源发现");
+        }
+        return registration;
+    }
+
+    private TeamMemberSourceDTO requireDiscoveredSource(
+            DiscoveryRegistration registration, String ownerChatterId,
+            TeamCreateMemberRequest requested) {
+        return registration.discovery.getTeamMemberSources().stream()
+                .filter(source -> source != null
+                        && ownerChatterId.equals(source.getOwnerChatterId())
+                        && requested.getSourceRobotId().equals(source.getSourceRobotId())
+                        && requested.getSourceGroupId().equals(source.getSourceGroupId()))
+                .findFirst()
+                .orElseThrow(() -> new TeamCommandException("SOURCE_ROBOT_NOT_FOUND",
+                        "所选 Team 来源不在当前 discovery 中"));
     }
 
     private Map<String, String> invoke(String ownerChatterId, String command,
@@ -284,6 +389,7 @@ public class TeamGatewaySolution {
         Map<String, String> result = teamCommandTransport.send(
                 command, registration.discovery.getTransportGroup(), payload.toJSONString());
         if (result == null) {
+            registration.transportReachable = false;
             throw new TeamCommandException("INTERNAL_ERROR", "cmdproxy Team命令响应为空");
         }
         if (!SUPPORTED_SCHEMA_VERSION.equals(result.get("schemaVersion"))) {
@@ -460,23 +566,6 @@ public class TeamGatewaySolution {
         return new HashSet<>(JSON.parseArray(json, String.class));
     }
 
-    private List<AcpRobotSyncSolution.AcpRobotParam> parseRobots(String json) {
-        if (StringUtils.isBlank(json)) {
-            return Collections.emptyList();
-        }
-        return JSON.parseArray(json, AcpRobotSyncSolution.AcpRobotParam.class);
-    }
-
-    private String buildRobotId(String robotName) {
-        return "acp-" + robotName.replaceAll("[\\s\u3000]+", "_");
-    }
-
-    private String computeSourceGroupId(String ownerChatterId, String robotId) {
-        List<String> ids = Arrays.asList(ownerChatterId, robotId);
-        Collections.sort(ids);
-        return ids.get(0) + ids.get(1);
-    }
-
     private String stableUuid(String source) {
         return UUID.nameUUIDFromBytes(source.getBytes(StandardCharsets.UTF_8)).toString();
     }
@@ -537,16 +626,14 @@ public class TeamGatewaySolution {
     private static final class DiscoveryRegistration {
         private final TeamDiscoveryDTO discovery;
         private final Set<String> visibleChatterIds;
-        private final List<AcpRobotSyncSolution.AcpRobotParam> robots;
         private final long lastSeenAt;
+        private volatile boolean transportReachable = true;
 
         private DiscoveryRegistration(TeamDiscoveryDTO discovery,
                                       Set<String> visibleChatterIds,
-                                      List<AcpRobotSyncSolution.AcpRobotParam> robots,
                                       long lastSeenAt) {
             this.discovery = discovery;
             this.visibleChatterIds = visibleChatterIds;
-            this.robots = robots;
             this.lastSeenAt = lastSeenAt;
         }
     }

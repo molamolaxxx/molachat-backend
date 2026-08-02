@@ -153,7 +153,7 @@ $(document).ready(function () {
             }
             $row.append($("<span class='team-row__meta'></span>")
                 .text((team.members ? team.members.length : 0) + " 位成员 · "
-                    + teamStatus))
+                    + teamStatus + (team.runtimeUnavailable ? " · 实例离线/不可用" : "")))
             if (teamStatus === "FAILED" && team.lastError) {
                 $row.append($("<span class='team-row__error'></span>")
                     .text(team.lastError.message || "成员启动失败"))
@@ -241,6 +241,20 @@ $(document).ready(function () {
                 } else if (response.msg) {
                     showRuntimeNotice(response.msg)
                 }
+                $.ajax({
+                    url: getPrefix() + "/chat/team/snapshot",
+                    type: "get",
+                    dataType: "json",
+                    timeout: 5000,
+                    data: authData(),
+                    success: function (snapshotResult) {
+                        teams = (snapshotResult.data || []).map(function (team) {
+                            team.runtimeUnavailable = true
+                            return team
+                        })
+                        renderTeams()
+                    }
+                })
             }
         })
         $.ajax({
@@ -251,6 +265,18 @@ $(document).ready(function () {
             data: authData(),
             success: function (result) {
                 candidates = result.data || []
+                var unsupportedInstances = candidates.filter(function (candidate) {
+                    return candidate.status === "DISCOVERY_UNSUPPORTED"
+                }).map(function (candidate) {
+                    return candidate.cmdProxyInstanceId
+                })
+                if (unsupportedInstances.length > 0
+                        && !candidates.some(function (candidate) {
+                            return candidate.status === "AVAILABLE"
+                        })) {
+                    showRuntimeNotice("cmd-proxy 实例 " + unsupportedInstances.join("、")
+                        + " 不支持 Team 来源发现，请升级 cmd-proxy")
+                }
             },
             error: function () {
                 candidates = []
@@ -391,7 +417,7 @@ $(document).ready(function () {
 
         var avatar = document.createElement("img")
         avatar.className = "team-candidate__avatar"
-        avatar.src = candidate.avatar
+        avatar.src = candidate.avatar || "img/kiro.png"
         avatar.alt = candidate.displayName
         wrapper.appendChild(avatar)
 
@@ -400,11 +426,43 @@ $(document).ready(function () {
         var name = document.createElement("strong")
         name.innerText = candidate.displayName
         content.appendChild(name)
-        var status = document.createElement("small")
-        status.innerText = candidate.status
-        content.appendChild(status)
+        if (candidate.onlyTeamMember) {
+            var role = document.createElement("em")
+            role.className = "team-candidate__role"
+            role.innerText = "仅 Team Member"
+            content.appendChild(role)
+        }
+        if (candidate.status !== "AVAILABLE") {
+            var status = document.createElement("small")
+            var statusLabels = {
+                BUSINESS_COMMANDS_NOT_READY: "业务命令未就绪",
+                DISCOVERY_STALE: "discovery 已过期",
+                TRANSPORT_UNREACHABLE: "transport 不可达",
+                DISCOVERY_UNSUPPORTED: candidate.remark
+            }
+            status.innerText = statusLabels[candidate.status] || candidate.status
+            content.appendChild(status)
+        }
+        if (candidate.remark && candidate.status !== "DISCOVERY_UNSUPPORTED") {
+            var remark = document.createElement("small")
+            remark.innerText = candidate.remark
+            content.appendChild(remark)
+        }
         wrapper.appendChild(content)
         return wrapper
+    }
+
+    var hasAvailablePlacement = function () {
+        var counts = candidates.filter(function (candidate) {
+            return candidate.status === "AVAILABLE"
+        }).reduce(function (groups, candidate) {
+            var key = candidate.cmdProxyInstanceId + "\n" + candidate.transportGroup
+            groups[key] = (groups[key] || 0) + 1
+            return groups
+        }, {})
+        return Object.keys(counts).some(function (key) {
+            return counts[key] >= 2
+        })
     }
 
     $("#createTeamBtn").on("click", function () {
@@ -413,8 +471,9 @@ $(document).ready(function () {
                 "Fast Team连接正在恢复，这不代表普通ACP离线", "info")
             return
         }
-        if (candidates.length < 2) {
-            swal("暂时无法发起 Team", "至少需要 2 个可用的 ACP robot", "info")
+        if (!hasAvailablePlacement()) {
+            swal("暂时无法发起 Team",
+                "至少需要同一 cmd-proxy 实例中的 2 个可用 ACP robot", "info")
             return
         }
 
@@ -452,6 +511,15 @@ $(document).ready(function () {
                 ".team-candidate__check:checked").length
             if (selectedCount < 2 || selectedCount > 6) {
                 showToast("请选择 2~6 个成员", 1200)
+                return false
+            }
+            var selectedPlacements = new Set(Array.from(form.querySelectorAll(
+                ".team-candidate__check:checked")).map(function (checkbox) {
+                var candidate = candidates[Number(checkbox.value)]
+                return candidate.cmdProxyInstanceId + "\n" + candidate.transportGroup
+            }))
+            if (selectedPlacements.size !== 1) {
+                showToast("成员必须来自同一个 cmd-proxy 实例", 1500)
                 return false
             }
             return true
@@ -500,6 +568,8 @@ $(document).ready(function () {
             name: name,
             members: selected.map(function (candidate) {
                 return {
+                    cmdProxyInstanceId: candidate.cmdProxyInstanceId,
+                    transportGroup: candidate.transportGroup,
                     sourceRobotId: candidate.sourceRobotId,
                     sourceGroupId: candidate.sourceGroupId
                 }

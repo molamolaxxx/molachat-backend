@@ -358,6 +358,18 @@ body {
     white-space: nowrap;
 }
 
+.team-candidate__role {
+    align-self: flex-start;
+    margin-top: .25rem;
+    border-radius: .7rem;
+    background: #eef0ff;
+    color: #4f5db3;
+    font-size: .78rem;
+    font-style: normal;
+    line-height: 1.4;
+    padding: .05rem .5rem;
+}
+
 .team-candidate__content small {
     margin-top: .25rem;
     color: #92949c;

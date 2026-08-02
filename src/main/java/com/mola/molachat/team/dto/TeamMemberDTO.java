@@ -7,6 +7,10 @@ public class TeamMemberDTO {
 
     private String cmdProxyInstanceId;
 
+    private String transportGroup;
+
+    private String ownerChatterId;
+
     private String teamMemberId;
 
     private String acpClientId;
@@ -28,6 +32,10 @@ public class TeamMemberDTO {
     private Integer order;
 
     private String remark;
+
+    private Boolean onlyTeamMember;
+
+    private Boolean discoverySupported;
 
     private String sessionId;
 

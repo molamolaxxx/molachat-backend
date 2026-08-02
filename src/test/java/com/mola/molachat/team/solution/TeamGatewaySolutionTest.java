@@ -182,30 +182,103 @@ public class TeamGatewaySolutionTest {
     }
 
     @Test
-    public void candidatesComeOnlyFromBoundInstanceSnapshot() {
+    public void candidatesComeFromEveryInstanceTeamDiscoveryForSameOwner() {
         gatewaySolution.updateDiscovery(discoveryResult("linux", true,
-                "[{\"name\":\"Linux Robot\",\"avatar\":\"linux.png\"}]"));
+                sources("owner", "linux", false)));
         gatewaySolution.updateDiscovery(discoveryResult("windows", true,
-                "[{\"name\":\"Windows Robot\",\"avatar\":\"windows.png\"}]"));
-        when(teamCommandTransport.send(eq("acpTeamList"),
-                eq("team-acp-linux"), anyString()))
-                .thenReturn(acceptedResult("{\"teams\":[{\"teamId\":\"team-linux\","
-                        + "\"ownerChatterId\":\"owner\",\"state\":\"READY\","
-                        + "\"version\":1,\"members\":[]}]}"));
-        when(teamCommandTransport.send(eq("acpTeamList"),
-                eq("team-acp-windows"), anyString()))
-                .thenReturn(acceptedResult("{\"teams\":[]}"));
+                sources("owner", "windows", true)));
 
-        assertEquals(1, gatewaySolution.listCandidates("owner").size());
+        assertEquals(2, gatewaySolution.listCandidates("owner").size());
         assertEquals("linux", gatewaySolution.listCandidates("owner").get(0)
                 .getCmdProxyInstanceId());
-        assertEquals("acp-Linux_Robot", gatewaySolution.listCandidates("owner").get(0)
+        assertEquals("source-linux-1", gatewaySolution.listCandidates("owner").get(0)
                 .getSourceRobotId());
+        assertEquals(Boolean.TRUE, gatewaySolution.listCandidates("owner").get(1)
+                .getOnlyTeamMember());
+    }
+
+    @Test
+    public void candidatesAreFilteredBySourceOwner() {
+        gatewaySolution.updateDiscovery(discoveryResult("linux", true,
+                sources("another-owner", "linux", false)));
+
+        assertEquals(0, gatewaySolution.listCandidates("owner").size());
+    }
+
+    @Test
+    public void oldProtocolIsExplicitAndNeverFallsBackToRobots() {
+        Map<String, String> result = discoveryResult("legacy", true, null);
+        result.put("robots", "[{\"name\":\"must-not-leak\"}]");
+        gatewaySolution.updateDiscovery(result);
+
+        assertEquals(1, gatewaySolution.listCandidates("owner").size());
+        assertEquals("DISCOVERY_UNSUPPORTED",
+                gatewaySolution.listCandidates("owner").get(0).getStatus());
+        assertNull(gatewaySolution.listCandidates("owner").get(0).getSourceRobotId());
+    }
+
+    @Test
+    public void notReadyInstanceKeepsSourceButRejectsPlacement() {
+        gatewaySolution.updateDiscovery(discoveryResult("linux", false,
+                sources("owner", "linux", true)));
+
+        assertEquals("BUSINESS_COMMANDS_NOT_READY",
+                gatewaySolution.listCandidates("owner").get(0).getStatus());
+        try {
+            gatewaySolution.create(createRequest("linux"));
+            fail("not ready placement must be rejected");
+        } catch (TeamCommandException expected) {
+            assertEquals("TEAM_NOT_READY", expected.getCode());
+        }
+    }
+
+    @Test
+    public void staleDiscoveryKeepsSourceButRejectsPlacement() throws Exception {
+        gatewaySolution.updateDiscovery(discoveryResult("linux", true,
+                twoSources("owner", "linux")));
+        java.lang.reflect.Field discoveriesField = TeamGatewaySolution.class
+                .getDeclaredField("discoveries");
+        discoveriesField.setAccessible(true);
+        Object registration = ((Map<?, ?>) discoveriesField.get(gatewaySolution)).get("linux");
+        java.lang.reflect.Field lastSeenAt = registration.getClass()
+                .getDeclaredField("lastSeenAt");
+        lastSeenAt.setAccessible(true);
+        lastSeenAt.setLong(registration, 0L);
+
+        assertEquals("DISCOVERY_STALE",
+                gatewaySolution.listCandidates("owner").get(0).getStatus());
+        try {
+            gatewaySolution.create(createRequest("linux"));
+            fail("stale placement must be rejected");
+        } catch (TeamCommandException expected) {
+            assertEquals("TEAM_NOT_READY", expected.getCode());
+        }
+    }
+
+    @Test
+    public void unreachableTransportDoesNotClearExistingSnapshot() {
+        gatewaySolution.updateDiscovery(discoveryResult("linux", true,
+                twoSources("owner", "linux")));
+        when(teamCommandTransport.send(eq("acpTeamList"),
+                eq("team-acp-linux"), anyString())).thenReturn(null);
+
+        try {
+            gatewaySolution.list("owner");
+            fail("unreachable transport must fail the live refresh");
+        } catch (TeamCommandException expected) {
+            assertEquals("INTERNAL_ERROR", expected.getCode());
+        }
+
+        assertEquals("TRANSPORT_UNREACHABLE",
+                gatewaySolution.listCandidates("owner").get(0).getStatus());
+        org.mockito.Mockito.verify(teamSnapshotSolution, org.mockito.Mockito.never())
+                .replaceAll(eq("owner"), org.mockito.ArgumentMatchers.anyList());
     }
 
     @Test
     public void createDerivesStableIdsFromRequestIdForSafeHttpRetry() {
-        gatewaySolution.updateDiscovery(discoveryResult(true));
+        gatewaySolution.updateDiscovery(discoveryResult("instance-1", true,
+                twoSources("owner", "instance-1")));
         TeamCreateRequest request = createRequest();
         when(teamCommandTransport.send(eq("acpTeamCreate"),
                 eq("team-acp-instance-1"), anyString()))
@@ -220,6 +293,23 @@ public class TeamGatewaySolutionTest {
         verify(teamCommandTransport, org.mockito.Mockito.times(2)).send(
                 eq("acpTeamCreate"), eq("team-acp-instance-1"), payloadCaptor.capture());
         assertEquals(payloadCaptor.getAllValues().get(0), payloadCaptor.getAllValues().get(1));
+    }
+
+    @Test
+    public void createRoutesToSelectedInstanceTransport() {
+        gatewaySolution.updateDiscovery(discoveryResult("linux", true,
+                twoSources("owner", "linux")));
+        gatewaySolution.updateDiscovery(discoveryResult("windows", true,
+                twoSources("owner", "windows")));
+        when(teamCommandTransport.send(eq("acpTeamCreate"),
+                eq("team-acp-windows"), anyString()))
+                .thenReturn(acceptedResult("{\"teamId\":\"team-result\",\"state\":\"CREATING\","
+                        + "\"version\":1,\"members\":[]}"));
+
+        gatewaySolution.create(createRequest("windows"));
+
+        verify(teamCommandTransport).send(eq("acpTeamCreate"),
+                eq("team-acp-windows"), anyString());
     }
 
     @Test
@@ -253,13 +343,13 @@ public class TeamGatewaySolutionTest {
     }
 
     private Map<String, String> discoveryResult(String instanceId, boolean ready,
-                                                 String robots) {
+                                                 String teamMemberSources) {
         Map<String, String> result = new HashMap<>();
         result.put("teamSchemaVersion", "1");
         result.put("teamCmdProxyInstanceId", instanceId);
         result.put("teamTransportGroup", "team-acp-" + instanceId);
         result.put("visibleChatterIds", "[\"owner\"]");
-        result.put("robots", robots);
+        result.put("robots", "[]");
         String commands = ready
                 ? "[\"acpTeamDescribe\",\"acpTeamCreate\",\"acpTeamList\",\"acpTeamGet\","
                     + "\"acpTeamDelete\",\"acpTeamMemoryDream\"]"
@@ -273,6 +363,8 @@ public class TeamGatewaySolutionTest {
                 + "\"eventCommand\":\"acpTeamEvent\","
                 + "\"businessCommandsReady\":" + ready + ","
                 + "\"commands\":" + commands
+                + (teamMemberSources == null ? ""
+                    : ",\"teamMemberSources\":" + teamMemberSources)
                 + "}");
         return result;
     }
@@ -290,18 +382,44 @@ public class TeamGatewaySolutionTest {
     }
 
     private TeamCreateRequest createRequest() {
+        return createRequest("instance-1");
+    }
+
+    private TeamCreateRequest createRequest(String instanceId) {
         TeamCreateRequest request = new TeamCreateRequest();
         request.setChatterId("owner");
         request.setToken("token");
         request.setRequestId("request-1");
         request.setName("Fast");
         TeamCreateMemberRequest first = new TeamCreateMemberRequest();
-        first.setSourceRobotId("acp-first");
-        first.setSourceGroupId("first-group");
+        first.setCmdProxyInstanceId(instanceId);
+        first.setTransportGroup("team-acp-" + instanceId);
+        first.setSourceRobotId("source-" + instanceId + "-1");
+        first.setSourceGroupId("group-" + instanceId + "-1");
         TeamCreateMemberRequest second = new TeamCreateMemberRequest();
-        second.setSourceRobotId("acp-second");
-        second.setSourceGroupId("second-group");
+        second.setCmdProxyInstanceId(instanceId);
+        second.setTransportGroup("team-acp-" + instanceId);
+        second.setSourceRobotId("source-" + instanceId + "-2");
+        second.setSourceGroupId("group-" + instanceId + "-2");
         request.setMembers(java.util.Arrays.asList(first, second));
         return request;
+    }
+
+    private String sources(String owner, String instanceId, boolean onlyTeamMember) {
+        return "[{\"ownerChatterId\":\"" + owner + "\","
+                + "\"sourceGroupId\":\"group-" + instanceId + "-1\","
+                + "\"sourceRobotId\":\"source-" + instanceId + "-1\","
+                + "\"robotName\":\"Robot " + instanceId + "\","
+                + "\"displayName\":\"Robot " + instanceId + "\","
+                + "\"onlyTeamMember\":" + onlyTeamMember + "}]";
+    }
+
+    private String twoSources(String owner, String instanceId) {
+        return sources(owner, instanceId, false).replace("]", ",{"
+                + "\"ownerChatterId\":\"" + owner + "\","
+                + "\"sourceGroupId\":\"group-" + instanceId + "-2\","
+                + "\"sourceRobotId\":\"source-" + instanceId + "-2\","
+                + "\"robotName\":\"Robot 2\",\"displayName\":\"Robot 2\","
+                + "\"onlyTeamMember\":true}]");
     }
 }

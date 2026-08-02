@@ -23,4 +23,7 @@ public class TeamDiscoveryDTO {
     private boolean businessCommandsReady;
 
     private List<String> commands = new ArrayList<>();
+
+    /** null 表示旧 cmd-proxy 尚未实现 Team 来源发现。 */
+    private List<TeamMemberSourceDTO> teamMemberSources;
 }

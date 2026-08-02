@@ -46,7 +46,7 @@ public class TeamController {
         }
         try {
             return ServerResponse.createBySuccess(
-                    teamGatewaySolution.getDiscovery(chatterId));
+                    teamGatewaySolution.getPlacementCapability(chatterId));
         } catch (TeamCommandException e) {
             return commandError(e, response);
         }

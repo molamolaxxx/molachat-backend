@@ -8,6 +8,12 @@ import javax.validation.constraints.NotBlank;
 public class TeamCreateMemberRequest {
 
     @NotBlank
+    private String cmdProxyInstanceId;
+
+    @NotBlank
+    private String transportGroup;
+
+    @NotBlank
     private String sourceRobotId;
 
     @NotBlank
