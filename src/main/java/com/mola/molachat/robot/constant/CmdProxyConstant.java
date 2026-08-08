@@ -10,6 +10,8 @@ public class CmdProxyConstant {
 
     public static final String ACP = "acp";
 
+    public static final String ACP_SESSION_CHANGED = "acpSessionChanged";
+
     public static final String IMAGE_GENERATE = "imageGenerate";
 
     public static final String CROSS_TALK_TO = "crossTalkTo";

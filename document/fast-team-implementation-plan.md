@@ -1,9 +1,9 @@
 # Fast Team 技术实施方案
 
-> 状态：设计中  
+> 状态：V1 已实现；本机与 Remote ACP 混选 MVP 待实施
 > 共同维护：MolaChat / Code Cmd Dev  
 > 主文档唯一合并者：MolaChat 侧 Agent  
-> 最后更新：2026-07-30
+> 最后更新：2026-08-08
 
 ## 1. 文档维护规则
 
@@ -13,6 +13,19 @@
 - 功能实施时必须同步更新第 7 节进度表；状态只能使用：`未开始`、`进行中`、`已完成`、`阻塞`。
 - `已完成` 必须同时满足：代码完成、责任方测试通过、本文“完成证据”列写入测试命令或结果。
 - 公共接口或模型变更必须先更新第 4 节契约，再分别改代码，防止两端各自猜测字段。
+
+### 1.1 2026-08-08 Remote ACP 混选 MVP 基线
+
+最新、唯一实施方案见 [`fast-team-remote-mixed-mvp.md`](fast-team-remote-mixed-mvp.md)。此前“整队放到 remote、owner 单活 placement”的方案已废弃。本轮冻结边界如下：
+
+1. 纯本机 `1~6` 人 Team 继续走现有 V1。
+2. 混选 Team 必须至少包含一个可信本机 ACP 和一个 remote ACP；remote 可来自多个不同 cmd-proxy；remote-only 禁止。
+3. MolaChat 用现有 KeyValue 持久化轻量 MixedTeamRecord，作为混选 Team 全局 placement、状态和补偿进度权威；MVP 限定单 MolaChat 协调进程。
+4. 每个 cmd-proxy 复用现有 V1 TeamDefinition/TeamManager 作为本地 fragment，只启动本实例成员，并持久化不含凭据的全队最小 roster。
+5. create 在首次 RPC 前落全局 CREATING 记录，按实例分发幂等 acpTeamCreate；任一失败调用现有 delete 补偿，无法清理时进入 PENDING_CLEANUP。
+6. member 命令按 `teamId + teamMemberId -> participant transport` 精确路由；list/get 以全局记录为基线定向刷新 participants。
+7. 跨实例 talkTo 通过 `TALK_TO_ROUTE_REQUEST` event 和 `acpTeamTalkToDeliver` 目标命令路由，不回退普通 crossTalkTo。
+8. 延后专用 CAS Store、多 MolaChat 节点、两阶段提交、fragmentId、epoch/fencing、来源配对、部分离线继续工作和自动 reaper。
 
 ## 2. V1 已确认决策
 
@@ -265,7 +278,7 @@ MolaChat 不新增 TeamDefinition 数据库表。Teams 弹框打开、重连或�
 
 ### 5.3 创建 Team
 
-- 前端多选 2~6 个成员并填写 trim 后 1~40 字符队名。
+- 前端选择 1~6 个成员并填写 trim 后 1~40 字符队名；单成员仍创建真正的 Team，不降级为普通 ACP 会话。
 - MolaChat 生成 requestId/teamId/teamMemberId 和用户选择顺序。
 - cmd-proxy 校验归属、幂等、配额与来源配置，持久化 CREATING 占位。
 - 受控并行创建独立 Team clients；除 talkTo contacts 外完整继承普通 ACP 配置。
@@ -437,6 +450,12 @@ cmd-proxy 测试至少新增 TeamManager、TeamStore、幂等、生命周期竞�
 | FT-021 | 验证 | 并发、重启、100 次资源回收与普通 ACP 回归 | Code Cmd Dev | 已完成 | FT-020 | 配额原子性、删除竞态、100 次 create→delete 五类资源逐轮归零；cmdproxy 96/96、package/fat-jar 通过 | 2026-07-30 |
 | FT-022 | 验证 | UI 桌面/移动端、Session、鉴权与事件回归 | MolaChat | 进行中 | FT-020 | dev HTTPS 8550 启动成功，index/team.js 200 且哈希一致；待登录后桌面/移动交互与业务事件回归 | 2026-07-30 |
 | FT-023 | 部署 | MolaChat 静态资源同步和 SHA-256 校验 | MolaChat | 已完成 | FT-022 | 首批 5 个文件已同步；本轮 team.js/styles.css 再同步并逐项 SHA-256 一致，目标 team.js 语法通过 | 2026-07-30 |
+| FT-028 | Mixed MVP 契约 | 本机 + N 个 remote 混选、remote-only 禁止与轻量 fragment/saga | 双方 | 已完成 | FT-020 | 用户确认 1A+2B；双方重写 mixed MVP 专项文档，旧整队 remote A 方案废弃 | 2026-08-08 |
+| FT-029 | Mixed 全局记录 | MixedTeamRecord/Store、placement、状态与重启恢复 | MolaChat | 未开始 | FT-028 | 复用现有 KeyValue；限定单 MolaChat 协调进程 | 2026-08-08 |
+| FT-030 | Mixed 创建删除 | 多 participant create、失败补偿、删除屏障与 PENDING_CLEANUP | 双方 | 未开始 | FT-029 | 扩展 acpTeamCreate roster；复用幂等 acpTeamDelete | 2026-08-08 |
+| FT-031 | Mixed 路由事件 | member 精确选路、participant event 聚合、跨实例 talkTo deliver | 双方 | 未开始 | FT-029、FT-030 | 新增 TALK_TO_ROUTE_REQUEST 与 acpTeamTalkToDeliver | 2026-08-08 |
+| FT-032 | Mixed 前端 | 跨 placement 多选、本机+remote 校验、remote-only 门禁 | MolaChat | 未开始 | FT-028 | 隐藏 raw 实例标识，纯本机 V1 保持不变 | 2026-08-08 |
+| FT-033 | Mixed 联调 | 多 remote 创建、补偿、消息、talkTo、删除、重启与 V1 回归 | 双方 | 未开始 | FT-030～FT-032 | 覆盖本机 + 两个 remote 实例和 12 项专项验收 | 2026-08-08 |
 
 ### 7.1 cmd-proxy 细分进度来源
 
@@ -481,7 +500,7 @@ cmd-proxy 进度来源文件：
 
 ## 10. V1 非目标
 
-- 跨 cmd-proxy 实例组队。
+- 单支 Team 混合多个 cmd-proxy 实例成员。
 - Team/member 动态 RPC group。
 - Team 聚合时间线。
 - 广播、队长、单成员离队、成员增删。

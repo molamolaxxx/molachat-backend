@@ -47,4 +47,9 @@ public class WSResponseCode {
      * 命令二次确认弹窗
      */
     public static final int CMD_CONFIRM = 488;
+
+    /**
+     * 普通ACP内部会话已切换
+     */
+    public static final int ACP_SESSION_CHANGED = 489;
 }

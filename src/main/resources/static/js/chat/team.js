@@ -461,7 +461,7 @@ $(document).ready(function () {
             return groups
         }, {})
         return Object.keys(counts).some(function (key) {
-            return counts[key] >= 2
+            return counts[key] >= 1
         })
     }
 
@@ -473,7 +473,7 @@ $(document).ready(function () {
         }
         if (!hasAvailablePlacement()) {
             swal("暂时无法发起 Team",
-                "至少需要同一 cmd-proxy 实例中的 2 个可用 ACP robot", "info")
+                "至少需要同一 cmd-proxy 实例中的 1 个可用 ACP robot", "info")
             return
         }
 
@@ -509,8 +509,8 @@ $(document).ready(function () {
             }
             var selectedCount = form.querySelectorAll(
                 ".team-candidate__check:checked").length
-            if (selectedCount < 2 || selectedCount > 6) {
-                showToast("请选择 2~6 个成员", 1200)
+            if (selectedCount < 1 || selectedCount > 6) {
+                showToast("请选择 1~6 个成员", 1200)
                 return false
             }
             var selectedPlacements = new Set(Array.from(form.querySelectorAll(

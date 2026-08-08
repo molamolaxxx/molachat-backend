@@ -53,6 +53,9 @@ public class CmdProxyCallbackSolution implements InitializingBean {
     private AcpRobotSyncSolution acpRobotSyncSolution;
 
     @Resource
+    private AcpSessionChangedSolution acpSessionChangedSolution;
+
+    @Resource
     private SessionFactoryInterface sessionFactory;
 
     @Resource
@@ -70,7 +73,17 @@ public class CmdProxyCallbackSolution implements InitializingBean {
         registerAcpCallback();
         // acp机器人同步
         registerAcpSyncRobotsCallback();
+        registerAcpSessionChangedCallback();
         ensureAcpSyncRecovery();
+    }
+
+    public void registerAcpSessionChangedCallback() {
+        CmdSender.INSTANCE.registerCallback(
+                CmdProxyConstant.ACP_SESSION_CHANGED, CmdProxyConstant.ACP,
+                res -> {
+                    acpSessionChangedSolution.handle(res.getResultMap());
+                    return Unit.INSTANCE;
+                });
     }
 
     public void registerAcpCallback() {

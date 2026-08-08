@@ -10,6 +10,7 @@ $(document).ready(function () {
     const VIDEO_REQUEST = 378;
     const VIDEO_RESPONSE = 379;
     const CMD_CONFIRM = 488;
+    const ACP_SESSION_CHANGED = 489;
 
     //唯一用户标识
     var chatterId;
@@ -601,6 +602,8 @@ $(document).ready(function () {
             } else if (result.code == CMD_CONFIRM) {
                 // 命令二次确认弹窗
                 showCmdConfirmDialog(result.data)
+            } else if (result.code == ACP_SESSION_CHANGED) {
+                handleAcpSessionChanged(result.data)
             }
             // console.info(result);
         };

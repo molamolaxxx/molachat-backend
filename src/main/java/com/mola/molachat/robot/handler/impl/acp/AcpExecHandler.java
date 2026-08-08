@@ -9,11 +9,15 @@ import com.mola.molachat.common.event.action.BaseAction;
 import com.mola.molachat.chatter.data.ChatterFactoryInterface;
 import com.mola.molachat.chatter.model.Chatter;
 import com.mola.molachat.chatter.model.RobotChatter;
+import com.mola.molachat.chatter.dto.ChatterDTO;
+import com.mola.molachat.chatter.enums.ChatterStatusEnum;
+import com.mola.molachat.chatter.service.ChatterService;
 import com.mola.molachat.robot.action.MessageSendAction;
 import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.robot.model.CmdDescription;
+import com.mola.molachat.robot.solution.AcpRuntimeStatusSolution;
 import com.mola.molachat.session.dto.SessionDTO;
 import com.mola.molachat.session.model.FileMessage;
 import com.mola.molachat.session.model.Message;
@@ -63,6 +67,12 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
     @Resource
     private ChatterFactoryInterface chatterFactory;
 
+    @Resource
+    private ChatterService chatterService;
+
+    @Resource
+    private AcpRuntimeStatusSolution acpRuntimeStatusSolution;
+
     private static final String FILE_DOWNLOAD_BASE_URL = "https://106.54.193.10:8550/chat/files/";
 
     @Override
@@ -90,6 +100,7 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
         // 处理清除会话命令
         if (CMD_NEW_SESSION.equals(userMessage)) {
+            markAcpTransitioning(messageReceiveEvent.getRobotChatter().getId());
             return invokeAcpCmd("acpNewSession", sessionId);
         }
 
@@ -106,6 +117,7 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
         // 处理恢复会话命令，格式: #restore-session# <sessionId>
         if (userMessage.startsWith(CMD_RESTORE_SESSION)) {
             String targetSessionId = userMessage.substring(CMD_RESTORE_SESSION.length()).trim();
+            markAcpTransitioning(messageReceiveEvent.getRobotChatter().getId());
             return invokeRestoreSession(sessionId, targetSessionId);
         }
 
@@ -290,23 +302,15 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
      * @return 状态字符串，如 READY、BUSY 等，获取失败时返回 UNKNOWN
      */
     private String getAcpStatus(String sessionId) {
-        try {
-            Map<String, String> paramMap = new HashMap<>();
-            paramMap.put("groupId", sessionId);
-            String paramJson = JSON.toJSONString(paramMap);
+        return acpRuntimeStatusSolution.getStatus(sessionId);
+    }
 
-            CmdInvokeResponse<CmdResponseContent> response = CmdSender.INSTANCE
-                    .send("acpGetStatus", sessionId, new String[]{paramJson});
-            if (response != null && response.getData() != null) {
-                String result = response.getData().getResultMap().get("result");
-                if (result != null) {
-                    return result;
-                }
-            }
-        } catch (Exception e) {
-            log.error("AcpExecHandler 获取ACP状态失败, sessionId={}", sessionId, e);
+    void markAcpTransitioning(String robotId) {
+        ChatterDTO chatter = chatterService.selectById(robotId);
+        if (chatter != null
+                && !ChatterStatusEnum.DISCONNECT.getCode().equals(chatter.getStatus())) {
+            chatterService.setChatterStatus(robotId, ChatterStatusEnum.DISCONNECT.getCode());
         }
-        return "UNKNOWN";
     }
 
     @Override

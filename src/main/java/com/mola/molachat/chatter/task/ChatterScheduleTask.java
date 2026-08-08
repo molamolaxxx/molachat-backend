@@ -11,6 +11,8 @@ import com.mola.molachat.chatter.enums.ChatterStatusEnum;
 import com.mola.molachat.chatter.enums.ChatterTagEnum;
 import com.mola.molachat.chatter.service.ChatterService;
 import com.mola.molachat.robot.solution.RobotSolution;
+import com.mola.molachat.robot.solution.AcpRuntimeStatusSolution;
+import com.mola.molachat.team.solution.TeamGatewaySolution;
 import com.mola.molachat.common.utils.BeanUtilsPlug;
 import com.mola.molachat.common.utils.KvUtils;
 import com.mola.rpc.core.remoting.netty.pool.ChannelWrapper;
@@ -53,6 +55,12 @@ public class ChatterScheduleTask {
 
     @Resource
     private KvUtils kvUtils;
+
+    @Resource
+    private TeamGatewaySolution teamGatewaySolution;
+
+    @Resource
+    private AcpRuntimeStatusSolution acpRuntimeStatusSolution;
 
     /**
      * 检查chatter最后在线时间，删除长时间不在线的chatter
@@ -98,6 +106,10 @@ public class ChatterScheduleTask {
             if (!chatter.isRobot()) {
                 continue;
             }
+            if (CmdProxyConstant.ACP.equals(chatter.getRobotGroup())) {
+                syncAcpStatus(chatter);
+                continue;
+            }
             // chatgpt反向代理，代理状态同步chatter状态
             boolean requireSyncProxyStatusToChatter = Objects.equals(chatter.getEventBusBeanName(),
                     "chatGptRobotEventBus") || Objects.equals(chatter.getEventBusBeanName(),
@@ -127,6 +139,21 @@ public class ChatterScheduleTask {
                     queue.clear();
                 }
             }
+        }
+    }
+
+    private void syncAcpStatus(ChatterDTO chatter) {
+        List<String> groupIds = teamGatewaySolution.findAcpSourceGroupIds(
+                chatter.getId(), chatter.getVisibleChatterIds());
+        boolean available = groupIds.isEmpty()
+                ? teamGatewaySolution.isAcpSourceAvailable(
+                        chatter.getId(), chatter.getVisibleChatterIds())
+                : groupIds.stream().anyMatch(acpRuntimeStatusSolution::isOnline);
+        int targetStatus = available
+                ? ChatterStatusEnum.ONLINE.getCode()
+                : ChatterStatusEnum.DISCONNECT.getCode();
+        if (!Objects.equals(chatter.getStatus(), targetStatus)) {
+            chatterService.setChatterStatus(chatter.getId(), targetStatus);
         }
     }
 

@@ -120,6 +120,64 @@ public class TeamGatewaySolution {
                 .anyMatch(registration -> registration.discovery.isBusinessCommandsReady());
     }
 
+    /**
+     * 使用cmd-proxy实例身份和普通ACP路由组联合定位来源，避免多实例之间串事件。
+     */
+    public TeamMemberSourceDTO findAcpSource(String instanceId, String sourceGroupId) {
+        if (StringUtils.isBlank(instanceId) || StringUtils.isBlank(sourceGroupId)) {
+            return null;
+        }
+        DiscoveryRegistration registration = discoveries.get(instanceId);
+        if (registration == null || !isActive(registration)
+                || registration.discovery.getTeamMemberSources() == null) {
+            return null;
+        }
+        return registration.discovery.getTeamMemberSources().stream()
+                .filter(source -> source != null
+                        && sourceGroupId.equals(source.getSourceGroupId()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * 普通ACP联系人是否仍有精确匹配且活跃的cmd-proxy来源。
+     */
+    public boolean isAcpSourceAvailable(String sourceRobotId, Set<String> ownerChatterIds) {
+        if (StringUtils.isBlank(sourceRobotId)) {
+            return false;
+        }
+        return discoveries.values().stream()
+                .filter(this::isActive)
+                .filter(registration -> registration.transportReachable)
+                .filter(registration -> registration.discovery.getTeamMemberSources() != null)
+                .flatMap(registration -> registration.discovery.getTeamMemberSources().stream())
+                .filter(source -> source != null
+                        && sourceRobotId.equals(source.getSourceRobotId()))
+                .anyMatch(source -> ownerChatterIds == null || ownerChatterIds.isEmpty()
+                        || ownerChatterIds.contains(source.getOwnerChatterId()));
+    }
+
+    /**
+     * 返回普通ACP机器人的精确路由组；保留最近发现的来源，以便实例刚失联时仍可主动探测。
+     */
+    public List<String> findAcpSourceGroupIds(String sourceRobotId,
+                                               Set<String> ownerChatterIds) {
+        if (StringUtils.isBlank(sourceRobotId)) {
+            return Collections.emptyList();
+        }
+        return discoveries.values().stream()
+                .filter(registration -> registration.discovery.getTeamMemberSources() != null)
+                .flatMap(registration -> registration.discovery.getTeamMemberSources().stream())
+                .filter(source -> source != null
+                        && sourceRobotId.equals(source.getSourceRobotId()))
+                .filter(source -> ownerChatterIds == null || ownerChatterIds.isEmpty()
+                        || ownerChatterIds.contains(source.getOwnerChatterId()))
+                .map(TeamMemberSourceDTO::getSourceGroupId)
+                .filter(StringUtils::isNotBlank)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
     public TeamDTO create(TeamCreateRequest request) {
         DiscoveryRegistration registration = resolvePlacement(request);
         JSONObject payload = new JSONObject();

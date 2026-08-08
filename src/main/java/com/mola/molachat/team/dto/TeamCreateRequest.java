@@ -25,6 +25,6 @@ public class TeamCreateRequest {
     private String name;
 
     @Valid
-    @Size(min = 2, max = 6)
+    @Size(min = 1, max = 6)
     private List<TeamCreateMemberRequest> members = new ArrayList<>();
 }

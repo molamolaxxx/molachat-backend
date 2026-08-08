@@ -1,16 +1,18 @@
 # Fast Team 跨 Chatter 多运行时技术方案
 
-> 状态：技术方案与双方分工已完成，暂不实施
+> 状态：后续 V2 储备方案，非当前实施基线
 >
 > 目标版本：Fast Team V2
 >
 > 共同维护：MolaChat / Code Cmd Dev
 >
-> 最后更新：2026-08-01
+> 最后更新：2026-08-08
 >
 > 实施约束：本文当前仅用于方案与工作项拆分，不授权任何一方实施代码、部署或数据迁移
 >
 > 双方最终评审结论：选择 MolaChat 全局权威（方案 A）；“本机 cmd-proxy Coordinator 全局权威”（方案 B）已由 cmd-proxy 侧明确撤回
+
+> 2026-08-08 需求纠正：用户明确要求本机 ACP 与一个或多个 remote cmd-proxy ACP 混选，并禁止 remote-only。当前唯一 MVP 基线改为 [`fast-team-remote-mixed-mvp.md`](fast-team-remote-mixed-mvp.md)。该 MVP 保留本文“全局 placement、本地 fragment、失败补偿”三项必要语义，但延后专用 CAS Store、两阶段提交、fragmentId、instanceEpoch/fencing、来源配对和多节点高可用。本文继续作为后续完整 V2 增强参考。
 
 ## 1. 背景与目标
 

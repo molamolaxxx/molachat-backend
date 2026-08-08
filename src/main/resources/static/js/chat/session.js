@@ -88,6 +88,31 @@ $(document).ready(function () {
             refreshTeamActivityIndicators()
         }
     }
+    handleAcpSessionChanged = function(data) {
+        if (!data || !data.groupId) {
+            return
+        }
+        var dom = streamMessageMap.get(data.groupId)
+        if (dom) {
+            clearTimeout(dom.streamLoadingTimer)
+            $(dom).remove()
+        }
+        streamMessageMap.delete(data.groupId)
+        streamMessageMap.delete("cache_" + data.groupId)
+        if (data.sourceRobotId) {
+            streamingChatterIds.delete(data.sourceRobotId)
+            var idx = getIndexByChatterId(data.sourceRobotId)
+            if (idx != null) {
+                $($(".contact")[idx]).find(".contact__status").removeClass("streaming")
+            }
+        }
+        if (activeSession && activeSession.sessionId === data.groupId) {
+            $messageViewModel.modal('close')
+        }
+        if (typeof refreshTeamActivityIndicators === "function") {
+            refreshTeamActivityIndicators()
+        }
+    }
     // initChatter重建DOM后调用，重新补上呼吸灯
     reapplyStreamingIndicator = function() {
         streamingChatterIds.forEach(function(chatterId) {
@@ -635,7 +660,7 @@ $(document).ready(function () {
     }
 
     getActiveSessionId = function () {
-        return activeSession.sessionId;
+        return activeSession ? activeSession.sessionId : null;
     }
 
     getActiveChatter = function () {

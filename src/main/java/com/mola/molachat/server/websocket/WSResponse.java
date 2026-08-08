@@ -55,6 +55,10 @@ public class WSResponse<T> implements Serializable {
         return new WSResponse<>(WSResponseCode.CMD_CONFIRM, msg, data);
     }
 
+    public static <T> WSResponse<T> acpSessionChanged(String msg, T data){
+        return new WSResponse<>(WSResponseCode.ACP_SESSION_CHANGED, msg, data);
+    }
+
     private WSResponse(Integer code, String msg, T data){
         this.msg = msg;
         this.code = code;

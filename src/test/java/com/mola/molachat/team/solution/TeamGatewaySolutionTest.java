@@ -19,6 +19,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -87,6 +88,24 @@ public class TeamGatewaySolutionTest {
             assertEquals("TEAM_NOT_READY", expected.getCode());
         }
         assertFalse(gatewaySolution.isBusinessReady());
+    }
+
+    @Test
+    public void acpSourceLookupRequiresMatchingInstanceAndGroup() {
+        gatewaySolution.updateDiscovery(discoveryResult("instance-1", true,
+                "[{\"ownerChatterId\":\"owner\",\"sourceGroupId\":\"group-1\","
+                        + "\"sourceRobotId\":\"acp-codex\"}]"));
+
+        assertNotNull(gatewaySolution.findAcpSource("instance-1", "group-1"));
+        assertNull(gatewaySolution.findAcpSource("instance-other", "group-1"));
+        assertNull(gatewaySolution.findAcpSource("instance-1", "group-other"));
+        assertEquals(true, gatewaySolution.isAcpSourceAvailable(
+                "acp-codex", Collections.singleton("owner")));
+        assertEquals(false, gatewaySolution.isAcpSourceAvailable(
+                "acp-codex", Collections.singleton("other-owner")));
+        assertEquals(Collections.singletonList("group-1"),
+                gatewaySolution.findAcpSourceGroupIds(
+                        "acp-codex", Collections.singleton("owner")));
     }
 
     @Test
