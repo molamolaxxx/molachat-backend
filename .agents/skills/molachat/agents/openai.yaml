@@ -1,0 +1,4 @@
+interface:
+  display_name: "MolaChat 项目助手"
+  short_description: "快速理解 MolaChat、定位故障并安全完成开发回归"
+  default_prompt: "Use $molachat to inspect this MolaChat issue, identify the cause, implement the scoped fix, and verify it."

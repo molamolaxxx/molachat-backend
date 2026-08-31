@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>俄罗斯方块 · HTML 预览测试</title>
+    <style>
+        :root {
+            --cell: clamp(18px, 4.1vw, 31px);
+            --ink: #dff8ff;
+            --panel: rgba(11, 28, 55, .88);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            overflow-x: hidden;
+            color: var(--ink);
+            font-family: Inter, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at 20% 15%, rgba(57, 190, 255, .22), transparent 28%),
+                radial-gradient(circle at 82% 80%, rgba(199, 78, 255, .18), transparent 30%),
+                linear-gradient(145deg, #07111f, #111b3a 55%, #090d20);
+        }
+
+        .game {
+            width: min(94vw, 680px);
+            display: grid;
+            grid-template-columns: calc(var(--cell) * 10) minmax(150px, 1fr);
+            gap: clamp(14px, 4vw, 32px);
+            align-items: start;
+            padding: 28px 0;
+        }
+
+        .board {
+            position: relative;
+            width: calc(var(--cell) * 10);
+            height: calc(var(--cell) * 20);
+            overflow: hidden;
+            border: 3px solid rgba(120, 226, 255, .72);
+            border-radius: 12px;
+            background-color: rgba(3, 12, 30, .92);
+            background-image:
+                linear-gradient(rgba(128, 205, 255, .075) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(128, 205, 255, .075) 1px, transparent 1px);
+            background-size: var(--cell) var(--cell);
+            box-shadow: 0 0 0 5px rgba(33, 174, 232, .09), 0 22px 70px rgba(0, 0, 0, .42);
+        }
+
+        .piece { position: absolute; }
+
+        .block {
+            position: absolute;
+            width: var(--cell);
+            height: var(--cell);
+            border: 2px solid rgba(255, 255, 255, .62);
+            border-radius: 4px;
+            box-shadow: inset 3px 3px 0 rgba(255,255,255,.22), inset -3px -3px 0 rgba(0,0,0,.18);
+        }
+
+        .cyan .block { background: #21d9e8; }
+        .yellow .block { background: #ffd636; }
+        .purple .block { background: #ab64f4; }
+        .blue .block { background: #4277f4; }
+        .orange .block { background: #ff963d; }
+        .green .block { background: #43d17d; }
+        .red .block { background: #f4576c; }
+
+        .falling {
+            left: calc(var(--cell) * 3);
+            top: calc(var(--cell) * 1);
+            animation: fall 3.4s cubic-bezier(.35, .05, .55, .98) infinite;
+            animation-delay: -1.1s;
+        }
+        .falling .block:nth-child(1) { left: var(--cell); }
+        .falling .block:nth-child(2) { top: var(--cell); }
+        .falling .block:nth-child(3) { left: var(--cell); top: var(--cell); }
+        .falling .block:nth-child(4) { left: calc(var(--cell) * 2); top: var(--cell); }
+
+        @keyframes fall {
+            0% { transform: translateY(calc(var(--cell) * -3)); opacity: 0; }
+            12% { opacity: 1; }
+            78% { transform: translateY(calc(var(--cell) * 8)); }
+            84% { transform: translateY(calc(var(--cell) * 7.65)); }
+            92%, 100% { transform: translateY(calc(var(--cell) * 8)); opacity: 1; }
+        }
+
+        .pile-i { left: 0; bottom: var(--cell); }
+        .pile-i .block:nth-child(2) { left: var(--cell); }
+        .pile-i .block:nth-child(3) { left: calc(var(--cell) * 2); }
+        .pile-i .block:nth-child(4) { left: calc(var(--cell) * 3); }
+
+        .pile-o { left: calc(var(--cell) * 4); bottom: var(--cell); }
+        .pile-o .block:nth-child(2) { left: var(--cell); }
+        .pile-o .block:nth-child(3) { top: calc(var(--cell) * -1); }
+        .pile-o .block:nth-child(4) { left: var(--cell); top: calc(var(--cell) * -1); }
+
+        .pile-l { left: calc(var(--cell) * 7); bottom: var(--cell); }
+        .pile-l .block:nth-child(2) { left: var(--cell); }
+        .pile-l .block:nth-child(3) { left: calc(var(--cell) * 2); }
+        .pile-l .block:nth-child(4) { left: calc(var(--cell) * 2); top: calc(var(--cell) * -1); }
+
+        .pile-s { left: calc(var(--cell) * 1); bottom: calc(var(--cell) * 2); }
+        .pile-s .block:nth-child(2) { left: var(--cell); }
+        .pile-s .block:nth-child(3) { left: var(--cell); top: calc(var(--cell) * -1); }
+        .pile-s .block:nth-child(4) { left: calc(var(--cell) * 2); top: calc(var(--cell) * -1); }
+
+        .side { display: grid; gap: 15px; }
+
+        .logo {
+            margin: 0 0 4px;
+            color: #fff;
+            font-size: clamp(28px, 6vw, 44px);
+            line-height: .95;
+            letter-spacing: -.05em;
+            text-shadow: 0 0 24px rgba(47, 210, 255, .65);
+        }
+
+        .logo span { color: #4fe3ff; }
+
+        .card {
+            padding: 15px 17px;
+            border: 1px solid rgba(127, 219, 255, .24);
+            border-radius: 12px;
+            background: var(--panel);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, .2);
+        }
+
+        .label {
+            margin-bottom: 5px;
+            color: #7d9cba;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+        }
+
+        .score { font: 700 27px/1.1 Consolas, monospace; }
+
+        .next {
+            position: relative;
+            height: 72px;
+            margin-top: 8px;
+        }
+
+        .next .block { width: 24px; height: 24px; }
+        .next .block:nth-child(1) { left: 24px; }
+        .next .block:nth-child(2) { top: 24px; }
+        .next .block:nth-child(3) { left: 24px; top: 24px; }
+        .next .block:nth-child(4) { left: 48px; top: 24px; }
+
+        .hint { color: #91abc3; font-size: 12px; line-height: 1.6; }
+
+        @media (max-width: 540px) {
+            body { place-items: start center; }
+            .game { grid-template-columns: calc(var(--cell) * 10); justify-content: center; }
+            .side { grid-template-columns: 1fr 1fr; }
+            .logo { grid-column: 1 / -1; text-align: center; }
+            .hint { grid-column: 1 / -1; }
+        }
+    </style>
+</head>
+<body>
+    <main class="game">
+        <section class="board" aria-label="俄罗斯方块棋盘">
+            <div class="piece purple falling">
+                <i class="block"></i><i class="block"></i><i class="block"></i><i class="block"></i>
+            </div>
+            <div class="piece cyan pile-i">
+                <i class="block"></i><i class="block"></i><i class="block"></i><i class="block"></i>
+            </div>
+            <div class="piece yellow pile-o">
+                <i class="block"></i><i class="block"></i><i class="block"></i><i class="block"></i>
+            </div>
+            <div class="piece orange pile-l">
+                <i class="block"></i><i class="block"></i><i class="block"></i><i class="block"></i>
+            </div>
+            <div class="piece green pile-s">
+                <i class="block"></i><i class="block"></i><i class="block"></i><i class="block"></i>
+            </div>
+        </section>
+
+        <aside class="side">
+            <h1 class="logo">TETR<span>IS</span></h1>
+            <section class="card">
+                <div class="label">Score</div>
+                <div class="score">012480</div>
+            </section>
+            <section class="card">
+                <div class="label">Next</div>
+                <div class="next purple">
+                    <i class="block"></i><i class="block"></i><i class="block"></i><i class="block"></i>
+                </div>
+            </section>
+            <section class="card hint">
+                纯 HTML + CSS 预览测试<br>
+                无 JavaScript，预览沙箱内可直接展示
+            </section>
+        </aside>
+    </main>
+</body>
+</html>
