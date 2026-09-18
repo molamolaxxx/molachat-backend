@@ -16,33 +16,29 @@ public class AcpTransportStatusSolutionTest {
 
     @Test
     public void missingChannelIsDisconnected() {
-        assertFalse(solution.hasConnectedChannel(null, 100_000L));
-        assertFalse(solution.hasConnectedChannel(Collections.emptyMap(), 100_000L));
+        assertFalse(solution.hasConnectedChannel(null));
+        assertFalse(solution.hasConnectedChannel(Collections.emptyMap()));
     }
 
     @Test
-    public void activeChannelWithFreshHeartbeatIsConnected() {
-        ChannelWrapper channel = channel(true, 99_000L);
+    public void channelWrapperAvailabilityIsTheSingleSourceOfTruth() {
+        ChannelWrapper channel = channel(true);
 
         assertTrue(solution.hasConnectedChannel(
-                Collections.singletonMap("proxy", channel), 100_000L));
+                Collections.singletonMap("proxy", channel)));
     }
 
     @Test
-    public void inactiveOrStaleChannelIsDisconnected() {
-        ChannelWrapper inactive = channel(false, 99_000L);
-        ChannelWrapper stale = channel(true, 40_000L);
+    public void inactiveChannelIsDisconnected() {
+        ChannelWrapper inactive = channel(false);
 
         assertFalse(solution.hasConnectedChannel(
-                Collections.singletonMap("inactive", inactive), 100_000L));
-        assertFalse(solution.hasConnectedChannel(
-                Collections.singletonMap("stale", stale), 100_000L));
+                Collections.singletonMap("inactive", inactive)));
     }
 
-    private ChannelWrapper channel(boolean ok, long lastAliveTime) {
+    private ChannelWrapper channel(boolean ok) {
         ChannelWrapper channel = mock(ChannelWrapper.class);
         when(channel.isOk()).thenReturn(ok);
-        when(channel.getLastAliveTime()).thenReturn(lastAliveTime);
         return channel;
     }
 }

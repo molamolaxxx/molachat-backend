@@ -41,7 +41,7 @@
 
     $(document).ready(function () {
         // Materialize appends tooltips to body, whose zoom would scale their screen coordinates twice.
-        $('.material-tooltip').appendTo(document.documentElement)
+        $('.material-tooltip').appendTo(document.documentElement).css('z-index', $('#menu').css('z-index'))
         $('.tooltipped').each(function () {
             var target = this
             var timer

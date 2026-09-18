@@ -684,7 +684,7 @@ $(document).ready(function () {
 
     setActiveChatterImgUrl = function (imgUrl) {
         activeChatter.imgUrl = imgUrl;
-        $("img.cloned")[0].src = imgUrl;
+        $("img.cloned").attr("src", imgUrl);
     }
 
     setActiveChatterSign = function (sign) {

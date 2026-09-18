@@ -95,7 +95,7 @@ public class SessionPreviewSolution {
         boolean truncated = canLoadFullContent && content != null
                 && content.length() > CONTENT_PREVIEW_LENGTH;
         preview.setContentTruncated(truncated);
-        preview.setContent(truncated ? content.substring(0, CONTENT_PREVIEW_LENGTH) : content);
+        preview.setContent(truncated ? truncateWithoutSplittingSurrogatePair(content) : content);
 
         if (message instanceof FileMessage) {
             FileMessage fileMessage = (FileMessage) message;
@@ -105,5 +105,14 @@ public class SessionPreviewSolution {
             preview.setFileStorage(fileMessage.getFileStorage());
         }
         return preview;
+    }
+
+    private String truncateWithoutSplittingSurrogatePair(String content) {
+        int endIndex = CONTENT_PREVIEW_LENGTH;
+        if (Character.isHighSurrogate(content.charAt(endIndex - 1))
+                && Character.isLowSurrogate(content.charAt(endIndex))) {
+            endIndex--;
+        }
+        return content.substring(0, endIndex);
     }
 }

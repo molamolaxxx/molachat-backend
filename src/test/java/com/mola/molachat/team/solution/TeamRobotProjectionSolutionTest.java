@@ -52,6 +52,37 @@ public class TeamRobotProjectionSolutionTest {
     }
 
     @Test
+    public void syncCreatesOwnerSessionForEveryProjectedMember() {
+        when(chatterFactory.list()).thenReturn(Collections.emptyList());
+
+        projectionSolution.sync(team("team-1",
+                member("member-1", "READY"), member("member-2", "READY")));
+
+        verify(sessionService).findOrCreateSession("owner", "team-acp-member-1");
+        verify(sessionService).findOrCreateSession("owner", "team-acp-member-2");
+    }
+
+    @Test
+    public void captainModeProjectsAllRosterMembersAndPreservesOrdinaryEntry() {
+        RobotChatter ordinary = projectedRobot("team-1", "member-1");
+        when(chatterFactory.list()).thenReturn(Collections.singletonList(ordinary));
+        TeamDTO team = team("team-1",
+                member("member-1", "READY"), member("member-2", "READY"));
+        team.setMode("CAPTAIN");
+        team.setCaptainTeamMemberId("member-2");
+
+        projectionSolution.sync(team);
+
+        verify(sessionService, never()).closeSessions("team-acp-member-1");
+        verify(chatterFactory, never()).remove(ordinary);
+        ArgumentCaptor<Chatter> captor = ArgumentCaptor.forClass(Chatter.class);
+        verify(chatterFactory).create(captor.capture());
+        assertEquals("member-2", ((RobotChatter) captor.getValue()).getTeamMemberId());
+        verify(sessionService).findOrCreateSession("owner", "team-acp-member-2");
+        verify(sessionService).findOrCreateSession("owner", "team-acp-member-1");
+    }
+
+    @Test
     public void syncOnlyDeletesStaleRobotsFromTheSameTeam() {
         RobotChatter stale = projectedRobot("team-1", "stale");
         RobotChatter otherTeam = projectedRobot("team-2", "other");
@@ -99,12 +130,12 @@ public class TeamRobotProjectionSolutionTest {
         verify(chatterFactory, never()).create(any(RobotChatter.class));
     }
 
-    private TeamDTO team(String teamId, TeamMemberDTO member) {
+    private TeamDTO team(String teamId, TeamMemberDTO... members) {
         TeamDTO team = new TeamDTO();
         team.setTeamId(teamId);
         team.setOwnerChatterId("owner");
         team.setName("Fast");
-        team.setMembers(Collections.singletonList(member));
+        team.setMembers(Arrays.asList(members));
         return team;
     }
 

@@ -24,6 +24,12 @@ public class TeamCreateRequest {
     @Size(max = 40)
     private String name;
 
+    /** NORMAL（缺省兼容旧请求）或 CAPTAIN。 */
+    private String mode = "NORMAL";
+
+    /** CAPTAIN 模式下必须引用 members 中唯一、稳定的 teamMemberId。 */
+    private String captainTeamMemberId;
+
     @Valid
     @Size(min = 1, max = 6)
     private List<TeamCreateMemberRequest> members = new ArrayList<>();

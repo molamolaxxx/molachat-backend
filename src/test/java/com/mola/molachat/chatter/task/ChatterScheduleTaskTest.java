@@ -4,7 +4,7 @@ import com.mola.molachat.chatter.dto.ChatterDTO;
 import com.mola.molachat.chatter.enums.ChatterStatusEnum;
 import com.mola.molachat.chatter.service.ChatterService;
 import com.mola.molachat.robot.constant.CmdProxyConstant;
-import com.mola.molachat.robot.solution.AcpRuntimeStatusSolution;
+import com.mola.molachat.robot.solution.AcpTransportStatusSolution;
 import com.mola.molachat.team.solution.TeamGatewaySolution;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,7 +28,7 @@ public class ChatterScheduleTaskTest {
     private TeamGatewaySolution teamGatewaySolution;
 
     @Mock
-    private AcpRuntimeStatusSolution acpRuntimeStatusSolution;
+    private AcpTransportStatusSolution acpTransportStatusSolution;
 
     @InjectMocks
     private ChatterScheduleTask task;
@@ -40,7 +40,7 @@ public class ChatterScheduleTaskTest {
         when(teamGatewaySolution.findAcpSourceGroupIds(
                 acp.getId(), acp.getVisibleChatterIds()))
                 .thenReturn(Collections.singletonList("group-1"));
-        when(acpRuntimeStatusSolution.isOnline("group-1")).thenReturn(false);
+        when(acpTransportStatusSolution.isConnected("group-1")).thenReturn(false);
 
         invokeStatusCheck();
 
@@ -55,7 +55,7 @@ public class ChatterScheduleTaskTest {
         when(teamGatewaySolution.findAcpSourceGroupIds(
                 acp.getId(), acp.getVisibleChatterIds()))
                 .thenReturn(Collections.singletonList("group-1"));
-        when(acpRuntimeStatusSolution.isOnline("group-1")).thenReturn(true);
+        when(acpTransportStatusSolution.isConnected("group-1")).thenReturn(true);
 
         invokeStatusCheck();
 

@@ -3,11 +3,10 @@ $(document).ready(function () {
     var $send = $(".send"),
         $chatInput = $(".chat__input")[0],
         $viewContent = $("#viewContent"),
+        $viewContentScroll = $("#message-view-modal #viewContentScroll"),
         $viewModal = $("#message-view-modal"),
         $copyViewBtn = $('#copyViewBtn'),
         $chatMsg = $(".chat__messages")[0];
-    var inEditMode = false
-
     // 配置marked采用高亮
     const originalCodes = [];
     marked.setOptions({
@@ -107,7 +106,9 @@ $(document).ready(function () {
         mainDoc.append(imgDoc);
         // mainDocChild.innerHTML = twemoji.parse(content,{"folder":"svg","ext":".svg","base":"asset/","size":15});
         if (!message.streamId) {
-            mainDocChild.innerText = content.length > 200 ? content.slice(0, 200) + "\n...." : content
+            mainDocChild.innerText = message.contentTruncated || content.length > 200
+                ? content.slice(0, 200) + "\n...."
+                : content
         } else {
             mainDocChild.innerText = content;
             mainDocChild.fullText = content;
@@ -115,7 +116,7 @@ $(document).ready(function () {
         mainDoc.append(mainDocChild);
         mainDoc.mainDocChild = mainDocChild;
         // 明细view
-        if (content.length > 80 || message.streamId) {
+        if (content.length > 80 || message.contentTruncated || message.streamId) {
             var copyIcon = document.createElement("span");
             $(copyIcon).addClass("copy_icon");
             $(copyIcon).css('position', 'absolute');
@@ -127,8 +128,75 @@ $(document).ready(function () {
                 const onClickCallback = (e) => {
                     // 流消息会自动刷新模态框，不用重置
                     $viewContent[0].triggerMessageId = mainDoc.messageId
-                    buildHighlightContent(content)
-                    $viewModal.modal('open')
+                    if (mainDocChild.fullText != null) {
+                        openNaturalMessageDetail(mainDocChild.fullText)
+                        return
+                    }
+                    if (message.contentTruncated) {
+                        showFullContentSkeleton()
+                        $viewContent[0].detailModalReady = false
+                        $viewContent[0].detailModalOpening = true
+                        $viewContent[0].pendingFullContentRender = null
+                        $viewModal.modal('open')
+                        if (mainDocChild.loadingFullContent) {
+                            return
+                        }
+                        mainDocChild.loadingFullContent = true
+                        var requestedSessionId = message.sessionId
+                        $.ajax({
+                            url: getPrefix() + "/chat/session/message/content",
+                            type: "get",
+                            dataType: "json",
+                            timeout: 10000,
+                            data: {
+                                sessionId: requestedSessionId,
+                                messageId: message.id,
+                                chatterId: getChatterId(),
+                                token: localStorage.getItem("token")
+                            },
+                            success: function(result) {
+                                if (!result || result.data == null) {
+                                    handleFullContentFailure()
+                                    return
+                                }
+                                mainDocChild.fullText = result.data
+                                message.contentTruncated = false
+                                if ($viewContent[0].triggerMessageId === mainDoc.messageId) {
+                                    if ($viewContent[0].detailModalReady) {
+                                        renderLoadedFullContent(mainDocChild.fullText)
+                                    } else if ($viewContent[0].detailModalOpening) {
+                                        $viewContent[0].pendingFullContentRender = function() {
+                                            if ($viewContent[0].triggerMessageId === mainDoc.messageId) {
+                                                renderLoadedFullContent(mainDocChild.fullText)
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            error: handleFullContentFailure,
+                            complete: function() {
+                                mainDocChild.loadingFullContent = false
+                            }
+                        })
+                        return
+                    }
+                    openNaturalMessageDetail(content)
+                }
+
+                function handleFullContentFailure() {
+                    if ($viewContent[0].triggerMessageId === mainDoc.messageId) {
+                        var renderFailure = function() {
+                            if ($viewContent[0].triggerMessageId === mainDoc.messageId) {
+                                renderLoadedFullContent("正文加载失败，请稍后重试")
+                            }
+                        }
+                        if ($viewContent[0].detailModalReady) {
+                            renderFailure()
+                        } else if ($viewContent[0].detailModalOpening) {
+                            $viewContent[0].pendingFullContentRender = renderFailure
+                        }
+                        showToast("正文加载失败，请稍后重试", 1500)
+                    }
                 }
                 $(copyIcon).on('click', onClickCallback)
                 $(mainDocChild).on('click', onClickCallback)
@@ -163,7 +231,264 @@ $(document).ready(function () {
         addCopyButtonToPre($viewContent[0])
     }
 
+    openNaturalMessageDetail = function (content) {
+        clearMessageDetailTransition()
+        buildHighlightContent(content)
+        $viewModal.modal('open')
+    }
+
+    showFullContentSkeleton = function () {
+        clearMessageDetailTransition()
+        $viewModal.addClass("message-detail-adaptive")
+        $viewContent.removeClass("view-content")
+        $viewContent[0].innerHTML = ""
+        $viewContentScroll.addClass("message-detail-loading")
+        $viewContentScroll.attr("aria-busy", "true")
+        $viewContentScroll.attr("aria-label", "正在加载正文")
+        var skeletonHtml = '<span class="message-detail-skeleton" aria-hidden="true">'
+        for (var paragraphIndex = 0; paragraphIndex < 6; paragraphIndex++) {
+            skeletonHtml += '<span class="message-detail-skeleton__paragraph">' +
+                '<span class="message-detail-skeleton__line message-detail-skeleton__line--first"></span>' +
+                '<span class="message-detail-skeleton__line message-detail-skeleton__line--middle"></span>' +
+                '<span class="message-detail-skeleton__line message-detail-skeleton__line--last"></span>' +
+                '</span>'
+        }
+        $viewContentScroll.append(skeletonHtml + '</span>')
+    }
+
+    renderLoadedFullContent = function (content) {
+        clearTimeout($viewContent[0].detailRenderTimer)
+        cancelAnimationFrame($viewContent[0].detailRenderFrame)
+        $viewContent[0].detailRenderFrame = requestAnimationFrame(function () {
+            $viewContent[0].detailRenderTimer = setTimeout(function () {
+                if (!$viewContent[0].detailModalOpening) {
+                    return
+                }
+                var renderedContent = buildHighlightContentInner(content)
+                prepareMessageDetailMeasurement(renderedContent)
+            }, 0)
+        })
+    }
+
+    prepareMessageDetailMeasurement = function (renderedContent) {
+        if (!$viewContent[0].detailModalOpening) {
+            return
+        }
+        removeMessageDetailMeasurement()
+        var measureModal = $viewModal[0].cloneNode(true)
+        var measureScroll = measureModal.querySelector("#viewContentScroll")
+        var measureContent = measureModal.querySelector("#viewContent")
+        if (!measureScroll || !measureContent) {
+            return
+        }
+
+        measureModal.classList.remove("message-detail-adaptive", "message-detail-resizing")
+        measureModal.classList.add("message-detail-measure")
+        measureModal.style.cssText = "display:block;position:fixed;visibility:hidden;pointer-events:none;" +
+            "left:-100000px;right:auto;top:0;bottom:auto;margin:0;opacity:0;" +
+            "width:" + $viewModal[0].offsetWidth + "px;height:auto;max-width:none;max-height:none;" +
+            "overflow:visible;contain:layout style paint;"
+        measureScroll.classList.remove("message-detail-loading", "message-detail-prepared",
+            "message-detail-content-ready")
+        measureScroll.style.height = "auto"
+        measureScroll.style.maxHeight = "none"
+        measureScroll.style.overflow = "visible"
+        measureContent.style.visibility = "visible"
+        measureContent.style.opacity = "1"
+        measureContent.innerHTML = renderedContent
+        Array.prototype.forEach.call(measureModal.querySelectorAll(".message-detail-skeleton"),
+            function (skeleton) {
+                skeleton.parentNode.removeChild(skeleton)
+        })
+        Array.prototype.forEach.call(measureModal.querySelectorAll("[id]"), function (element) {
+            // Keep #viewContent so the offscreen clone receives exactly the same
+            // Markdown/tool-card styles as the visible modal during measurement.
+            if (element !== measureContent) {
+                element.removeAttribute("id")
+            }
+        })
+        document.body.appendChild(measureModal)
+        $viewContent[0].detailMeasureModal = measureModal
+
+        waitForMessageDetailImages(measureContent, function () {
+            if (!$viewContent[0].detailModalOpening
+                || $viewContent[0].detailMeasureModal !== measureModal) {
+                return
+            }
+            $viewContent[0].detailMeasureFrame = requestAnimationFrame(function () {
+                $viewContent[0].detailMeasureReadyFrame = requestAnimationFrame(function () {
+                    completeMessageDetailMeasurement(measureModal, measureContent)
+                })
+            })
+        })
+    }
+
+    waitForMessageDetailImages = function (measureContent, callback) {
+        var images = Array.prototype.filter.call(measureContent.querySelectorAll("img"), function (image) {
+            return !image.complete
+        })
+        if (images.length === 0) {
+            callback()
+            return
+        }
+        var remaining = images.length
+        var finished = false
+        var finish = function () {
+            if (finished) {
+                return
+            }
+            remaining--
+            if (remaining <= 0) {
+                finished = true
+                clearTimeout($viewContent[0].detailMeasureImageTimer)
+                callback()
+            }
+        }
+        images.forEach(function (image) {
+            image.addEventListener("load", finish, {once: true})
+            image.addEventListener("error", finish, {once: true})
+        })
+        $viewContent[0].detailMeasureImageTimer = setTimeout(function () {
+            if (!finished) {
+                finished = true
+                callback()
+            }
+        }, 800)
+    }
+
+    completeMessageDetailMeasurement = function (measureModal, measureContent) {
+        if (!$viewContent[0].detailModalOpening
+            || $viewContent[0].detailMeasureModal !== measureModal) {
+            return
+        }
+        var initialModalHeight = $viewModal[0].offsetHeight
+        var initialScrollHeight = $viewContentScroll[0].offsetHeight
+        var measuredModalHeight = measureModal.offsetHeight
+        var targetModalHeight = Math.min(initialModalHeight,
+            measuredModalHeight || initialModalHeight)
+        var targetScrollHeight = Math.max(0,
+            targetModalHeight - (initialModalHeight - initialScrollHeight))
+        var preparedContent = document.createDocumentFragment()
+        while (measureContent.firstChild) {
+            preparedContent.appendChild(measureContent.firstChild)
+        }
+        removeMessageDetailMeasurement()
+        startMessageDetailHeightResize(targetModalHeight, targetScrollHeight, preparedContent)
+    }
+
+    startMessageDetailHeightResize = function (targetModalHeight, targetScrollHeight, preparedContent) {
+        var initialModalHeight = $viewModal[0].offsetHeight
+        var initialScrollHeight = $viewContentScroll[0].offsetHeight
+        $viewModal.css("height", initialModalHeight + "px")
+        $viewContentScroll.css("height", initialScrollHeight + "px")
+        $viewModal.addClass("message-detail-resizing")
+        $viewModal[0].offsetHeight
+
+        var resizeFinished = false
+        var finishResize = function () {
+            if (resizeFinished) {
+                return
+            }
+            resizeFinished = true
+            if (!$viewContent[0].detailModalOpening) {
+                return
+            }
+            clearTimeout($viewContent[0].detailResizeTimer)
+            $viewModal.off("transitionend.messageDetailResize")
+            $viewModal.removeClass("message-detail-resizing")
+            mountPreparedMessageDetail(preparedContent)
+        }
+        if (initialModalHeight - targetModalHeight <= 8
+            || (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+            $viewModal.css("height", targetModalHeight + "px")
+            $viewContentScroll.css("height", targetScrollHeight + "px")
+            requestAnimationFrame(finishResize)
+            return
+        }
+        $viewModal.off("transitionend.messageDetailResize")
+        $viewModal.on("transitionend.messageDetailResize", function (event) {
+            if (event.target === $viewModal[0] && event.originalEvent.propertyName === "height") {
+                finishResize()
+            }
+        })
+        $viewContent[0].detailResizeTimer = setTimeout(finishResize, 360)
+        $viewContent[0].detailResizeFrame = requestAnimationFrame(function () {
+            $viewModal.css("height", targetModalHeight + "px")
+            $viewContentScroll.css("height", targetScrollHeight + "px")
+        })
+    }
+
+    mountPreparedMessageDetail = function (preparedContent) {
+        if (!$viewContent[0].detailModalOpening) {
+            return
+        }
+        $viewContent[0].innerHTML = ""
+        $viewContent[0].appendChild(preparedContent)
+        addCopyButtonToPre($viewContent[0])
+        $viewContentScroll.addClass("message-detail-prepared")
+        $viewContent[0].detailRevealFrame = requestAnimationFrame(function () {
+            $viewContent[0].detailRevealReadyFrame = requestAnimationFrame(function () {
+                if (!$viewContent[0].detailModalOpening) {
+                    return
+                }
+                $viewContentScroll.addClass("message-detail-content-ready")
+                if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                    finishMessageDetailTransition()
+                    return
+                }
+                $viewContent[0].detailRevealTimer = setTimeout(finishMessageDetailTransition, 280)
+            })
+        })
+    }
+
+    finishMessageDetailTransition = function () {
+        if (!$viewContent[0].detailModalOpening
+            || !$viewContentScroll.hasClass("message-detail-prepared")) {
+            return
+        }
+        clearTimeout($viewContent[0].detailRevealTimer)
+        clearTimeout($viewContent[0].detailResizeTimer)
+        $viewContentScroll.children(".message-detail-skeleton").remove()
+        $viewContentScroll.removeClass("message-detail-loading message-detail-prepared message-detail-content-ready")
+        $viewContentScroll.removeAttr("aria-busy aria-label")
+    }
+
+    removeMessageDetailMeasurement = function () {
+        clearTimeout($viewContent[0].detailMeasureImageTimer)
+        cancelAnimationFrame($viewContent[0].detailMeasureFrame)
+        cancelAnimationFrame($viewContent[0].detailMeasureReadyFrame)
+        var measureModal = $viewContent[0].detailMeasureModal
+        if (measureModal && measureModal.parentNode) {
+            measureModal.parentNode.removeChild(measureModal)
+        }
+        $viewContent[0].detailMeasureModal = null
+    }
+
+    clearMessageDetailTransition = function () {
+        clearTimeout($viewContent[0].detailRenderTimer)
+        clearTimeout($viewContent[0].detailResizeTimer)
+        clearTimeout($viewContent[0].detailRevealTimer)
+        cancelAnimationFrame($viewContent[0].detailRenderFrame)
+        cancelAnimationFrame($viewContent[0].detailResizeFrame)
+        cancelAnimationFrame($viewContent[0].detailRevealFrame)
+        cancelAnimationFrame($viewContent[0].detailRevealReadyFrame)
+        $viewModal.off("transitionend.messageDetailResize")
+        removeMessageDetailMeasurement()
+        $viewModal.removeClass("message-detail-adaptive message-detail-resizing")
+        $viewModal.css("height", "")
+        $viewContentScroll.css("height", "")
+        $viewContentScroll.children(".message-detail-skeleton").remove()
+        $viewContentScroll.removeClass("message-detail-loading message-detail-prepared message-detail-content-ready")
+        $viewContentScroll.removeAttr("aria-busy aria-label")
+    }
+
     buildHighlightContentInner = function (content) {
+        if (isMarkdown(content) || hasMarkdownMath(content)) {
+            $viewContent.removeClass("view-content")
+            $copyViewBtn[0].copyContent = content
+            return marked.parse(content)
+        }
+
         const codeObj = hljs.highlightAuto(content)
         // 主流语言，显示用pre方便看
         let isCommonCode = codeObj.language === 'java' ||
@@ -186,15 +511,9 @@ $(document).ready(function () {
 
         $copyViewBtn[0].copyContent = content
         const divBlock = document.createElement("div");
-        if (isMarkdown(content)) {
-            console.log("isMarkdown");
-            return marked.parse(content)
-        } else {
-            console.log("isNotMarkdown");
-            divBlock.innerHTML = content
-            hljs.highlightElement(divBlock)
-            return divBlock.innerHTML
-        }
+        divBlock.innerHTML = content
+        hljs.highlightElement(divBlock)
+        return divBlock.innerHTML
     }
 
     //增加一条我方记录
@@ -220,10 +539,7 @@ $(document).ready(function () {
 
     // 判断输入是否完成
     var isInputFinished = true
-    $(".chat__input").bind("keyup", function (ev) {
-        if (inEditMode) {
-            return
-        }
+    $($chatInput).bind("keyup", function (ev) {
         if (ev.keyCode == "13" && isInputFinished) {
             $send.click();
         }
@@ -253,7 +569,8 @@ $(document).ready(function () {
             return;
         }
         
-        if (queryStreamDom(getActiveSessionId())) {
+        if (queryStreamDom(getActiveSessionId())
+            && (!getActiveChatter() || getActiveChatter().robotGroup !== 'acp')) {
             showToast("当前状态无法发送新消息，请先终止当前会话", 1000)
             return;
         }
@@ -277,9 +594,20 @@ $(document).ready(function () {
         starting_top: '4%', // Starting top style attribute
         ending_top: '100%', // Ending top style attribute
         ready: function (modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
+            $viewContent[0].detailModalReady = true
+            var pendingFullContentRender = $viewContent[0].pendingFullContentRender
+            $viewContent[0].pendingFullContentRender = null
+            if (pendingFullContentRender) {
+                pendingFullContentRender()
+            }
             fetchContextUsage()
         },
         complete: function () {
+            $viewContent[0].detailModalReady = false
+            $viewContent[0].detailModalOpening = false
+            $viewContent[0].pendingFullContentRender = null
+            clearMessageDetailTransition()
+            originalCodes.splice(0, originalCodes.length)
             $('#contextUsageWrapper').hide()
         }
     });
@@ -298,12 +626,6 @@ $(document).ready(function () {
         out_duration: 200, // Transition out duration
         starting_top: '4%', // Starting top style attribute
         ending_top: '100%', // Ending top style attribute
-        ready: function (modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
-            inEditMode = true
-        },
-        complete: function () {
-            inEditMode = false
-        }
     });
 
     // dom初始化位置
@@ -367,7 +689,8 @@ $(document).ready(function () {
             return;
         }
 
-        if (queryStreamDom(getActiveSessionId())) {
+        if (queryStreamDom(getActiveSessionId())
+            && (!getActiveChatter() || getActiveChatter().robotGroup !== 'acp')) {
             showToast("当前状态无法发送新消息", 1000)
             return;
         }
@@ -384,11 +707,11 @@ $(document).ready(function () {
         sendMessageInner(content)
     })
 
-    // 支持 Enter 触发发送，Shift+Enter 触发换行（手机端回车始终换行）
+    // 支持 Enter 触发发送，Shift+Enter 触发换行（App 内回车始终换行）
     $chatEditor.on('keydown', function (e) {
         if (e.keyCode === 13) {
-            if (getInnerWidth() <= 600) {
-                // 手机端回车不发送，允许默认换行行为
+            if (isAppNow()) {
+                // App 内回车不发送，允许默认换行行为
                 return;
             }
             if (e.shiftKey) {

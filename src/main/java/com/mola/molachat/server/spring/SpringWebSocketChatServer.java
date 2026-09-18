@@ -8,6 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import org.springframework.web.socket.*;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * @author : molamola
  * @Project: molachat
@@ -18,6 +21,11 @@ import org.springframework.web.socket.*;
 public class SpringWebSocketChatServer implements WebSocketHandler {
 
     private ServerService serverService;
+
+    /**
+     * 物理 WebSocket session 与 ChatServer 一一对应，避免旧连接关闭时误取到新连接。
+     */
+    private final Map<String, ChatServer> sessionServerMap = new ConcurrentHashMap<>();
 
     private void initDependencyInjection(){
         // 如果不使用getBean创建ChatServer，则无法走生命周期，导致service无法注入到chatserver
@@ -32,11 +40,9 @@ public class SpringWebSocketChatServer implements WebSocketHandler {
         String[] chatterAndDeviceId = getChatterAndDeviceId(session);
         String chatterId = chatterAndDeviceId[0];
         if (!StringUtils.isEmpty(chatterId)) {
-            ChatServer server = serverService.selectByChatterId(chatterId, chatterAndDeviceId[1]);
-            if (null == server) {
-                server = MyApplicationContextAware.getApplicationContext().getBean(ChatServer.class);
-            }
+            ChatServer server = MyApplicationContextAware.getApplicationContext().getBean(ChatServer.class);
             server.onOpen(new SpringSessionWrapper(session), chatterId, chatterAndDeviceId[1]);
+            sessionServerMap.put(session.getId(), server);
         } else {
             log.error("chatterId为空");
         }
@@ -62,7 +68,7 @@ public class SpringWebSocketChatServer implements WebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
-        ChatServer server = getChatServer(session);
+        ChatServer server = sessionServerMap.remove(session.getId());
         if (null != server) {
             server.onClose();
         }
@@ -85,13 +91,6 @@ public class SpringWebSocketChatServer implements WebSocketHandler {
     }
 
     private ChatServer getChatServer(WebSocketSession session) {
-        String chatterId = getChatterAndDeviceId(session)[0];
-        String deviceId = getChatterAndDeviceId(session)[1];
-        if (!StringUtils.isEmpty(chatterId)) {
-            return serverService.selectByChatterId(chatterId, deviceId);
-        } else {
-            log.error("chatterId为空");
-        }
-        return null;
+        return sessionServerMap.get(session.getId());
     }
 }

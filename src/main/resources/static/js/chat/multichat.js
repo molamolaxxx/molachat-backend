@@ -39,7 +39,7 @@ $(document).ready(function () {
     function onStartGroupSession(groupInfo) {
         enterMutiChat(groupInfo);
         closeFAB(menu)
-        $('.tooltipped').tooltip('remove');
+        $('.tooltipped').trigger('mouseleave');
         showToast(groupInfo.hint, 1800)
     }
 

@@ -37,6 +37,16 @@ public class TeamMemberDTO {
 
     private Boolean discoverySupported;
 
+    /** HOME 或 REMOTE，仅用于产品展示和后端二次校验。 */
+    private String sourceType;
+
+    /** 对用户友好的分组名；不包含 raw instanceId/transportGroup。 */
+    private String sourceLabel;
+
+    private Boolean homeSelectionRequired;
+
+    private Boolean mixedSupported;
+
     private String sessionId;
 
     public String getStatus() {

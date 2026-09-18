@@ -17,6 +17,8 @@ import com.mola.molachat.robot.event.BaseRobotEvent;
 import com.mola.molachat.robot.event.MessageReceiveEvent;
 import com.mola.molachat.robot.handler.IRobotEventHandler;
 import com.mola.molachat.robot.model.CmdDescription;
+import com.mola.molachat.robot.solution.AcpPromptSolution;
+import com.mola.molachat.robot.solution.AcpDeferredMessageSolution;
 import com.mola.molachat.robot.solution.AcpRuntimeStatusSolution;
 import com.mola.molachat.session.dto.SessionDTO;
 import com.mola.molachat.session.model.FileMessage;
@@ -73,6 +75,12 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
     @Resource
     private AcpRuntimeStatusSolution acpRuntimeStatusSolution;
 
+    @Resource
+    private AcpPromptSolution acpPromptSolution;
+
+    @Resource
+    private AcpDeferredMessageSolution acpDeferredMessageSolution;
+
     private static final String FILE_DOWNLOAD_BASE_URL = "https://106.54.193.10:8550/chat/files/";
 
     @Override
@@ -123,39 +131,35 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
 
         // 默认：向ACP发送消息，先检查状态
         String status = getAcpStatus(sessionId);
-        if (!"READY".equals(status)) {
+        if (!"READY".equals(status) && !"BUSY".equals(status)) {
             return MessageSendAction.withResp("ACP当前状态为 " + status + "，无法发送消息，请等待就绪后再试");
         }
 
-        try {
-            // 收集当前消息之前连续的文件消息，每个文件以文件名->下载URL的形式存储
-            List<Map<String, String>> files = collectRecentFileUrls(sessionId, messageReceiveEvent);
-
-            Map<String, Object> paramMap = new HashMap<>();
-            paramMap.put("groupId", sessionId);
-            paramMap.put("message", userMessage);
-            if (!CollectionUtils.isEmpty(files)) {
-                paramMap.put("files", files);
+        // cmd-proxy 在同一个 group 锁内完成 READY 直发或 BUSY 取消后挂起发送。
+        List<Map<String, String>> files = collectRecentFileUrls(sessionId, messageReceiveEvent);
+        boolean deferred = "BUSY".equals(status)
+                && acpDeferredMessageSolution.defer(
+                sessionId, messageReceiveEvent.getMessage());
+        AcpPromptSolution.InvokeResult result = acpPromptSolution.sendInterrupting(
+                sessionId, userMessage, files);
+        if (!result.isAccepted()
+                || (deferred && !"INTERRUPTED_PENDING".equals(result.getCode()))) {
+            if (deferred) {
+                acpDeferredMessageSolution.restore(
+                        sessionId, messageReceiveEvent.getMessage());
             }
-            String paramJson = JSON.toJSONString(paramMap);
-
-            CmdInvokeResponse<CmdResponseContent> response = CmdSender.INSTANCE
-                    .send("acpSendMessage", sessionId, new String[]{paramJson});
-            if (response == null || response.getData() == null) {
-                return MessageSendAction.withResp("ACP消息发送失败：响应为空");
-            }
-            return MessageSendAction.skip();
-        } catch (Exception e) {
-            log.error("AcpExecHandler 发送消息失败, sessionId={}", sessionId, e);
-            return MessageSendAction.withResp("ACP消息发送失败: " + e.getMessage());
         }
+        if (!result.isAccepted()) {
+            return MessageSendAction.withResp("ACP消息发送失败: " + result.getMessage());
+        }
+        return MessageSendAction.skip();
     }
 
     /**
      * 从当前会话中收集当前消息之前、连续的、当前用户发送的文件消息，返回文件下载URL
      * @return List<Map<String, String>>，每个Map中key为文件名，value为文件的下载URL
      */
-    private List<Map<String, String>> collectRecentFileUrls(String sessionId, MessageReceiveEvent event) {
+    List<Map<String, String>> collectRecentFileUrls(String sessionId, MessageReceiveEvent event) {
         List<Map<String, String>> files = new ArrayList<>();
         try {
             SessionDTO session = sessionService.findSession(sessionId);
@@ -173,8 +177,11 @@ public class AcpExecHandler implements IRobotEventHandler<MessageReceiveEvent, B
             List<FileMessage> consecutiveFileMessages = new ArrayList<>();
             for (int i = messageList.size() - 2; i >= 0; i--) {
                 Message msg = messageList.get(i);
-                // 必须是当前用户发送的，非机器人发送
-                if (!currentChatterId.equals(msg.getChatterId()) || robotChatterId.equals(msg.getChatterId())) {
+                // 取消旧 turn 产生的机器人终止消息可能夹在文件和下一条文字之间。
+                if (robotChatterId.equals(msg.getChatterId())) {
+                    continue;
+                }
+                if (!currentChatterId.equals(msg.getChatterId())) {
                     break;
                 }
                 if (!(msg instanceof FileMessage)) {

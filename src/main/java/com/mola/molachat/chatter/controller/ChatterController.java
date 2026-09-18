@@ -3,6 +3,7 @@ package com.mola.molachat.chatter.controller;
 import com.alibaba.fastjson.JSONObject;
 import com.mola.molachat.common.model.ResponseCode;
 import com.mola.molachat.common.model.ServerResponse;
+import com.mola.molachat.common.enums.ServiceErrorEnum;
 import com.mola.molachat.chatter.model.Chatter;
 import com.mola.molachat.chatter.dto.ChatterDTO;
 import com.mola.molachat.session.dto.SessionDTO;
@@ -30,8 +31,6 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import javax.websocket.EncodeException;
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -66,6 +65,7 @@ public class ChatterController {
                                   @RequestParam("signature") String signature,
                                   @RequestParam("imgUrl") String imgUrl,
                                   @RequestParam(value = "preId", required = false) String preId, // 传入preID来，让一个客户端永远只对应一个id，防止创建失败
+                                  @RequestParam(value = "token", required = false) String token,
                                   HttpServletRequest request, HttpServletResponse response){
         ChatterDTO chatterDTO = new ChatterDTO();
         chatterDTO.setName(chatterName);
@@ -73,6 +73,11 @@ public class ChatterController {
         chatterDTO.setSignature(signature);
         chatterDTO.setImgUrl(imgUrl);
         if (StringUtils.isNotBlank(preId)) {
+            if (!tokenCheckHandler.checkToken(preId, token, request)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                return ServerResponse.createByErrorCodeMessage(ResponseCode.ERROR.getCode(),
+                        "token验证错误");
+            }
             chatterDTO.setId(preId);
         }
         chatterDTO.setStatus(ChatterStatusEnum.ONLINE.getCode());
@@ -89,6 +94,9 @@ public class ChatterController {
 
         Map<String, String> resultMap = new HashMap();
         resultMap.put("id", result.getId());
+        resultMap.put("name", result.getName());
+        resultMap.put("signature", result.getSignature());
+        resultMap.put("imgUrl", result.getImgUrl());
         //设置jwt
         resultMap.put("token", jwtUtil.generateToken(result.getId()));
         return ServerResponse.createBySuccess(resultMap);
@@ -206,9 +214,17 @@ public class ChatterController {
      * @return
      */
     @DeleteMapping
-    public ServerResponse deletePreChatter(@RequestParam("preId") String preId) {
+    public ServerResponse deletePreChatter(@RequestParam("preId") String preId,
+                                           @RequestParam("token") String token,
+                                           HttpServletRequest request,
+                                           HttpServletResponse response) {
         if (preId.length() == 0) {
             return ServerResponse.createBySuccess();
+        }
+        if (!tokenCheckHandler.checkToken(preId, token, request)) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return ServerResponse.createByErrorCodeMessage(ResponseCode.ERROR.getCode(),
+                    "token验证错误");
         }
         ChatterDTO chatterDTO = new ChatterDTO();
         chatterDTO.setId(preId);
@@ -245,7 +261,9 @@ public class ChatterController {
         if (null == chatterDTO){
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             log.error("重连失败,chatter不存在, id = {}", chatterId);
-            return ServerResponse.createByErrorMessage("重连失败,chatter不存在");
+            return ServerResponse.createByErrorCodeMessage(
+                    ServiceErrorEnum.CHATTER_NOT_FOUND.getCode(),
+                    ServiceErrorEnum.CHATTER_NOT_FOUND.getMsg());
         }
         //2.判断jwt的相同
         // 判断token能否被刷新
@@ -257,18 +275,8 @@ public class ChatterController {
             log.error("重连失败,token错误, id = {}", chatterId);
             return ServerResponse.createByErrorMessage("重连失败,token错误");
         }
-        try {
-            ChatServer server = serverService.selectByChatterId(chatterId, deviceId);
-            // 如果还存在server，则关闭它
-            if (null != server) {
-                server.onClose();
-            }
-        } catch (IOException | EncodeException e) {
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            log.error("重连失败,内部错误, id = {}", chatterId, e);
-            return ServerResponse.createByErrorMessage("重连失败,内部错误");
-        }
-        //4.保存session
+        //3.保存身份状态。旧 WebSocket 由新物理连接建立时精确替换，
+        // 不在 HTTP 重连接口中提前关闭，避免触发并发重连。
         chatterDTO.setIp(IpUtils.getIp(request));
         //设置为在线
         if (chatterDTO.getStatus() != ChatterStatusEnum.ONLINE.getCode()){

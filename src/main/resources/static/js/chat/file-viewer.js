@@ -37,9 +37,26 @@
         return { target: target, requestedLine: requestedLine, remote: remote };
     }
 
+    function getFileViewerViewportGeometry(viewportWidth, viewportHeight, bodyZoom) {
+        var zoom = Number(bodyZoom);
+        if (!isFinite(zoom) || zoom <= 0) zoom = 1;
+        var compact = viewportWidth <= 600;
+        var tablet = !compact && viewportWidth <= 900;
+        var topRatio = compact ? 0 : (tablet ? .02 : .03);
+        var heightRatio = compact ? 1 : (tablet ? .96 : .94);
+        return {
+            top: viewportHeight * topRatio / zoom,
+            height: viewportHeight * heightRatio / zoom
+        };
+    }
+
     global.parseFilePreviewTarget = parseFilePreviewTarget;
+    global.getFileViewerViewportGeometry = getFileViewerViewportGeometry;
     if (typeof module !== "undefined" && module.exports) {
-        module.exports = { parseFilePreviewTarget: parseFilePreviewTarget };
+        module.exports = {
+            parseFilePreviewTarget: parseFilePreviewTarget,
+            getFileViewerViewportGeometry: getFileViewerViewportGeometry
+        };
     }
 
     if (typeof global.jQuery === "undefined") return;
@@ -61,6 +78,7 @@
             out_duration: 160,
             starting_top: "3%",
             ending_top: "3%",
+            ready: schedulePendingRender,
             complete: clearViewer
         });
 
@@ -68,11 +86,14 @@
             $modal.modal("close");
         });
 
+        $(global).on("resize.fileViewer", function () {
+            if ($modal.is(":visible")) syncViewerGeometry();
+        });
+
         $mode.on("click", function () {
             var data = $modal[0].previewData;
             if (!data) return;
-            if ($preview.prop("hidden")) renderPreview(data);
-            else renderSource(data);
+            queueFileRender(data, $preview.prop("hidden") ? "PREVIEW" : "SOURCE");
         });
 
         $(document).on("click", "#viewContent a", function (event) {
@@ -92,8 +113,6 @@
                 return;
             }
             var fallback = parsed.remote ? prepareRemoteFallback() : null;
-            showLoading(parsed.target);
-            $modal.modal("open");
             $.ajax({
                 url: getPrefix() + "/chat/robot/file-preview",
                 type: "POST",
@@ -113,7 +132,7 @@
                         return;
                     }
                     if (fallback && !fallback.closed) fallback.close();
-                    renderFile(result.data);
+                    queueFileRender(result.data, null, parsed.target);
                 },
                 error: function () {
                     handleFailure(parsed, fallback);
@@ -121,15 +140,72 @@
             });
         }
 
-        function showLoading(target) {
+        function queueFileRender(data, mode, target) {
+            showLoading(target || data.displayName, mode || data.renderMode);
+            $modal[0].pendingPreviewData = data;
+            $modal[0].pendingPreviewMode = mode;
+            syncViewerGeometry();
+            if ($modal.hasClass("open")) schedulePendingRender();
+            else $modal.modal("open");
+        }
+
+        function schedulePendingRender() {
+            if ($modal[0].renderScheduled) return;
+            $modal[0].renderScheduled = true;
+            $modal[0].renderFrame = requestAnimationFrame(function () {
+                $modal[0].renderFrame = requestAnimationFrame(function () {
+                    $modal[0].renderScheduled = false;
+                    var data = $modal[0].pendingPreviewData;
+                    if (!data || !$modal.hasClass("open")) return;
+                    var mode = $modal[0].pendingPreviewMode;
+                    $modal[0].pendingPreviewData = null;
+                    $modal[0].pendingPreviewMode = null;
+                    renderFile(data, mode);
+                });
+            });
+        }
+
+        function showLoading(target, renderMode) {
             clearViewer();
             $title.text(fileName(target) || "文件预览").attr("title", target);
-            $meta.text("正在读取");
-            $loading.show();
+            $loading.removeClass("file-viewer__loading--leaving")
+                    .attr("aria-busy", "true")
+                    .attr("aria-label", "正在准备文件预览")
+                    .html(buildFileSkeleton(renderMode)).show();
             $mode.hide();
         }
 
-        function renderFile(data) {
+        function buildFileSkeleton(renderMode) {
+            if (renderMode === "MARKDOWN" || renderMode === "HTML" || renderMode === "PREVIEW") {
+                var article = '<div class="file-viewer__skeleton file-viewer__skeleton--article" aria-hidden="true">';
+                for (var paragraph = 0; paragraph < 7; paragraph++) {
+                    article += '<div class="file-viewer__skeleton-paragraph">'
+                            + '<span class="file-viewer__skeleton-line file-viewer__skeleton-line--first"></span>'
+                            + '<span class="file-viewer__skeleton-line file-viewer__skeleton-line--middle"></span>'
+                            + '<span class="file-viewer__skeleton-line file-viewer__skeleton-line--last"></span>'
+                            + '</div>';
+                }
+                return article + '</div>';
+            }
+            var source = '<div class="file-viewer__skeleton file-viewer__skeleton--source" aria-hidden="true">';
+            for (var line = 0; line < 32; line++) {
+                source += '<div class="file-viewer__skeleton-code-line">'
+                        + '<span class="file-viewer__skeleton-gutter"></span>'
+                        + '<span class="file-viewer__skeleton-code"></span>'
+                        + '</div>';
+            }
+            return source + '</div>';
+        }
+
+        function syncViewerGeometry() {
+            var geometry = getFileViewerViewportGeometry(global.innerWidth, global.innerHeight,
+                    parseFloat(document.body.style.zoom || 1));
+            $modal[0].style.setProperty("top", geometry.top + "px", "important");
+            $modal[0].style.setProperty("height", geometry.height + "px", "important");
+            $modal[0].style.setProperty("max-height", geometry.height + "px", "important");
+        }
+
+        function renderFile(data, mode) {
             $modal[0].previewData = data;
             $title.text(data.displayName || "文件预览");
             var details = [data.source === "REMOTE" ? "远程" : "本地"];
@@ -137,11 +213,13 @@
             if (data.lineCount != null) details.push(data.lineCount + " 行");
             if (data.requestedLine) details.push("定位 L" + data.requestedLine);
             $meta.text(details.join(" · "));
-            $loading.hide();
-            if (data.renderMode === "MARKDOWN" || data.renderMode === "HTML") {
+            if (mode === "SOURCE") {
                 $mode.show();
-                if (data.requestedLine) renderSource(data);
-                else renderPreview(data);
+                renderSource(data);
+            } else if (mode === "PREVIEW"
+                    || data.renderMode === "MARKDOWN" || data.renderMode === "HTML") {
+                $mode.show();
+                renderPreview(data);
             } else {
                 $mode.hide();
                 renderSource(data);
@@ -149,8 +227,9 @@
         }
 
         function renderSource(data) {
-            $preview.prop("hidden", true).attr("srcdoc", "");
-            $source.prop("hidden", false);
+            $preview.prop("hidden", true);
+            clearPreviewDocument();
+            prepareViewerContent($source);
             $mode.text("预览");
             var content = data.content || "";
             var highlighted;
@@ -178,11 +257,12 @@
             } else if (data.requestedLine && data.requestedLine > lineCount) {
                 showToast("目标行超出文件范围", 1400);
             }
+            revealViewerContent($source);
         }
 
         function renderPreview(data) {
             $source.prop("hidden", true);
-            $preview.prop("hidden", false);
+            prepareViewerContent($preview);
             $mode.text("源码");
             var base = data.baseUrl
                     ? '<base href="' + escapeAttribute(data.baseUrl) + '">' : "";
@@ -198,10 +278,9 @@
                         + 'code{font-family:Consolas,Monaco,monospace}table{display:block;overflow:auto;'
                         + 'border-collapse:collapse}th,td{padding:7px 11px;border:1px solid #dce5eb}'
                         + 'img{max-width:100%}a{color:#287fb7}</style>';
-                $preview.attr("sandbox", "allow-same-origin").attr("srcdoc",
-                        '<!doctype html><html><head>' + csp + base + markdownCss
-                        + '</head><body>' + markdown + '</body></html>');
-                $preview.off("load.fileViewer").on("load.fileViewer", function () {
+                $preview.attr("sandbox", "allow-same-origin");
+                loadPreviewDocument('<!doctype html><html><head>' + csp + base + markdownCss
+                        + '</head><body>' + markdown + '</body></html>', function () {
                     try {
                         $(this.contentDocument).off("click.fileViewer", "a")
                                 .on("click.fileViewer", "a", function (event) {
@@ -213,7 +292,7 @@
                     } catch (ignored) { }
                 });
             } else {
-                $preview.off("load.fileViewer").attr("sandbox", "");
+                $preview.attr("sandbox", "");
                 var html = data.content || "";
                 var guards = csp + base;
                 if (/<head(?:\s[^>]*)?>/i.test(html)) {
@@ -224,12 +303,84 @@
                     html = '<!doctype html><html><head>' + guards
                             + '</head><body>' + html + '</body></html>';
                 }
-                $preview.attr("srcdoc", html);
+                loadPreviewDocument(html);
             }
         }
 
+        function loadPreviewDocument(html, onLoad) {
+            $preview.off("load.fileViewer");
+            clearTimeout($modal[0].previewRevealTimer);
+            revokePreviewObjectUrl();
+            $preview.removeAttr("srcdoc");
+            $preview.on("load.fileViewer", function () {
+                revokePreviewObjectUrl();
+                if (onLoad) onLoad.call(this);
+                revealViewerContent($preview);
+            });
+            $modal[0].previewRevealTimer = setTimeout(function () {
+                revealViewerContent($preview);
+            }, 1400);
+            if (!(typeof isAppNow === "function" && isAppNow())
+                    && global.Blob && global.URL && global.URL.createObjectURL) {
+                var objectUrl = global.URL.createObjectURL(new global.Blob([html], {
+                    type: "text/html;charset=UTF-8"
+                }));
+                $preview.attr("data-preview-object-url", objectUrl).attr("src", objectUrl);
+            } else {
+                $preview.removeAttr("src").attr("srcdoc", html);
+            }
+        }
+
+        function revokePreviewObjectUrl() {
+            var objectUrl = $preview.attr("data-preview-object-url");
+            if (!objectUrl) return;
+            if (global.URL && global.URL.revokeObjectURL) {
+                global.URL.revokeObjectURL(objectUrl);
+            }
+            $preview.removeAttr("data-preview-object-url");
+        }
+
+        function clearPreviewDocument() {
+            $preview.off("load.fileViewer");
+            clearTimeout($modal[0].previewRevealTimer);
+            revokePreviewObjectUrl();
+            if (typeof isAppNow === "function" && isAppNow()) {
+                $preview.removeAttr("src").attr("srcdoc", "");
+            } else {
+                $preview.removeAttr("srcdoc").attr("src", "about:blank");
+            }
+        }
+
+        function prepareViewerContent($content) {
+            $modal[0].viewerContentRevealed = false;
+            $content[0].fileViewerGeneration = $modal[0].viewerRenderGeneration;
+            $content.removeClass("file-viewer__content--visible")
+                    .addClass("file-viewer__content--enter")
+                    .prop("hidden", false);
+        }
+
+        function revealViewerContent($content) {
+            if ($modal[0].viewerContentRevealed || $content.prop("hidden")) return;
+            var renderGeneration = $content[0].fileViewerGeneration;
+            $modal[0].viewerContentRevealed = true;
+            clearTimeout($modal[0].previewRevealTimer);
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    if (!$modal.hasClass("open") || $content.prop("hidden")
+                            || renderGeneration !== $modal[0].viewerRenderGeneration) return;
+                    $loading.addClass("file-viewer__loading--leaving");
+                    $content.addClass("file-viewer__content--visible");
+                    clearTimeout($modal[0].loadingHideTimer);
+                    $modal[0].loadingHideTimer = setTimeout(function () {
+                        $loading.hide().removeClass("file-viewer__loading--leaving")
+                                .removeAttr("aria-busy aria-label");
+                        $content.removeClass("file-viewer__content--enter file-viewer__content--visible");
+                    }, 240);
+                });
+            });
+        }
+
         function handleFailure(parsed, fallback) {
-            $modal.modal("close");
             if (parsed.remote) openRemote(parsed.target, fallback);
             else showToast("当前链接不支持展示", 1600);
         }
@@ -265,12 +416,25 @@
         }
 
         function clearViewer() {
+            cancelAnimationFrame($modal[0].renderFrame);
+            clearTimeout($modal[0].previewRevealTimer);
+            clearTimeout($modal[0].loadingHideTimer);
+            $modal[0].renderScheduled = false;
+            $modal[0].pendingPreviewData = null;
+            $modal[0].pendingPreviewMode = null;
+            $modal[0].viewerContentRevealed = false;
+            $modal[0].viewerRenderGeneration = ($modal[0].viewerRenderGeneration || 0) + 1;
             $modal[0].previewData = null;
-            $loading.hide();
-            $source.prop("hidden", true).find("code").empty();
+            $loading.hide().removeClass("file-viewer__loading--leaving")
+                    .removeAttr("aria-busy aria-label").empty();
+            $source.prop("hidden", true)
+                    .removeClass("file-viewer__content--enter file-viewer__content--visible")
+                    .find("code").empty();
             $source.find(".file-viewer__gutter").empty();
             $source.find(".file-viewer__line-focus").hide();
-            $preview.prop("hidden", true).off("load.fileViewer").attr("srcdoc", "");
+            $preview.prop("hidden", true)
+                    .removeClass("file-viewer__content--enter file-viewer__content--visible");
+            clearPreviewDocument();
             $mode.hide();
             $meta.empty();
         }

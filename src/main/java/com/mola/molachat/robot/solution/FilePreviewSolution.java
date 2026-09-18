@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.mola.cmd.proxy.client.consumer.CmdSender;
 import com.mola.cmd.proxy.client.resp.CmdInvokeResponse;
 import com.mola.cmd.proxy.client.resp.CmdResponseContent;
+import com.mola.molachat.chatter.data.ChatterFactoryInterface;
 import com.mola.molachat.chatter.model.Chatter;
 import com.mola.molachat.chatter.model.RobotChatter;
 import com.mola.molachat.robot.dto.FilePreviewDTO;
@@ -55,6 +56,9 @@ public class FilePreviewSolution {
     private SessionFactoryInterface sessionFactory;
 
     @Resource
+    private ChatterFactoryInterface chatterFactory;
+
+    @Resource
     private TeamGatewaySolution teamGatewaySolution;
 
     public FilePreviewDTO preview(FilePreviewRequest request) {
@@ -67,15 +71,7 @@ public class FilePreviewSolution {
     }
 
     private FilePreviewDTO previewLocal(FilePreviewRequest request, Session session) {
-        RobotChatter robot = session.getChatterSet().stream()
-                .filter(RobotChatter.class::isInstance)
-                .map(RobotChatter.class::cast)
-                .filter(candidate -> "acp".equals(candidate.getRobotGroup())
-                        || TeamRobotProjectionSolution.TEAM_ACP_GROUP.equals(
-                        candidate.getRobotGroup()))
-                .findFirst()
-                .orElseThrow(() -> failure("NOT_ACP_SESSION",
-                        HttpServletResponse.SC_BAD_REQUEST, "当前会话不是ACP会话"));
+        RobotChatter robot = requireAcpRobot(session);
 
         JSONObject data;
         String path = normalizeLocalTarget(request.getTarget());
@@ -97,6 +93,20 @@ public class FilePreviewSolution {
             data = invokeMain(request.getSessionId(), payload);
         }
         return toDto(data, "LOCAL", request.getRequestedLine(), null);
+    }
+
+    RobotChatter requireAcpRobot(Session session) {
+        return session.getChatterSet().stream()
+                .map(Chatter::getId)
+                .map(chatterFactory::select)
+                .filter(RobotChatter.class::isInstance)
+                .map(RobotChatter.class::cast)
+                .filter(candidate -> "acp".equals(candidate.getRobotGroup())
+                        || TeamRobotProjectionSolution.TEAM_ACP_GROUP.equals(
+                        candidate.getRobotGroup()))
+                .findFirst()
+                .orElseThrow(() -> failure("NOT_ACP_SESSION",
+                        HttpServletResponse.SC_BAD_REQUEST, "当前会话不是ACP会话"));
     }
 
     private JSONObject invokeMain(String groupId, Map<String, Object> payload) {

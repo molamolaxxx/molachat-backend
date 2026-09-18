@@ -65,10 +65,24 @@ public class MessageSolution {
     @Resource
     private SessionService sessionService;
 
+    @Resource
+    private SessionPreviewSolution sessionPreviewSolution;
+
     private List<StreamMessageConnect> streamMessageConnectPool = Lists.newCopyOnWriteArrayList();
 
     @AddPoint(action = ChatterPointEnum.SEND_MESSAGE, key = "#message.chatterId")
     public Message insertMessage(String sessionId, Message message) throws SessionServiceException {
+        return insertMessage(sessionId, message, true);
+    }
+
+    /** Inserts and broadcasts a user projection without dispatching it to the robot again. */
+    public Message insertMessageWithoutRobot(String sessionId, Message message)
+            throws SessionServiceException {
+        return insertMessage(sessionId, message, false);
+    }
+
+    private Message insertMessage(String sessionId, Message message, boolean notifyRobot)
+            throws SessionServiceException {
         //1.查询是否存在对应session
         Session session = sessionFactory.selectById(sessionId);
         if (null == session){
@@ -83,7 +97,9 @@ public class MessageSolution {
             Chatter chatter = chatterFactory.select(chatterId);
             // 如果为机器人，进行插槽调用，利用handler解析message
             if (chatter instanceof RobotChatter && !Objects.equals(message.getChatterId(), chatter.getId())) {
-                robotSolution.onReceiveMessage(message, sessionId, (RobotChatter)chatter);
+                if (notifyRobot) {
+                    robotSolution.onReceiveMessage(message, sessionId, (RobotChatter)chatter);
+                }
                 continue;
             }
             //构建response,向不同客户端发送
@@ -115,6 +131,19 @@ public class MessageSolution {
         sessionFactory.updateMessage(session.getSessionId(), message);
     }
 
+    public boolean removeMessage(String sessionId, Message target) {
+        Session session = sessionFactory.selectById(sessionId);
+        if (session == null || session.getMessageList() == null || target == null) {
+            return false;
+        }
+        List<Message> messages = session.getMessageList();
+        synchronized (messages) {
+            return messages.removeIf(message -> message == target
+                    || (target.getId() != null
+                    && Objects.equals(message.getId(), target.getId())));
+        }
+    }
+
     /**
      * 是否已经存在stream
      * @param senderId
@@ -134,6 +163,17 @@ public class MessageSolution {
      * @param streamMessage
      */
     public void sendStreamMessage(String sessionId, StreamMessage streamMessage) {
+        sendStreamMessage(sessionId, streamMessage, true);
+    }
+
+    /** Ends and persists a stream without replacing the current frontend session projection. */
+    public void sendStreamMessageWithoutSessionRefresh(
+            String sessionId, StreamMessage streamMessage) {
+        sendStreamMessage(sessionId, streamMessage, false);
+    }
+
+    private void sendStreamMessage(String sessionId, StreamMessage streamMessage,
+                                   boolean refreshSessionOnEnd) {
         //1.查询是否存在对应session
         Session session = sessionFactory.selectById(sessionId);
         if (null == session){
@@ -189,6 +229,10 @@ public class MessageSolution {
             message.setContent(messageConnect.getMessageContent().toString());
             sessionFactory.insertMessage(session.getSessionId(), message);
 
+            if (!refreshSessionOnEnd) {
+                return;
+            }
+
             // 流式消息完成后，通知接收方刷新session
             for (String chatterId : session.getChatterSet().stream().map(Chatter::getId).collect(Collectors.toList())) {
                 if (Objects.equals(chatterId, messageConnect.getSenderId())) {
@@ -200,7 +244,8 @@ public class MessageSolution {
                     SessionDTO sessionDTO = sessionService.findSession(session.getSessionId());
                     for (ChatServer server : servers) {
                         try {
-                            server.getSession().sendToClient(WSResponse.createSession("ok", sessionDTO));
+                            server.getSession().sendToClient(WSResponse.createSession(
+                                    "ok", sessionPreviewSolution.toPreview(sessionDTO)));
                         } catch (Exception e) {
                             log.warn("push createSession after stream end failed, chatterId = {}", chatterId, e);
                         }

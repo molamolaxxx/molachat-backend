@@ -14,6 +14,10 @@ public class TeamDTO {
 
     private String name;
 
+    private String mode = "NORMAL";
+
+    private String captainTeamMemberId;
+
     private String status;
 
     private String state;
@@ -26,5 +30,10 @@ public class TeamDTO {
 
     public String getStatus() {
         return status == null ? state : status;
+    }
+
+    public String getMode() {
+        return mode == null || mode.trim().isEmpty()
+                ? "NORMAL" : mode.trim().toUpperCase(java.util.Locale.ROOT);
     }
 }

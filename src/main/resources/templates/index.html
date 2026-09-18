@@ -10,7 +10,8 @@
     <link rel="stylesheet" type="text/css" href="css/normalize.css">
     <link rel="stylesheet" type="text/css" href="css/font.css">
     <link rel="stylesheet" type="text/css" href="css/default.css">
-    <link rel="stylesheet" type="text/css" href="css/styles.css">
+    <link rel="stylesheet" type="text/css" href="vendor/katex/katex.min.css?v=0.18.1">
+    <link rel="stylesheet" type="text/css" href="css/styles.css?v=202609122139">
     <link rel="stylesheet" type="text/css" href="css/ripple.css">
     <link rel="stylesheet" type="text/css" href="css/emoji-popup.css">
     <link rel="stylesheet" type="text/css" href="css/mail.css">
@@ -37,6 +38,11 @@
 
         <div id="sidebar" class="sidebar-content">
             <div class="friend-list">
+                <button id="leave-team-quick" class="team-home-shortcut" type="button" hidden
+                    aria-label="切回主会话">
+                    <i class="material-icons" aria-hidden="true">home</i>
+                    <span>主会话</span>
+                </button>
                 <div class="empty" style="display:block">
                     <h2 style="color: #787b81ab;">empty</h2>
                 </div>
@@ -318,6 +324,37 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
             </div>
         </div>
     </div>
+    <div id="file-viewer-modal" class="modal file-viewer-modal" role="dialog"
+        aria-modal="true" aria-labelledby="file-viewer-title">
+        <div class="file-viewer__shell">
+            <header class="file-viewer__header">
+                <div class="file-viewer__heading">
+                    <div id="file-viewer-title" class="file-viewer__title">文件预览</div>
+                    <div class="file-viewer__meta"></div>
+                </div>
+                <div class="file-viewer__actions">
+                    <button type="button" class="file-viewer__mode btn-flat">源码</button>
+                    <button type="button" class="file-viewer__close btn-flat" aria-label="关闭文件查看器">
+                        <i class="material-icons" aria-hidden="true">close</i>
+                    </button>
+                </div>
+            </header>
+            <main class="file-viewer__body">
+                <div class="file-viewer__loading"></div>
+                <div class="file-viewer__source" hidden>
+                    <div class="file-viewer__code-scroll">
+                        <div class="file-viewer__code-layout">
+                            <pre class="file-viewer__gutter" aria-hidden="true"></pre>
+                            <pre class="file-viewer__code"><code></code></pre>
+                            <div class="file-viewer__line-focus" aria-hidden="true"></div>
+                        </div>
+                    </div>
+                </div>
+                <iframe class="file-viewer__preview" title="文件预览内容"
+                    referrerpolicy="no-referrer" hidden></iframe>
+            </main>
+        </div>
+    </div>
     <div id="message-edit-modal" class="modal bottom-sheet">
         <div class="history-root">
             <div class="modal-content" style="padding-bottom: 0; position: relative;">
@@ -395,6 +432,8 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
     </a>
 
     <script src="js/utils/marked.min.js"></script>
+    <script src="vendor/katex/katex.min.js?v=0.18.1"></script>
+    <script src="js/utils/markdown-math.js?v=202609122139"></script>
     <script type="text/javascript" src="js/utils/highlight.min.js"></script>
     <script type="text/javascript" src="cordova.js"></script>
     <script type="text/javascript" src="js/utils/stopExecutionOnTimeout.js?t=1"></script>
@@ -410,27 +449,29 @@ right: 2rem;" href="javascript:;"><i class="material-icons">account_box</i></a> 
     <script type="text/javascript" src="js/chat/common.js"></script>
     <script type="text/javascript" src="js/app/resizelistener.js"></script>
     <script type="text/javascript" src="js/app/remote.js"></script>
-    <script type="text/javascript" src="js/app/main.js"></script>
-    <script type="text/javascript" src="js/chat/user.js"></script>
+    <script type="text/javascript" src="js/app/main.js?v=202608132146"></script>
+    <script type="text/javascript" src="js/chat/user.js?v=202608232144"></script>
     <script type="text/javascript" src="js/chat/chatter.js"></script>
-    <script type="text/javascript" src="js/chat/session.js"></script>
+    <script type="text/javascript" src="js/chat/session.js?v=202608132146"></script>
     <script type="text/javascript" src="js/chat/notification.js"></script>
-    <script type="text/javascript" src="js/chat/message.js"></script>
+    <script type="text/javascript" src="js/chat/message.js?v=202609122139"></script>
+    <script type="text/javascript" src="js/chat/file-viewer.js?v=202608280008"></script>
     <script type="text/javascript" src="js/chat/group.js"></script>
     <script type="text/javascript" src="js/file/file-dom-render.js"></script>
     <script type="text/javascript" src="js/file/file.js"></script>
     <script type="text/javascript" src="js/utils/ripple.js"></script>
     <script type="text/javascript" src="js/app/mail.js"></script>
-    <script type="text/javascript" src="js/chat/multichat.js"></script>
+    <script type="text/javascript" src="js/chat/multichat.js?v=202608161318"></script>
     <script type="text/javascript" src="js/video/rtc.js"></script>
     <script type="text/javascript" src="js/video/video.js"></script>
     <script type="text/javascript" src="js/video/handler.js"></script>
-    <script type="text/javascript" src="js/chat/team.js"></script>
+    <script type="text/javascript" src="js/chat/team.js?v=202609061950"></script>
     <script type="text/javascript" src="js/app/nav.js"></script>
     <script type="text/javascript" src="js/utils/spinner.js"></script>
     <script type="text/javascript" src="js/chat/history.js"></script>
     <script type="text/javascript" src="js/chat/cmd.js"></script>
     <script src="js/utils/materialize.min.js"></script>
+    <script type="text/javascript" src="js/app/tooltip.js?v=202608161406"></script>
     <!-- and it's easy to individually load additional languages -->
     <script type="text/javascript" src="js/utils/go.min.js"></script>
 

@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -77,6 +78,11 @@ public class ChatServer {
     private AtomicInteger connectClientCount = new AtomicInteger(0);
 
     /**
+     * HTTP 主动重连和 WebSocket close 回调可能同时关闭同一个连接。
+     */
+    private AtomicBoolean closed = new AtomicBoolean(false);
+
+    /**
      * 登录之后，开始连接
      * @param session
      * @param chatterId
@@ -84,6 +90,7 @@ public class ChatServer {
      */
     public void onOpen(SessionWrapper session, String chatterId, String deviceId) throws Exception {
         this.session = session;
+        this.closed.set(false);
         log.info("chatterId:"+chatterId+"开始连接");
         this.chatterId = chatterId;
         this.lastHeartBeat = System.currentTimeMillis();
@@ -91,10 +98,13 @@ public class ChatServer {
 
         //1.添加服务器
         try {
-            //如果存在服务器：重连状态只是更换session,不存在则创建
-            if (null == serverService.selectByChatterId(chatterId, deviceId)){
-                serverService.create(this);
+            // 同一设备的新物理连接替换旧连接，旧连接的 close 必须只清理自己。
+            ChatServer previous = serverService.selectByChatterId(chatterId, deviceId);
+            if (null != previous && previous != this) {
+                previous.onClose();
             }
+            serverService.create(this);
+            chatterService.setChatterStatus(chatterId, ChatterStatusEnum.ONLINE.getCode());
         } catch (ServerServiceException e) {
             log.error("ChatServer onOpen error!" + chatterId, e);
             //发送异常信息
@@ -117,6 +127,9 @@ public class ChatServer {
      * 关闭连接
      */
     public void onClose() throws IOException, EncodeException{
+        if (!closed.compareAndSet(false, true)) {
+            return;
+        }
         log.info("chatterId:"+chatterId+"断开连接");
         if (connectClientCount.get() > 0) {
             connectClientCount.decrementAndGet();

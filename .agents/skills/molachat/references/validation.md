@@ -61,7 +61,10 @@ Also package the relevant cmd-proxy modules and confirm expected normal and depe
 ## Deployment and E2E
 
 - Source files in this repository are authoritative for frontend assets.
-- Sync source → Nginx/static deployment only when requested and authorized; verify each modified file with `cmp` or SHA-256 afterward.
+- For MolaChat frontend changes, sync the corresponding authoritative source files to `/home/mola/nginx-root/molaapp` before reporting delivery complete. Obtain authorization when required by filesystem permissions.
+- Do not modify `/home/mola/CordovaProject/chat/www` unless the user explicitly requests a Cordova build or Cordova asset update.
+- Preserve unrelated deployment-specific differences and update only the relevant cache-busting references in the deployed `index.html`.
+- Verify every synchronized JavaScript file with `cmp` or SHA-256 and `node --check`; verify the deployed cache reference and, when available, the asset served over HTTP.
 - Restart/deploy only when explicitly in scope.
 - Real Fast Team acceptance needs deployed processes and at least two actual placements/devices for cross-instance behavior.
 - Verify old Team recovery, creation, message streaming, TalkTo, session rotation, offline/reconnect, deletion, and cleanup according to the changed surface.

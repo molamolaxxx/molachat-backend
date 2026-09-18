@@ -178,20 +178,31 @@ $(document).ready(function () {
         $(document).off("click", closeSidebar);
     }
 
-    function moveImage(that) {
+    function prepareImageTransition(that) {
         var zoom = parseFloat(document.body.style.zoom || 1),
             $img = $(that).find(".contact__photo"),
             top = ($img.offset().top - $demo.offset().top) / zoom,
             left = ($img.offset().left - $demo.offset().left) / zoom,
             $clone = $img.clone().addClass("cloned");
 
-        $clone.css({
+        return {
+            clone: $clone,
             top: top,
             left: left
+        }
+    }
+
+    function moveImage(transition) {
+        if (!transition) {
+            return
+        }
+        transition.clone.css({
+            top: transition.top,
+            left: transition.left
         });
-        $demo.append($clone);
-        $clone.css("top");
-        $clone.css({
+        $demo.append(transition.clone);
+        transition.clone.css("top");
+        transition.clone.css({
             top: "1.8rem",
             left: "25rem"
         });
@@ -246,10 +257,16 @@ $(document).ready(function () {
         ripple($(that), e);
         // 如果用户栏在外部，省略动画
         if (isSideBarOutside()) {
-            // moveImage(that);
             var $img = $(that).find(".contact__photo")
             var online = $(that).find(".contact__photo__gray")
             let $cloned = $(".cloned")
+            if (!$cloned.length) {
+                $cloned = $img.clone().addClass("cloned").css({
+                    top: "1.8rem",
+                    left: "25rem"
+                })
+                $demo.append($cloned)
+            }
             $cloned[0].src = $img[0].src
             console.log(online.length)
             if (online.length > 0) {
@@ -264,6 +281,7 @@ $(document).ready(function () {
         animating = true;
         $(document).off("click", closeSidebar);
         var online = $(this).find(".contact__status").hasClass("online");
+        var imageTransition = prepareImageTransition(that)
 
         // $intro.innerText = $(this).find(".contact_intro")[0].innerText;
 
@@ -271,7 +289,7 @@ $(document).ready(function () {
         if (online) $(".chat__online").addClass("active");
         setTimeout(function () {
             $sCont.removeClass("active");
-            moveImage(that);
+            moveImage(imageTransition);
             finalX = -80;
             setTimeout(function () {
                 $(".ripple").remove();

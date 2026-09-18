@@ -16,6 +16,8 @@ public class MixedTeamRecord {
     private String teamId;
     private String ownerChatterId;
     private String name;
+    private String mode = "NORMAL";
+    private String captainTeamMemberId;
     private String state;
     private String requestId;
     private String payloadHash;
@@ -46,8 +48,10 @@ public class MixedTeamRecord {
         private String sourceGroupId;
         private String displayName;
         private String avatar;
+        private String teamRemark;
         private String remark;
         private Integer order;
         private String state;
+        private String sessionId;
     }
 }

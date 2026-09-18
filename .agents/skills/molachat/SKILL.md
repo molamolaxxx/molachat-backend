@@ -47,6 +47,15 @@ description: Inspect, diagnose, modify, and validate the MolaChat repository, a 
 5. Distinguish current command results from historical Surefire reports. Report test counts and any skipped validation explicitly.
 6. Treat real cross-device/cross-instance E2E, browser layout verification, deployment sync, and production checks as separate evidence—not implied by unit tests.
 
+## Deliver frontend changes to the actual static directory
+
+1. Treat `src/main/resources/static/` and `src/main/resources/templates/` as authoritative. Never copy an older deployed file back over repository source.
+2. After changing MolaChat frontend source, sync the corresponding files to the actual Nginx frontend at `/home/mola/nginx-root/molaapp` before reporting the frontend work complete. Update only the relevant cache-busting reference in the deployed `index.html` when a changed asset is referenced there.
+3. Do not sync or modify `/home/mola/CordovaProject/chat/www` unless the user explicitly asks for a Cordova build or Cordova asset update. Nginx static delivery and Cordova packaging are separate targets.
+4. Before overwriting deployment files, resolve the exact source and target and preserve unrelated target-specific differences. Request authorization when the target is outside the writable workspace or the action otherwise requires it.
+5. After syncing, prove the deployed asset matches source with `cmp` or SHA-256, run `node --check` on each deployed JavaScript file, and verify the deployed `index.html` contains the new cache version. When the local HTTP endpoint is available, also confirm the served asset and cache reference; report explicitly when runtime HTTP verification is unavailable.
+6. If required Nginx synchronization cannot be performed, report the frontend change as implemented in source but not fully delivered. Do not describe it as complete deployment.
+
 ## Report the result
 
 Lead with the outcome. Summarize the root cause or implementation, list current validation evidence, name anything not verified, and link directly to the most important changed files. Do not claim deployment or production recovery unless it was actually performed and observed.

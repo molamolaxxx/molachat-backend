@@ -43,9 +43,15 @@ public class ChatterServiceImpl implements ChatterService {
     private SelfConfig selfConfig;
 
     @Override
-    public ChatterDTO create(ChatterDTO chatterDTO) throws ChatterServiceException {
+    public synchronized ChatterDTO create(ChatterDTO chatterDTO) throws ChatterServiceException {
 
         //1.chatterDTO内部应该包含 :ip, name,默认不为空
+        if (chatterDTO.getId() != null) {
+            Chatter existing = chatterFactory.select(chatterDTO.getId());
+            if (existing != null) {
+                return (ChatterDTO) BeanUtilsPlug.copyPropertiesReturnTarget(existing, new ChatterDTO());
+            }
+        }
         Chatter chatter = new Chatter();
         BeanUtils.copyProperties(chatterDTO, chatter);
         List<Chatter> chatterList = chatterFactory.list();

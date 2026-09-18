@@ -5,6 +5,7 @@ import com.mola.molachat.common.model.ServerResponse;
 import com.mola.molachat.team.dto.TeamCreateRequest;
 import com.mola.molachat.team.dto.TeamDiscoveryDTO;
 import com.mola.molachat.team.dto.TeamDTO;
+import com.mola.molachat.team.dto.TeamHomeDTO;
 import com.mola.molachat.team.dto.TeamMemberDTO;
 import com.mola.molachat.team.solution.TeamCommandException;
 import com.mola.molachat.team.solution.TeamGatewaySolution;
@@ -69,6 +70,40 @@ public class TeamController {
         }
     }
 
+    @GetMapping("/home")
+    public ServerResponse<TeamHomeDTO> home(
+            @RequestParam("chatterId") String chatterId,
+            @RequestParam("token") String token,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        if (!checkToken(chatterId, token, request, response)) {
+            return ServerResponse.createByErrorMessage("token验证错误");
+        }
+        try {
+            return ServerResponse.createBySuccess(teamGatewaySolution.getHome(chatterId));
+        } catch (TeamCommandException e) {
+            return commandError(e, response);
+        }
+    }
+
+    @PostMapping("/home")
+    public ServerResponse<TeamHomeDTO> selectHome(
+            @RequestParam("chatterId") String chatterId,
+            @RequestParam("token") String token,
+            @RequestParam("cmdProxyInstanceId") String cmdProxyInstanceId,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        if (!checkToken(chatterId, token, request, response)) {
+            return ServerResponse.createByErrorMessage("token验证错误");
+        }
+        try {
+            return ServerResponse.createBySuccess(
+                    teamGatewaySolution.selectHome(chatterId, cmdProxyInstanceId));
+        } catch (TeamCommandException e) {
+            return commandError(e, response);
+        }
+    }
+
     @GetMapping
     public ServerResponse<List<TeamDTO>> list(
             @RequestParam("chatterId") String chatterId,
@@ -95,6 +130,19 @@ public class TeamController {
             return ServerResponse.createByErrorMessage("token验证错误");
         }
         return ServerResponse.createBySuccess(teamGatewaySolution.snapshot(chatterId));
+    }
+
+    @PostMapping("/maintenance/cleanup-stale")
+    public ServerResponse<List<String>> cleanupStale(
+            @RequestParam("chatterId") String chatterId,
+            @RequestParam("token") String token,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        if (!checkToken(chatterId, token, request, response)) {
+            return ServerResponse.createByErrorMessage("token验证错误");
+        }
+        return ServerResponse.createBySuccess(
+                teamGatewaySolution.cleanupStaleTeams(chatterId));
     }
 
     @GetMapping("/{teamId}")
@@ -183,11 +231,15 @@ public class TeamController {
         String code = exception.getCode();
         if ("NOT_FOUND".equals(code)) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        } else if ("UNAUTHORIZED".equals(code)) {
+        } else if ("UNAUTHORIZED".equals(code)
+                || "REMOTE_GRANT_REVOKED".equals(code)
+                || "TEAM_COMMUNICATION_FORBIDDEN".equals(code)) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         } else if ("IDEMPOTENCY_CONFLICT".equals(code)
                 || "VERSION_CONFLICT".equals(code)
                 || "TEAM_DELETING".equals(code)
+                || "HOME_INSTANCE_REQUIRED".equals(code)
+                || "HOME_INSTANCE_CONFLICT".equals(code)
                 || "CMD_PROXY_INSTANCE_CONFLICT".equals(code)) {
             response.setStatus(HttpServletResponse.SC_CONFLICT);
         } else if ("TEAM_NOT_READY".equals(code)) {
@@ -213,6 +265,21 @@ public class TeamController {
         }
         if ("QUOTA_EXCEEDED".equals(code)) {
             return "Fast Team数量或成员数已达到当前环境上限";
+        }
+        if ("HOME_INSTANCE_REQUIRED".equals(code)) {
+            return "请先选择一台本机ACP设备";
+        }
+        if ("REMOTE_ONLY_TEAM".equals(code)) {
+            return "跨设备Team必须至少包含一位本机成员";
+        }
+        if ("REMOTE_GRANT_REVOKED".equals(code)) {
+            return "远程设备已撤销使用授权";
+        }
+        if ("CAPTAIN_REQUIRED".equals(code)) {
+            return "队长模式至少需要两名成员，并且必须手工指定一名队长";
+        }
+        if ("TEAM_COMMUNICATION_FORBIDDEN".equals(code)) {
+            return "队长模式只能通过队长进行团队通信";
         }
         return message;
     }

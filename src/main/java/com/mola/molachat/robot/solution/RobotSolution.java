@@ -79,6 +79,12 @@ public class RobotSolution implements InitializingBean {
     @Resource
     private TeamAcpExecSolution teamAcpExecSolution;
 
+    @Resource
+    private AcpRuntimeStatusSolution acpRuntimeStatusSolution;
+
+    @Resource
+    private AcpPromptSolution acpPromptSolution;
+
     /**
      * 业务线程池
      */
@@ -272,14 +278,7 @@ public class RobotSolution implements InitializingBean {
                 return;
             }
             if (message instanceof FileMessage) {
-                FileMessage fm = (FileMessage) message;
-                ServerResponse<String> result = ocrSolution.ocr(fm);
-                if (result.getStatus() == ResponseCode.SUCCESS.getCode()) {
-                    FileMessage toUpdate = new FileMessage();
-                    toUpdate.setId(fm.getId());
-                    toUpdate.setOcrResultCache(result.getData());
-                    messageSolution.updateMessage(sessionId, toUpdate);
-                }
+                handleFileMessage((FileMessage) message, sessionId, robot);
                 return;
             }
             MessageReceiveEvent messageReceiveEvent = new MessageReceiveEvent();
@@ -332,6 +331,24 @@ public class RobotSolution implements InitializingBean {
                 return msg;
             }
             return null;
+        }
+    }
+
+    void handleFileMessage(FileMessage fileMessage, String sessionId, RobotChatter robot) {
+        if ("acp".equals(robot.getRobotGroup())
+                && "BUSY".equals(acpRuntimeStatusSolution.getStatus(sessionId))) {
+            AcpPromptSolution.InvokeResult cancelResult = acpPromptSolution.cancelPrompt(sessionId);
+            if (!cancelResult.isAccepted()) {
+                log.warn("ACP文件消息取消当前prompt失败, sessionId={}, code={}, result={}",
+                        sessionId, cancelResult.getCode(), cancelResult.getMessage());
+            }
+        }
+        ServerResponse<String> result = ocrSolution.ocr(fileMessage);
+        if (result.getStatus() == ResponseCode.SUCCESS.getCode()) {
+            FileMessage toUpdate = new FileMessage();
+            toUpdate.setId(fileMessage.getId());
+            toUpdate.setOcrResultCache(result.getData());
+            messageSolution.updateMessage(sessionId, toUpdate);
         }
     }
 }

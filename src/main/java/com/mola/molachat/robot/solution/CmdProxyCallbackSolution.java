@@ -14,6 +14,7 @@ import com.mola.molachat.team.solution.TeamGatewaySolution;
 import com.mola.molachat.team.solution.TeamCommandTransport;
 import kotlin.Unit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
 import org.springframework.scheduling.TaskScheduler;
@@ -56,6 +57,9 @@ public class CmdProxyCallbackSolution implements InitializingBean {
     private AcpSessionChangedSolution acpSessionChangedSolution;
 
     @Resource
+    private AcpDeferredMessageSolution acpDeferredMessageSolution;
+
+    @Resource
     private SessionFactoryInterface sessionFactory;
 
     @Resource
@@ -88,15 +92,22 @@ public class CmdProxyCallbackSolution implements InitializingBean {
 
     public void registerAcpCallback() {
         CmdSender.INSTANCE.registerCallback(CmdProxyConstant.ACP, CmdProxyConstant.ACP, (res) -> {
-            String groupId = res.getResultMap().get("groupId");
-            String content = res.getResultMap().get("content");
-            boolean end = Objects.equals(res.getResultMap().get("end"), "Y");
-            sendStreamMessage(content, groupId, end);
+            handleAcpResponse(res.getResultMap());
             return Unit.INSTANCE;
         });
     }
 
-    private void sendStreamMessage(String content, String groupId, boolean end) {
+    void handleAcpResponse(Map<String, String> resultMap) {
+        String groupId = resultMap.get("groupId");
+        String content = resultMap.get("content");
+        boolean end = Objects.equals(resultMap.get("end"), "Y");
+        boolean interrupted = Objects.equals(
+                resultMap.get("termination"), "INTERRUPTED");
+        sendStreamMessage(content, groupId, end, interrupted);
+    }
+
+    private void sendStreamMessage(String content, String groupId, boolean end,
+                                   boolean interrupted) {
         // 发送流式消息
         StreamMessage msg = new StreamMessage();
         msg.setContent(content);
@@ -115,6 +126,16 @@ public class CmdProxyCallbackSolution implements InitializingBean {
         msg.setSessionId(groupId);
         msg.setCreateTime(new Date());
         msg.setEnd(end);
+        if (end && interrupted) {
+            // Consume the real provider terminal exactly once. Suppress the intermediate
+            // CREATE_SESSION refresh so the frontend's optimistic user message stays visible.
+            if (messageSolution.findStreamConnect(chatterId, groupId) != null
+                    || !StringUtils.isBlank(content)) {
+                messageSolution.sendStreamMessageWithoutSessionRefresh(groupId, msg);
+            }
+            acpDeferredMessageSolution.flush(groupId);
+            return;
+        }
         messageSolution.sendStreamMessage(groupId, msg);
     }
 
@@ -134,7 +155,15 @@ public class CmdProxyCallbackSolution implements InitializingBean {
                     robotsJson, AcpRobotSyncSolution.AcpRobotParam.class);
             Set<String> visibleChatterIds = new HashSet<>(
                     JSON.parseArray(visibleChatterIdsJson, String.class));
-            acpRobotSyncSolution.sync(robots, visibleChatterIds);
+            String instanceId = resultMap.get("teamCmdProxyInstanceId");
+            if (StringUtils.isBlank(instanceId)
+                    || teamGatewaySolution.shouldSyncOrdinaryRobots(
+                    instanceId, visibleChatterIds)) {
+                acpRobotSyncSolution.sync(robots, visibleChatterIds);
+            } else {
+                log.info("忽略非home实例的普通ACP快照, instanceId={}, visibleChatterIds={}",
+                        instanceId, visibleChatterIds);
+            }
         } catch (Exception e) {
             log.error("acpSyncRobots响应处理失败", e);
         }

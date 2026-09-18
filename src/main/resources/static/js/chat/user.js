@@ -184,7 +184,7 @@ $(document).ready(function () {
                     checkHost()
                     return
                 }
-                response = JSON.parse(result.responseText)
+                var response = JSON.parse(result.responseText)
                 if (response.data && response.data.isOverFlow) {
                     swal("sorry", "抱歉，会话人数已达上限", "warning")
                     return
@@ -196,7 +196,14 @@ $(document).ready(function () {
                     onChangeChatterFail(preId)
                     return
                 }
-                createChatter()
+                // 只有服务端明确确认 chatter 不存在时才恢复身份。
+                // 网络、token、超时等临时错误不能删除或重建共享 chatter。
+                if (response.status === 103) {
+                    createChatter()
+                    return
+                }
+                removeSpinner()
+                notRepeatToast("连接恢复失败，原因是:" + response.msg, 1000)
 
             },
             complete: function (xhr, status) {
@@ -457,36 +464,23 @@ $(document).ready(function () {
 
     //创建用户信息，获取chatterId
     createChatter = function () {
-        $.ajax({
-            url: getPrefix() + "/chat/chatter",
-            dataType: "json",
-            type: "delete",
-            xhrFields: {
-                withCredentials: true
-            },
-            crossDomain: true,
-            data: {
-                "preId": localStorage.getItem("preId")
-            },
-            success: function (result) {
-                // 从本地读取头像链接
-                var imgUrl = localStorage.getItem("imgUrl");
-                if (null == imgUrl) {
-                    // 随机生成头像
-                    var rand = Math.ceil(Math.random() * 1000000000) % 15 + 1;
-                    imgUrl = "img/header/" + rand + ".jpeg"
-                    // imgUrl = "img/mola.png";
-                }
-                postCreateChatter(chatterName, imgUrl, true)
-            }
-        });
-
+        // 从本地读取头像链接
+        var imgUrl = localStorage.getItem("imgUrl");
+        if (null == imgUrl) {
+            // 随机生成头像
+            var rand = Math.ceil(Math.random() * 1000000000) % 15 + 1;
+            imgUrl = "img/header/" + rand + ".jpeg"
+            // imgUrl = "img/mola.png";
+        }
+        // 首次创建或恢复已不存在的 chatter 都直接提交。
+        // 禁止先 DELETE preId，避免删除其他设备正在使用的共享身份。
+        postCreateChatter(chatterName, imgUrl, true)
     }
 
     /**
      * 提交创建chatter请求
-     * 服务端要求昵称全局唯一，而createChatter是先删旧chatter再建新chatter，
-     * 一旦创建失败本机身份就彻底丢失，所以重名时自动加随机后缀重试一次
+     * 服务端要求昵称全局唯一；新身份重名时自动加随机后缀重试一次。
+     * 携带 preId 的恢复由服务端按 id 幂等处理，不会覆盖另一设备先恢复的同一身份。
      * @param {*} name 昵称
      * @param {*} imgUrl 头像
      * @param {*} allowRename 重名时是否允许自动改名重试
@@ -504,16 +498,16 @@ $(document).ready(function () {
                 "chatterName": name,
                 "signature": chatterSign,
                 "imgUrl": imgUrl,
-                "preId": localStorage.getItem("preId")
+                "preId": localStorage.getItem("preId"),
+                "token": token
             },
             success: function (result) {
                 chatterId = result.data.id
-                token = result.data.token
-                localStorage.setItem("token", result.data.token)
+                setToken(result.data.token)
                 localStorage.setItem("preId", chatterId)
-                if (name !== chatterName) {
-                    setChatterName(name)
-                }
+                setChatterName(result.data.name)
+                setChatterImage(result.data.imgUrl)
+                setChatterSign(result.data.signature)
                 if (typeof updateProfileChatterId === "function") {
                     updateProfileChatterId(chatterId)
                 }
@@ -544,23 +538,39 @@ $(document).ready(function () {
     }
 
     var socketErrorTimes = 0
-    linkToServer = function () {
+    var reconnecting = false
+    linkToServer = function (onOpen) {
         if (chatterId == null) {
             swal("error", "未获取chatterId，连接服务器失败!", "error");
             return;
         }
         if (socket) {
+            socket.onopen = null
+            socket.onmessage = null
+            socket.onerror = null
+            socket.onclose = null
             socket.close()
         }
         clearStreamMessageMap()
-        socket = new WebSocket(getSocketPrefix() + "/chat/server/" + chatterId + "," + getDeviceId());
-        socket.onopen = function (ev) {
+        var currentSocket = new WebSocket(getSocketPrefix() + "/chat/server/" + chatterId + "," + getDeviceId());
+        socket = currentSocket
+        currentSocket.onopen = function (ev) {
+            if (socket !== currentSocket) {
+                return
+            }
             console.info("socket已经打开");
             console.info(ev);
             socketErrorTimes = 0;
+            reconnecting = false
+            if (onOpen) {
+                onOpen()
+            }
         };
 
-        socket.onmessage = function (ev) {
+        currentSocket.onmessage = function (ev) {
+            if (socket !== currentSocket) {
+                return
+            }
             var result = JSON.parse(ev.data)
             if (result.code == LIST_MESSAGE) {
                 var chatterList = result.data;
@@ -608,7 +618,11 @@ $(document).ready(function () {
             // console.info(result);
         };
 
-        socket.onerror = function (ev) {
+        currentSocket.onerror = function (ev) {
+            if (socket !== currentSocket) {
+                return
+            }
+            reconnecting = false
             if (socketErrorTimes > 10) {
                 swal("出错啦", "服务器连接崩溃了，请重新连接", "info").then((value) => {
                     socketErrorTimes = 0
@@ -621,7 +635,11 @@ $(document).ready(function () {
             console.info(ev);
         }
 
-        socket.onclose = function (ev) {
+        currentSocket.onclose = function (ev) {
+            if (socket !== currentSocket) {
+                return
+            }
+            reconnecting = false
             console.info("socket退出");
             console.info(ev);
 
@@ -704,6 +722,10 @@ $(document).ready(function () {
 
     //重新连接
     reconnect = function (onSuccess) {
+        if (reconnecting) {
+            return
+        }
+        reconnecting = true
         $.ajax({
             url: getPrefix() + "/chat/chatter/reconnect",
             type: "post",
@@ -720,35 +742,38 @@ $(document).ready(function () {
             },
             success: function (result) {
                 if (chatterId == result.data.id) {
-                    linkToServer();
                     // 将更新的token插入缓存
                     if (result.data.token) {
-                        localStorage.setItem("token", result.data.token)
+                        setToken(result.data.token)
                     }
-                    notRepeatToast("服务器连接成功，欢迎回来", 1000)
-                    // 重连后主动请求当前session最新状态
-                    var currentActiveChatter = getActiveChatter();
-                    if (currentActiveChatter) {
-                        setTimeout(function () {
-                            var socket = getSocket();
-                            if (socket && socket.readyState === WebSocket.OPEN) {
-                                var action = new Object();
-                                action.code = 220;
-                                action.msg = "ok";
-                                action.data = getChatterId() + ";" + currentActiveChatter.id;
-                                socket.send(JSON.stringify(action));
-                            }
-                        }, 500)
-                    }
-                    if (onSuccess) {
-                        onSuccess()
-                    }
+                    linkToServer(function () {
+                        notRepeatToast("服务器连接成功，欢迎回来", 1000)
+                        // 重连后主动请求当前session最新状态
+                        var currentActiveChatter = getActiveChatter();
+                        if (currentActiveChatter) {
+                            setTimeout(function () {
+                                var socket = getSocket();
+                                if (socket && socket.readyState === WebSocket.OPEN) {
+                                    var action = new Object();
+                                    action.code = 220;
+                                    action.msg = "ok";
+                                    action.data = getChatterId() + ";" + currentActiveChatter.id;
+                                    socket.send(JSON.stringify(action));
+                                }
+                            }, 500)
+                        }
+                        if (onSuccess) {
+                            onSuccess()
+                        }
+                    });
                 } else {
+                    reconnecting = false
                     swal("error", "id不一致，重连失败", "error")
                 }
             },
             error: function (result) {
-                response = JSON.parse(result.responseText)
+                reconnecting = false
+                var response = JSON.parse(result.responseText)
                 if (response.data && response.data.isOverFlow) {
                     swal("sorry", "抱歉，会话人数已达上限", "warning")
                     return
@@ -762,7 +787,7 @@ $(document).ready(function () {
                 if (status == 'timeout') {
                     // 超时后中断请求
                     xhr.abort();
-                    reconnect()
+                    reconnecting = false
                 }
             }
         });

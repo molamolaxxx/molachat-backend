@@ -4,15 +4,12 @@ import org.junit.Test;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class TeamCommandTransportTest {
 
@@ -70,6 +67,54 @@ public class TeamCommandTransportTest {
         } catch (RejectedExecutionException expected) {
             // expected
         }
+    }
+
+    @Test
+    public void blockedMutationDoesNotBlockQueryAndEventOrderIsPreserved() throws Exception {
+        TeamCommandTransport transport = new TeamCommandTransport(4);
+        CountDownLatch mutationStarted = new CountDownLatch(1);
+        CountDownLatch releaseMutation = new CountDownLatch(1);
+        CountDownLatch queryCompleted = new CountDownLatch(1);
+        CountDownLatch mutationsCompleted = new CountDownLatch(2);
+        CountDownLatch eventsCompleted = new CountDownLatch(2);
+        List<String> events = new CopyOnWriteArrayList<>();
+        List<String> mutations = new CopyOnWriteArrayList<>();
+
+        transport.dispatchEvent("transport-a",
+                TeamCommandTransport.CallbackLane.GATEWAY_MUTATION, ignored -> {
+                    mutationStarted.countDown();
+                    await(releaseMutation);
+                    mutations.add("1");
+                    mutationsCompleted.countDown();
+                }, Collections.singletonMap("operation", "member"));
+        assertTrue(mutationStarted.await(1, TimeUnit.SECONDS));
+
+        transport.dispatchEvent("transport-a",
+                TeamCommandTransport.CallbackLane.GATEWAY_QUERY,
+                ignored -> queryCompleted.countDown(),
+                Collections.singletonMap("operation", "list"));
+        transport.dispatchEvent("transport-a",
+                TeamCommandTransport.CallbackLane.GATEWAY_MUTATION, ignored -> {
+                    mutations.add("2");
+                    mutationsCompleted.countDown();
+                }, Collections.singletonMap("operation", "create"));
+        transport.dispatchEvent("transport-a", ignored -> {
+            events.add(ignored.get("id"));
+            eventsCompleted.countDown();
+        }, Collections.singletonMap("id", "1"));
+        transport.dispatchEvent("transport-a", ignored -> {
+            events.add(ignored.get("id"));
+            eventsCompleted.countDown();
+        }, Collections.singletonMap("id", "2"));
+
+        assertTrue("query must not wait for mutation lane",
+                queryCompleted.await(1, TimeUnit.SECONDS));
+        assertTrue(eventsCompleted.await(1, TimeUnit.SECONDS));
+        assertEquals(java.util.Arrays.asList("1", "2"), events);
+        releaseMutation.countDown();
+        assertTrue(mutationsCompleted.await(1, TimeUnit.SECONDS));
+        assertEquals(java.util.Arrays.asList("1", "2"), mutations);
+        transport.close();
     }
 
     private static void await(CountDownLatch latch) {

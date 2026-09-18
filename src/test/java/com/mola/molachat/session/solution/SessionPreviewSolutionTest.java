@@ -14,6 +14,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.nio.CharBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -46,7 +48,22 @@ public class SessionPreviewSolutionTest {
         assertEquals(fullContent, message.getContent());
         String responseJson = JSONObject.toJSONString(preview);
         assertFalse(responseJson.contains(fullContent));
+        assertFalse(responseJson.contains("detailSize"));
         assertTrue(responseJson.contains("\"contentTruncated\":true"));
+    }
+
+    @Test
+    public void doesNotSplitEmojiSurrogatePairAtPreviewBoundary() throws Exception {
+        String fullContent = repeat('x', 199) + "\uD83D\uDE80" + repeat('y', 50);
+        Message message = message("message-1", fullContent);
+
+        MessagePreviewDTO projected = solution.toPreview(session("session-1", message))
+                .getMessageList().get(0);
+
+        assertEquals(repeat('x', 199), projected.getContent());
+        assertTrue(projected.isContentTruncated());
+        assertEquals(fullContent, message.getContent());
+        StandardCharsets.UTF_8.newEncoder().encode(CharBuffer.wrap(JSONObject.toJSONString(projected)));
     }
 
     @Test
@@ -117,4 +134,5 @@ public class SessionPreviewSolutionTest {
         }
         return builder.toString();
     }
+
 }

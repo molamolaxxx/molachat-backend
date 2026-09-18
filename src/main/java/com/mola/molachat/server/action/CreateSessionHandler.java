@@ -10,6 +10,7 @@ import com.mola.molachat.session.dto.SessionDTO;
 import com.mola.molachat.server.session.SessionWrapper;
 import com.mola.molachat.group.service.GroupService;
 import com.mola.molachat.session.service.SessionService;
+import com.mola.molachat.session.solution.SessionPreviewSolution;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 
@@ -31,6 +32,9 @@ public class CreateSessionHandler implements WSRequestActionHandler{
     @Resource
     private GroupService groupService;
 
+    @Resource
+    private SessionPreviewSolution sessionPreviewSolution;
+
     @Override
     public Integer actonCode() {
         return ActionCode.CREATE_SESSION;
@@ -48,7 +52,7 @@ public class CreateSessionHandler implements WSRequestActionHandler{
             // 如果该session为群聊session
             if (SessionConstant.COMMON_SESSION_ID.equals(ids)) {
                 SessionDTO sessionDTO = sessionService.findCommonAndGroupSession(chatterId, SessionConstant.COMMON_SESSION_ID);
-                session.sendToClient(WSResponse.createSession("ok", sessionDTO));
+                session.sendToClient(WSResponse.createSession("ok", sessionPreviewSolution.toPreview(sessionDTO)));
                 return;
             }
 
@@ -58,7 +62,7 @@ public class CreateSessionHandler implements WSRequestActionHandler{
                 SessionDTO groupSession = sessionService.findSession(ids);
                 if (null != groupSession) {
                     groupSession = sessionService.findCommonAndGroupSession(chatterId, groupSession.getSessionId());
-                    session.sendToClient(WSResponse.createSession("ok", groupSession));
+                    session.sendToClient(WSResponse.createSession("ok", sessionPreviewSolution.toPreview(groupSession)));
                     return;
                 }
             }
@@ -69,7 +73,7 @@ public class CreateSessionHandler implements WSRequestActionHandler{
             SessionDTO sessionDTO = sessionService.findOrCreateSession(idSplit[0], idSplit[1]);
 
             //返回session信息
-            session.sendToClient(WSResponse.createSession("ok", sessionDTO));
+            session.sendToClient(WSResponse.createSession("ok", sessionPreviewSolution.toPreview(sessionDTO)));
         } catch (Exception e) {
             log.error("com.mola.molachat.handler.action.CreateSessionHandler.handle error ", e);
             action.getSessionWrapper().sendToClient(WSResponse.exception("会话创建失败", e.getMessage()));

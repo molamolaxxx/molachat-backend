@@ -26,6 +26,9 @@ public class TeamEventSolutionTest {
     private TeamMessageEventSolution messageEventSolution;
 
     @Mock
+    private TeamSessionChangedEventSolution sessionChangedEventSolution;
+
+    @Mock
     private TeamTalkToEventSolution talkToEventSolution;
 
     @Mock
@@ -38,7 +41,9 @@ public class TeamEventSolutionTest {
     public void teamReadySynchronizesRobotProjection() {
         Map<String, String> event = baseEvent("TEAM_READY");
         event.put("data", "{\"team\":{\"teamId\":\"team-1\",\"ownerChatterId\":\"owner\","
-                + "\"name\":\"Fast\",\"state\":\"READY\",\"version\":2,\"members\":[]},"
+                + "\"name\":\"Fast\",\"mode\":\"CAPTAIN\","
+                + "\"captainTeamMemberId\":\"member-1\","
+                + "\"state\":\"READY\",\"version\":2,\"members\":[]},"
                 + "\"members\":[]}");
 
         eventSolution.handle(event);
@@ -47,6 +52,8 @@ public class TeamEventSolutionTest {
         verify(projectionSolution).sync(captor.capture());
         assertEquals("team-1", captor.getValue().getTeamId());
         assertEquals("READY", captor.getValue().getStatus());
+        assertEquals("CAPTAIN", captor.getValue().getMode());
+        assertEquals("member-1", captor.getValue().getCaptainTeamMemberId());
     }
 
     @Test
@@ -91,6 +98,28 @@ public class TeamEventSolutionTest {
     }
 
     @Test
+    public void participantVersionsAreComparedWithinTransportOnly() {
+        Map<String, String> first = baseEvent("TEAM_READY");
+        first.put("teamVersion", "5");
+        first.put("data", "{\"team\":{\"teamId\":\"team-1\","
+                + "\"ownerChatterId\":\"owner\",\"state\":\"READY\","
+                + "\"version\":5,\"members\":[]}}");
+        eventSolution.handle(first);
+
+        Map<String, String> second = baseEvent("TEAM_READY");
+        second.put("eventId", "event-2");
+        second.put("transportGroup", "team-acp-instance-2");
+        second.put("teamVersion", "1");
+        second.put("data", "{\"team\":{\"teamId\":\"team-1\","
+                + "\"ownerChatterId\":\"owner\",\"state\":\"READY\","
+                + "\"version\":1,\"members\":[]}}");
+        eventSolution.handle(second);
+
+        verify(projectionSolution, times(2)).sync(
+                org.mockito.ArgumentMatchers.any(TeamDTO.class));
+    }
+
+    @Test
     public void talkToEventIsDelegatedWithoutChangingProjection() {
         Map<String, String> event = baseEvent("TALK_TO_QUEUED");
         event.put("data", "{\"messageId\":\"message-1\"}");
@@ -98,6 +127,21 @@ public class TeamEventSolutionTest {
         eventSolution.handle(event);
 
         verify(talkToEventSolution).handle(org.mockito.ArgumentMatchers.any());
+        verify(projectionSolution, never()).sync(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    public void memberSessionChangedIsDelegatedWithoutChangingProjection() {
+        Map<String, String> event = baseEvent("MEMBER_SESSION_CHANGED");
+        event.put("teamMemberId", "member-1");
+        event.put("acpClientId", "team-acp-member-1");
+        event.put("data", "{\"oldSessionId\":\"old\",\"newSessionId\":\"new\","
+                + "\"reason\":\"AUTO_IDLE\"}");
+
+        eventSolution.handle(event);
+
+        verify(sessionChangedEventSolution).handle(
+                org.mockito.ArgumentMatchers.any());
         verify(projectionSolution, never()).sync(org.mockito.ArgumentMatchers.any());
     }
 

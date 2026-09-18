@@ -42,7 +42,8 @@ public class TeamRobotProjectionSolution {
         List<RobotChatter> existing = findTeamRobots(team.getTeamId());
         Map<String, RobotChatter> existingByMemberId = existing.stream()
                 .collect(Collectors.toMap(RobotChatter::getTeamMemberId, Function.identity()));
-        Set<String> targetMemberIds = team.getMembers().stream()
+        List<TeamMemberDTO> projectedMembers = projectedMembers(team);
+        Set<String> targetMemberIds = projectedMembers.stream()
                 .map(TeamMemberDTO::getTeamMemberId)
                 .collect(Collectors.toSet());
 
@@ -50,13 +51,15 @@ public class TeamRobotProjectionSolution {
                 .filter(robot -> !targetMemberIds.contains(robot.getTeamMemberId()))
                 .forEach(this::deleteRobotAndSessions);
 
-        for (TeamMemberDTO member : team.getMembers()) {
+        for (TeamMemberDTO member : projectedMembers) {
             RobotChatter robot = existingByMemberId.get(member.getTeamMemberId());
             if (robot == null) {
-                chatterFactory.create(toRobot(team, member));
+                robot = toRobot(team, member);
+                chatterFactory.create(robot);
             } else {
                 updateRobot(robot, team, member);
             }
+            sessionService.findOrCreateSession(team.getOwnerChatterId(), robot.getId());
         }
     }
 
@@ -151,6 +154,10 @@ public class TeamRobotProjectionSolution {
                 : ChatterStatusEnum.DISCONNECT.getCode();
     }
 
+    private List<TeamMemberDTO> projectedMembers(TeamDTO team) {
+        return team.getMembers();
+    }
+
     private String memberRobotId(TeamMemberDTO member) {
         return StringUtils.defaultIfBlank(member.getRobotId(), "team-acp-" + member.getTeamMemberId());
     }
@@ -167,6 +174,9 @@ public class TeamRobotProjectionSolution {
         }
         if (team.getMembers() == null) {
             team.setMembers(Collections.emptyList());
+        }
+        if (!"NORMAL".equals(team.getMode()) && !"CAPTAIN".equals(team.getMode())) {
+            throw new IllegalArgumentException("不支持的Team模式");
         }
         for (TeamMemberDTO member : team.getMembers()) {
             if (member == null || StringUtils.isBlank(member.getTeamMemberId())) {

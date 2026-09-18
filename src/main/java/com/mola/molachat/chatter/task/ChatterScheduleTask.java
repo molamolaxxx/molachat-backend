@@ -11,7 +11,7 @@ import com.mola.molachat.chatter.enums.ChatterStatusEnum;
 import com.mola.molachat.chatter.enums.ChatterTagEnum;
 import com.mola.molachat.chatter.service.ChatterService;
 import com.mola.molachat.robot.solution.RobotSolution;
-import com.mola.molachat.robot.solution.AcpRuntimeStatusSolution;
+import com.mola.molachat.robot.solution.AcpTransportStatusSolution;
 import com.mola.molachat.team.solution.TeamGatewaySolution;
 import com.mola.molachat.common.utils.BeanUtilsPlug;
 import com.mola.molachat.common.utils.KvUtils;
@@ -60,7 +60,7 @@ public class ChatterScheduleTask {
     private TeamGatewaySolution teamGatewaySolution;
 
     @Resource
-    private AcpRuntimeStatusSolution acpRuntimeStatusSolution;
+    private AcpTransportStatusSolution acpTransportStatusSolution;
 
     /**
      * 检查chatter最后在线时间，删除长时间不在线的chatter
@@ -148,7 +148,7 @@ public class ChatterScheduleTask {
         boolean available = groupIds.isEmpty()
                 ? teamGatewaySolution.isAcpSourceAvailable(
                         chatter.getId(), chatter.getVisibleChatterIds())
-                : groupIds.stream().anyMatch(acpRuntimeStatusSolution::isOnline);
+                : groupIds.stream().anyMatch(acpTransportStatusSolution::isConnected);
         int targetStatus = available
                 ? ChatterStatusEnum.ONLINE.getCode()
                 : ChatterStatusEnum.DISCONNECT.getCode();

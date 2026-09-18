@@ -26,6 +26,9 @@ public class TeamEventSolution {
     private TeamMessageEventSolution messageEventSolution;
 
     @Resource
+    private TeamSessionChangedEventSolution sessionChangedEventSolution;
+
+    @Resource
     private TeamTalkToEventSolution talkToEventSolution;
 
     @Resource
@@ -70,6 +73,8 @@ public class TeamEventSolution {
                 || "MESSAGE_COMPLETE".equals(event.getType())
                 || "MESSAGE_ERROR".equals(event.getType())) {
             messageEventSolution.handle(event);
+        } else if ("MEMBER_SESSION_CHANGED".equals(event.getType())) {
+            sessionChangedEventSolution.handle(event);
         } else if ("TALK_TO_SEND".equals(event.getType())
                 || "TALK_TO_RECEIVE".equals(event.getType())
                 || "TALK_TO_QUEUED".equals(event.getType())
@@ -102,13 +107,14 @@ public class TeamEventSolution {
         if (event.getTeamVersion() == null || !isStateEvent(event.getType())) {
             return false;
         }
-        Long latest = latestTeamVersions.get(event.getTeamId());
+        String versionKey = event.getTransportGroup() + ":" + event.getTeamId();
+        Long latest = latestTeamVersions.get(versionKey);
         if (latest != null && event.getTeamVersion() < latest) {
             log.warn("忽略旧版本Fast Team状态事件, teamId={}, eventVersion={}, latestVersion={}",
                     event.getTeamId(), event.getTeamVersion(), latest);
             return true;
         }
-        latestTeamVersions.merge(event.getTeamId(), event.getTeamVersion(), Math::max);
+        latestTeamVersions.merge(versionKey, event.getTeamVersion(), Math::max);
         return false;
     }
 
