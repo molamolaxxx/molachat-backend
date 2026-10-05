@@ -27,6 +27,8 @@ public class TeamDTO {
     private List<TeamMemberDTO> members = new ArrayList<>();
 
     private Object lastError;
+    /** Projection only; the registry center owns coordinated teams. */
+    private boolean coordinated;
 
     public String getStatus() {
         return status == null ? state : status;
